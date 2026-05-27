@@ -8,9 +8,37 @@ Bilingual TH / EN, served at `https://trimongkol.com/`.
 ## Stack
 
 - **Laravel 11** with Blade templates
+- **Laravel Breeze** for authentication (login / register / password reset / email verify)
+- **Livewire 3** for the upcoming admin/scan dashboard (real-time UI)
 - **Tailwind CSS v4** via Vite
 - **Alpine.js** for the mobile menu toggle
 - Translations in `lang/th/site.php` and `lang/en/site.php`, switched via session cookie
+
+## Production checklist
+
+Before opening sign-ups, on the Plesk server `.env` must have:
+
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_NAME="Tirmongkol Service"      # must be quoted
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=...
+DB_USERNAME=...
+DB_PASSWORD=...
+```
+
+Then run on the server (Plesk → Composer → Run command, or via task):
+
+```bash
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
 
 ## Local development
 

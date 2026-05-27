@@ -26,9 +26,18 @@
 
         <div class="hidden items-center gap-3 md:flex">
             @include('partials.language-toggle')
-            <a href="{{ route('contact') }}" class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700">
-                {{ __('site.nav.cta') }}
-            </a>
+            @auth
+                <a href="{{ route('dashboard') }}" class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700">
+                    {{ __('site.nav.dashboard') }}
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="text-sm font-medium text-slate-600 hover:text-slate-900">
+                    {{ __('site.nav.login') }}
+                </a>
+                <a href="{{ route('register') }}" class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700">
+                    {{ __('site.nav.register') }}
+                </a>
+            @endauth
         </div>
 
         <button type="button" @click="open = !open" aria-label="Toggle menu" :aria-expanded="open"
@@ -54,9 +63,15 @@
             @endforeach
             <div class="mt-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
                 @include('partials.language-toggle')
-                <a href="{{ route('contact') }}" class="flex-1 rounded-md bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white">
-                    {{ __('site.nav.cta') }}
-                </a>
+                @auth
+                    <a href="{{ route('dashboard') }}" class="flex-1 rounded-md bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white">
+                        {{ __('site.nav.dashboard') }}
+                    </a>
+                @else
+                    <a href="{{ route('register') }}" class="flex-1 rounded-md bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white">
+                        {{ __('site.nav.register') }}
+                    </a>
+                @endauth
             </div>
         </div>
     </div>

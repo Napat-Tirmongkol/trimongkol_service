@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.marketing')
 
 @php
     $heroWords = explode(' ', __('site.home.heroTitle'));
