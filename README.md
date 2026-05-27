@@ -6,20 +6,14 @@
 Built with Next.js 15 (App Router), TypeScript, and Tailwind CSS.
 Bilingual (TH / EN) via React Context with `localStorage`-backed persistence.
 
-## เริ่มต้นใช้งาน (Getting started)
+Deployed on **Plesk Node.js** at `trimongkol.com/tirmongkol_service/`.
+
+## รันบนเครื่อง (Local development)
 
 ```bash
-# 1. ติดตั้ง dependencies
 npm install
-
-# 2. รันโหมด development
-npm run dev
-
-# 3. build สำหรับ production
-npm run build && npm start
+npm run dev          # http://localhost:3000/tirmongkol_service
 ```
-
-เปิดเว็บที่ http://localhost:3000
 
 ## โครงสร้างโปรเจกต์
 
@@ -27,38 +21,62 @@ npm run build && npm start
 app/
 ├── layout.tsx           # Root layout + metadata
 ├── page.tsx             # หน้า Home
-├── services/page.tsx    # หน้า Services
-├── about/page.tsx       # หน้า About
-├── contact/page.tsx     # หน้า Contact (mailto form)
+├── services/page.tsx
+├── about/page.tsx
+├── contact/page.tsx
 └── globals.css
 
 components/
 ├── Navbar.tsx
 ├── Footer.tsx
-├── LanguageProvider.tsx # Context + localStorage
-└── LanguageToggle.tsx   # ปุ่ม TH / EN
+├── LanguageProvider.tsx
+└── LanguageToggle.tsx
 
 lib/
 ├── site.ts              # ข้อมูลติดต่อ / domain
-└── translations.ts      # คำแปลทั้งหมด (TH / EN)
+└── translations.ts      # คำแปล TH / EN
+
+server.js                # Startup file สำหรับ Plesk Passenger
+next.config.js           # basePath: '/tirmongkol_service'
 ```
 
 ## การแก้ไขเนื้อหา
 
-- ข้อความทั้งหมดอยู่ใน `lib/translations.ts` (มีทั้งภาษาไทยและอังกฤษ)
+- ข้อความทั้งหมดอยู่ใน `lib/translations.ts`
 - ข้อมูลติดต่อ (อีเมล, เบอร์โทร, LINE) อยู่ใน `lib/site.ts`
-- บริการ (services) เพิ่ม/แก้/ลบในรายการ `services.items` ของ `lib/translations.ts`
+- บริการ (services) เพิ่ม/แก้/ลบในรายการ `services.items` ใน `lib/translations.ts`
 
-## Deploy ขึ้น Production
+## Deploy บน Plesk (Node.js mode)
 
-แนะนำให้ deploy บน Vercel:
+### Setup ครั้งแรก
 
-1. push repo นี้ขึ้น GitHub
-2. import โปรเจกต์ที่ https://vercel.com/new
-3. ที่หน้า Domains ใน Vercel ใส่ `tirmongkol.com`
-4. ที่ผู้ให้บริการ domain ตั้ง DNS:
-   - A record `@` → `76.76.21.21`
-   - CNAME record `www` → `cname.vercel-dns.com`
+1. **Git** — Plesk → Websites & Domains → trimongkol.com → Git
+   - Repository URL: `https://github.com/Napat-Tirmongkol/trimongkol_service.git`
+   - Branch: `main`
+   - Deployment path: `/httpdocs/tirmongkol_service`
 
-หรือ deploy แบบ static export ก็ได้ — เพิ่ม `output: "export"` ใน `next.config.js`
-แล้ว `npm run build` จะได้โฟลเดอร์ `out/` เอาไปวางบน hosting ใดก็ได้
+2. **Node.js** — Plesk → Node.js
+   - Application Root: `/httpdocs/tirmongkol_service`
+   - Application Startup File: `server.js`
+   - Application Mode: `production`
+   - กด **NPM Install**
+   - กด **Run Script** → เลือก `build`
+   - กด **Restart App**
+
+3. **Reverse proxy** — เปิด `https://trimongkol.com/tirmongkol_service/`
+   - ถ้า Plesk รัน Node ที่ root domain อยู่แล้ว Next.js จะตอบเฉพาะ path ที่ขึ้นต้นด้วย `/tirmongkol_service` (เพราะตั้ง `basePath`) และ 404 path อื่น — ตามต้องการ
+
+### Deploy ครั้งถัดไป
+
+แค่ `git push origin main` → Plesk auto-pull → ใน Node.js dashboard กด:
+- **NPM Install** (เฉพาะถ้า `package.json` มีการเปลี่ยน)
+- **Run Script** → `build`
+- **Restart App**
+
+หรือเปิด "Additional deployment actions" ใน Plesk Git ใส่:
+```
+npm install
+npm run build
+touch tmp/restart.txt
+```
+แล้ว Plesk จะรันให้อัตโนมัติทุกครั้งหลัง pull
