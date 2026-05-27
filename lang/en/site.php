@@ -11,6 +11,9 @@ return [
         'about' => 'About',
         'contact' => 'Contact',
         'cta' => 'Get a Quote',
+        'login' => 'Log In',
+        'register' => 'Sign Up Free',
+        'dashboard' => 'Dashboard',
     ],
     'home' => [
         'heroEyebrow' => 'Software Solutions',

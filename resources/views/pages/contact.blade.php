@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.marketing')
 
 @section('title', __('site.contact.heading') . ' — ' . __('site.brand.name'))
 

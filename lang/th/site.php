@@ -11,6 +11,9 @@ return [
         'about' => 'เกี่ยวกับเรา',
         'contact' => 'ติดต่อ',
         'cta' => 'ขอใบเสนอราคา',
+        'login' => 'เข้าสู่ระบบ',
+        'register' => 'สมัครฟรี',
+        'dashboard' => 'แดชบอร์ด',
     ],
     'home' => [
         'heroEyebrow' => 'Software Solutions',
