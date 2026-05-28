@@ -18,28 +18,28 @@
 @endphp
 
 @section('content')
-    <section class="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-        <div class="bg-grid absolute inset-0 opacity-30" aria-hidden="true"></div>
-        <div class="relative mx-auto max-w-4xl px-6 py-20 text-center md:py-24">
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{{ __('site.about.heading') }}</h1>
-            <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-600">{{ __('site.about.subheading') }}</p>
-        </div>
-    </section>
+    @include('partials.hero', [
+        'image' => config('site.hero_images.about'),
+        'eyebrow' => __('site.nav.about'),
+        'title' => __('site.about.heading'),
+        'subtitle' => __('site.about.subheading'),
+        'minHeight' => 'min-h-[60vh]',
+    ])
 
-    <section class="py-20">
-        <div class="mx-auto grid max-w-6xl gap-12 px-6 md:grid-cols-2 md:items-center">
-            <div>
-                <span class="text-sm font-semibold uppercase tracking-wider text-brand-700">{{ __('site.about.story') }}</span>
-                <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900">{{ __('site.brand.name') }}</h2>
-                <p class="mt-6 text-base leading-relaxed text-slate-600">{{ __('site.about.storyText') }}</p>
-            </div>
-            <div class="relative">
-                <div class="absolute -inset-4 rounded-3xl bg-gradient-to-br from-brand-100 to-brand-300 opacity-50 blur-2xl" aria-hidden="true"></div>
-                <div class="relative rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
-                    <div class="grid grid-cols-2 gap-6">
+    {{-- Floating "Our story" card --}}
+    <section class="relative z-20 mx-auto -mt-24 max-w-6xl px-4 sm:px-6">
+        <div class="rounded-3xl bg-white p-8 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200/50 md:p-12">
+            <div class="grid gap-10 md:grid-cols-5 md:gap-12">
+                <div class="md:col-span-3">
+                    <span class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">{{ __('site.about.story') }}</span>
+                    <h2 class="mt-3 text-3xl font-bold leading-tight tracking-tight text-slate-900 md:text-4xl">{{ __('site.brand.name') }}</h2>
+                    <p class="mt-6 text-base leading-relaxed text-slate-600 md:text-lg">{{ __('site.about.storyText') }}</p>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="grid grid-cols-2 gap-4">
                         @foreach ($statBoxes as $s)
-                            <div class="rounded-xl bg-brand-50 p-5">
-                                <div class="text-3xl font-bold text-brand-700">{{ $s['n'] }}</div>
+                            <div class="rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 p-5">
+                                <div class="text-3xl font-extrabold tracking-tight text-brand-700">{{ $s['n'] }}</div>
                                 <div class="mt-1 text-xs text-slate-600">{{ $s['l'] }}</div>
                             </div>
                         @endforeach
@@ -49,51 +49,56 @@
         </div>
     </section>
 
-    <section class="border-y border-slate-200 bg-slate-50 py-20">
-        <div class="mx-auto grid max-w-6xl gap-8 px-6 md:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-white p-8">
-                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-600 text-white">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    {{-- Mission + Vision --}}
+    <section class="mx-auto mt-16 max-w-6xl px-4 sm:px-6 md:mt-24">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200/50 md:p-10">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/20">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
                     </svg>
                 </div>
-                <h3 class="mt-5 text-xl font-semibold text-slate-900">{{ __('site.about.missionTitle') }}</h3>
-                <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ __('site.about.missionText') }}</p>
+                <h3 class="mt-6 text-xl font-bold text-slate-900">{{ __('site.about.missionTitle') }}</h3>
+                <p class="mt-3 text-sm leading-relaxed text-slate-600 md:text-base">{{ __('site.about.missionText') }}</p>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-8">
-                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-600 text-white">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="rounded-3xl bg-slate-900 p-8 text-white shadow-sm md:p-10">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/20">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                     </svg>
                 </div>
-                <h3 class="mt-5 text-xl font-semibold text-slate-900">{{ __('site.about.visionTitle') }}</h3>
-                <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ __('site.about.visionText') }}</p>
+                <h3 class="mt-6 text-xl font-bold">{{ __('site.about.visionTitle') }}</h3>
+                <p class="mt-3 text-sm leading-relaxed text-slate-300 md:text-base">{{ __('site.about.visionText') }}</p>
             </div>
         </div>
     </section>
 
-    <section class="py-20">
-        <div class="mx-auto max-w-6xl px-6">
-            <h2 class="text-center text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.about.valuesHeading') }}</h2>
-            <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                @foreach ($values as $i => $value)
-                    <div class="rounded-2xl border border-slate-200 bg-white p-6">
-                        <span class="text-sm font-semibold text-brand-700">0{{ $i + 1 }}</span>
-                        <h3 class="mt-3 text-lg font-semibold text-slate-900">{{ $value['title'] }}</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-600">{{ $value['desc'] }}</p>
-                    </div>
-                @endforeach
-            </div>
+    {{-- Values --}}
+    <section class="mx-auto mt-16 max-w-6xl px-4 sm:px-6 md:mt-24">
+        <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.about.valuesHeading') }}</h2>
+        </div>
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            @foreach ($values as $i => $value)
+                <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200/50">
+                    <span class="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">0{{ $i + 1 }}</span>
+                    <h3 class="mt-3 text-lg font-semibold text-slate-900">{{ $value['title'] }}</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600">{{ $value['desc'] }}</p>
+                </div>
+            @endforeach
         </div>
     </section>
 
-    <section class="bg-slate-50 py-20">
-        <div class="mx-auto max-w-3xl px-6 text-center">
-            <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.home.ctaHeading') }}</h2>
-            <p class="mt-4 text-lg text-slate-600">{{ __('site.home.ctaSubheading') }}</p>
-            <a href="{{ route('contact') }}" class="mt-8 inline-block rounded-md bg-brand-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700">
-                {{ __('site.home.ctaButton') }}
-            </a>
-        </div>
+    {{-- CTA --}}
+    <section class="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 md:py-28">
+        <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.home.ctaHeading') }}</h2>
+        <p class="mt-4 text-base text-slate-600 md:text-lg">{{ __('site.home.ctaSubheading') }}</p>
+        <a href="{{ route('contact') }}"
+           class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-slate-800">
+            {{ __('site.home.ctaButton') }}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+        </a>
     </section>
 @endsection
