@@ -193,6 +193,44 @@ class WorkspaceController extends Controller
             ->with('status', __('app.workspaces.left', ['name' => $workspace->name]));
     }
 
+    public function transferOwnership(Request $request, Workspace $workspace)
+    {
+        $current = $request->user();
+        abort_unless($workspace->isOwnedBy($current), 403);
+
+        $data = $request->validate([
+            'target_user' => 'required|exists:users,id',
+            'password' => 'required|current_password',
+        ]);
+
+        if ((int) $data['target_user'] === $current->id) {
+            return back()->with('error', __('app.workspaces.transfer_self'));
+        }
+
+        $newOwnerMembership = WorkspaceMember::where('workspace_id', $workspace->id)
+            ->where('user_id', $data['target_user'])
+            ->first();
+
+        if (! $newOwnerMembership) {
+            return back()->with('error', __('app.workspaces.transfer_not_member'));
+        }
+
+        $newOwner = User::find($data['target_user']);
+
+        // Demote current owner to admin, promote new owner.
+        WorkspaceMember::where('workspace_id', $workspace->id)
+            ->where('user_id', $current->id)
+            ->update(['role' => 'admin']);
+
+        $newOwnerMembership->update(['role' => 'owner']);
+
+        AuditLog::record('workspace.transfer_ownership', $workspace, $newOwner->email, [
+            'from' => $current->email,
+        ]);
+
+        return back()->with('status', __('app.workspaces.ownership_transferred', ['name' => $newOwner->name]));
+    }
+
     private function ensureManager(Workspace $workspace, User $user): void
     {
         $role = $workspace->roleFor($user);

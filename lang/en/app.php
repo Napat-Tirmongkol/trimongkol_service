@@ -467,6 +467,17 @@ return [
         'left' => 'You left :name.',
         'owner_cannot_leave' => 'The owner cannot leave their own workspace — transfer ownership or delete the workspace instead.',
 
+        'transfer_heading' => 'Transfer ownership',
+        'transfer_hint' => 'After transferring you will become an admin on this workspace and the chosen member will become the owner. Use this before leaving, or when changing roles.',
+        'transfer_to' => 'Transfer to',
+        'transfer_submit' => 'Transfer ownership',
+        'transfer_confirm' => 'Transfer ownership to the selected member? You will be left as an admin.',
+        'transfer_no_candidates' => 'No other members yet — invite someone before you can transfer.',
+        'transfer_self' => 'You cannot transfer ownership to yourself.',
+        'transfer_not_member' => 'The recipient must already be a member of the workspace.',
+        'transfer_button' => 'Transfer ownership',
+        'ownership_transferred' => 'Ownership transferred to :name. You are now an admin.',
+
         'delete' => 'Delete workspace permanently',
         'delete_hint' => 'Deleting removes all classrooms, students, and assignments in this workspace — irreversible.',
         'delete_confirm' => 'Delete workspace :name? Everything inside will be permanently lost.',

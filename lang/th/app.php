@@ -467,6 +467,17 @@ return [
         'left' => 'ออกจาก :name แล้ว',
         'owner_cannot_leave' => 'เจ้าของออกจาก workspace ของตัวเองไม่ได้ — โอนความเป็นเจ้าของ หรือลบ workspace แทน',
 
+        'transfer_heading' => 'โอนความเป็นเจ้าของ',
+        'transfer_hint' => 'หลังโอน คุณจะกลายเป็น admin ใน workspace นี้ และคนใหม่จะเป็น owner — ทำเฉพาะตอนจะ leave หรือต้องการสลับบทบาท',
+        'transfer_to' => 'โอนให้',
+        'transfer_submit' => 'โอนความเป็นเจ้าของ',
+        'transfer_confirm' => 'โอนความเป็นเจ้าของให้คนที่เลือก? ของคุณจะเหลือสิทธิ์ระดับ admin',
+        'transfer_no_candidates' => 'ยังไม่มีสมาชิกคนอื่นใน workspace — เชิญสมาชิกก่อนถึงจะโอนได้',
+        'transfer_self' => 'โอนความเป็นเจ้าของให้ตัวเองไม่ได้',
+        'transfer_not_member' => 'ผู้ที่จะรับโอนต้องเป็นสมาชิก workspace ก่อน',
+        'transfer_button' => 'โอนความเป็นเจ้าของ',
+        'ownership_transferred' => 'โอนความเป็นเจ้าของให้ :name แล้ว — ตอนนี้คุณเป็น admin',
+
         'delete' => 'ลบ workspace ถาวร',
         'delete_hint' => 'การลบจะลบห้องเรียน นักเรียน การบ้าน ทุกอย่างใน workspace นี้ — กู้คืนไม่ได้',
         'delete_confirm' => 'ลบ workspace :name? ข้อมูลทุกอย่างใน workspace จะหายถาวร',

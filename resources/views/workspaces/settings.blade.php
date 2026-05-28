@@ -97,6 +97,45 @@
                 @endif
             </div>
 
+            {{-- Transfer ownership — owner only --}}
+            @if ($isOwner)
+                @php
+                    $transferCandidates = $members->filter(fn ($m) => $m->role !== 'owner');
+                @endphp
+                <div class="rounded-xl border border-amber-200 bg-amber-50/40 p-6">
+                    <h3 class="text-sm font-semibold text-amber-900">{{ __('app.workspaces.transfer_heading') }}</h3>
+                    <p class="mt-1 text-xs text-amber-800">{{ __('app.workspaces.transfer_hint') }}</p>
+                    @if ($transferCandidates->isEmpty())
+                        <p class="mt-3 text-xs text-amber-700">{{ __('app.workspaces.transfer_no_candidates') }}</p>
+                    @else
+                        <form method="POST" action="{{ route('workspaces.transfer', $workspace) }}" class="mt-4 space-y-3"
+                              data-confirm="{{ __('app.workspaces.transfer_confirm') }}" data-confirm-danger="1">
+                            @csrf
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="target_user" class="block text-xs font-medium text-slate-600">{{ __('app.workspaces.transfer_to') }}</label>
+                                    <select id="target_user" name="target_user" required
+                                            class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        @foreach ($transferCandidates as $cand)
+                                            <option value="{{ $cand->user->id }}">{{ $cand->user->name }} ({{ $cand->user->email }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="transfer_password" class="block text-xs font-medium text-slate-600">{{ __('app.two_factor.current_password') }}</label>
+                                    <input id="transfer_password" name="password" type="password" required
+                                           class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                </div>
+                            </div>
+                            @error('password') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+                            <button type="submit" class="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-50">
+                                {{ __('app.workspaces.transfer_submit') }}
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            @endif
+
             {{-- Leave / delete --}}
             <div class="rounded-xl border border-rose-200 bg-rose-50/40 p-6">
                 <h3 class="text-sm font-semibold text-rose-900">{{ __('app.admin.danger_zone') }}</h3>
