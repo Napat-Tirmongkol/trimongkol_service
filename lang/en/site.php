@@ -1,6 +1,26 @@
 <?php
 
 return [
+    'products' => [
+        'available_label' => 'Available',
+        'coming_label' => 'Coming soon',
+        'try_free' => 'Try Free',
+        'free_forever' => 'Free forever',
+        'go_to_app' => 'Open app',
+        'scanner' => [
+            'title' => 'Homework Scanner',
+            'tagline' => 'Scan to check, done in seconds',
+            'description' => 'Upload your student roster → the system auto-generates a barcode/QR per student → print and stick on their books → scan instead of ticking off names by hand. 10× faster.',
+            'features' => [
+                'Upload Excel roster → auto barcodes',
+                'Scan with a phone camera (no scanner needed)',
+                'Hardware scanner supported too',
+                'Live count: submitted vs not yet',
+                'Export scores to Excel for your school',
+            ],
+        ],
+    ],
+
     'brand' => [
         'name' => 'Tirmongkol Service',
         'tagline' => 'End-to-end Business Software',

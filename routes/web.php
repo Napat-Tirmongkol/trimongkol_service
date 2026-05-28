@@ -22,9 +22,9 @@ Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
     ->name('locale.switch');
 
-// Authenticated app
+// Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [ClassroomController::class, 'index'])->name('dashboard');
+    Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
 
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 
