@@ -1,9 +1,9 @@
 @php
     $links = [
-        ['route' => 'home', 'label' => __('site.nav.home')],
-        ['route' => 'services', 'label' => __('site.nav.services')],
-        ['route' => 'about', 'label' => __('site.nav.about')],
-        ['route' => 'contact', 'label' => __('site.nav.contact')],
+        ['route' => 'home', 'label' => t('nav.home')],
+        ['route' => 'services', 'label' => t('nav.services')],
+        ['route' => 'about', 'label' => t('nav.about')],
+        ['route' => 'contact', 'label' => t('nav.contact')],
     ];
     $current = request()->route()->getName();
 @endphp
@@ -18,7 +18,7 @@
             <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">T</span>
             <span :class="scrolled ? 'text-slate-900' : 'text-white drop-shadow'"
                   class="text-base font-semibold tracking-tight transition-colors">
-                {{ __('site.brand.name') }}
+                {{ t('brand.name') }}
             </span>
         </a>
 
@@ -40,18 +40,18 @@
                 <a href="{{ route('dashboard') }}"
                    :class="scrolled ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-900 hover:bg-slate-100'"
                    class="rounded-full px-4 py-2 text-sm font-semibold transition">
-                    {{ __('site.nav.dashboard') }}
+                    {{ t('nav.dashboard') }}
                 </a>
             @else
                 <a href="{{ route('login') }}"
                    :class="scrolled ? 'text-slate-700 hover:text-slate-900' : 'text-white/90 hover:text-white'"
                    class="rounded-full px-4 py-2 text-sm font-medium transition">
-                    {{ __('site.nav.login') }}
+                    {{ t('nav.login') }}
                 </a>
                 <a href="{{ route('register') }}"
                    :class="scrolled ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-900 hover:bg-slate-100'"
                    class="rounded-full px-5 py-2 text-sm font-semibold transition">
-                    {{ __('site.nav.register') }}
+                    {{ t('nav.register') }}
                 </a>
             @endauth
         </div>
@@ -82,11 +82,11 @@
                 @include('partials.language-toggle')
                 @auth
                     <a href="{{ route('dashboard') }}" class="flex-1 rounded-full bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white">
-                        {{ __('site.nav.dashboard') }}
+                        {{ t('nav.dashboard') }}
                     </a>
                 @else
                     <a href="{{ route('register') }}" class="flex-1 rounded-full bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white">
-                        {{ __('site.nav.register') }}
+                        {{ t('nav.register') }}
                     </a>
                 @endauth
             </div>
