@@ -6,6 +6,7 @@
         ['route' => 'admin.security', 'label' => __('app.admin.tab_security'), 'pattern' => 'admin.security'],
         ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs'],
         ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],
+        ['route' => 'admin.system', 'label' => __('app.admin.tab_system'), 'pattern' => 'admin.system*'],
     ];
 
     $products = config('admin-products', []);

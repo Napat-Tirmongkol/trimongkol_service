@@ -96,7 +96,23 @@ return [
         'tab_logs' => 'Audit Log',
         'tab_leads' => 'ลีดติดต่อ',
         'tab_security' => 'ความปลอดภัย',
+        'tab_system' => 'System',
         'nav_products' => 'Products',
+
+        'system' => [
+            'heading' => 'System — รัน migration / เคลียร์ cache',
+            'env_heading' => 'Environment',
+            'pending_heading' => 'Pending migrations',
+            'pending_hint' => 'มี :n migration ที่ยังไม่ได้รัน — กดปุ่มขวาเพื่อรันให้เสร็จ',
+            'no_pending' => 'ทุก migration ถูกรันแล้ว ระบบ up-to-date',
+            'run_migrate' => 'Run migrations',
+            'migrate_confirm' => 'รัน :n migration ที่ค้างอยู่ตอนนี้?',
+            'migrate_confirm_empty' => 'ไม่มี migration ค้าง — กดเพื่อรัน migrate ก็ได้ (จะไม่เกิดอะไรขึ้น)',
+            'cache_heading' => 'Clear caches',
+            'cache_hint' => 'เคลียร์ config / route / view / event cache ทั้งหมด — ใช้หลังเปลี่ยน .env, แก้ route, แก้ blade',
+            'run_clear_cache' => 'Clear all caches',
+            'cache_confirm' => 'เคลียร์ cache ทั้งหมด?',
+        ],
 
         'security' => [
             'heading' => 'ความปลอดภัย — ประวัติการเข้าระบบ',

@@ -96,7 +96,23 @@ return [
         'tab_logs' => 'Audit Log',
         'tab_leads' => 'Leads',
         'tab_security' => 'Security',
+        'tab_system' => 'System',
         'nav_products' => 'Products',
+
+        'system' => [
+            'heading' => 'System — run migrations / clear cache',
+            'env_heading' => 'Environment',
+            'pending_heading' => 'Pending migrations',
+            'pending_hint' => ':n migration(s) waiting to run.',
+            'no_pending' => 'All migrations are up to date.',
+            'run_migrate' => 'Run migrations',
+            'migrate_confirm' => 'Run :n pending migration(s) now?',
+            'migrate_confirm_empty' => 'No pending migrations — this will be a no-op.',
+            'cache_heading' => 'Clear caches',
+            'cache_hint' => 'Clears config / route / view / event caches. Use after editing .env, routes, or Blade templates.',
+            'run_clear_cache' => 'Clear all caches',
+            'cache_confirm' => 'Clear all caches?',
+        ],
 
         'security' => [
             'heading' => 'Security — login history',

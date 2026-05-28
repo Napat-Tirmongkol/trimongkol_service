@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
+use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
@@ -100,6 +101,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
         Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
         Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+
+        Route::get('/system', [AdminSystemController::class, 'index'])->name('system');
+        Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
+        Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
 
         // Product-specific moderation. New products get a sibling group here +
         // an entry in config/admin-products.php and the nav picks them up.
