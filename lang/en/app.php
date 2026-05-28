@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'nav' => [
+        'website_home' => 'Website home',
+    ],
+
     'admin' => [
         'nav' => 'Admin',
         'portalLabel' => 'Restricted area',

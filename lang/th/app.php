@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'nav' => [
+        'website_home' => 'หน้าแรกเว็บไซต์',
+    ],
+
     'admin' => [
         'nav' => 'Admin',
         'portalLabel' => 'พื้นที่ผู้ดูแลระบบ',

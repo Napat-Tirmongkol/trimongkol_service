@@ -4,6 +4,14 @@
 
 ---
 
+## 🔙 ลิงก์กลับหน้าแรกเว็บไซต์จากในแอป
+
+- เพิ่มลิงก์ **"หน้าแรกเว็บไซต์"** ในเมนูนำทางของแอป (`layouts/navigation.blade.php`) — มีทั้งในเมนูบัญชีผู้ใช้ (desktop) และเมนูมือถือ
+- แก้ปัญหาหน้า `/scanner` (และหน้าอื่น ๆ ในแอป) ไม่มีทางกลับไปหน้าแรกของเว็บไซต์ (`/`)
+- เพิ่ม key `app.nav.website_home` ใน `lang/th/app.php` + `lang/en/app.php`
+
+---
+
 ## 💳 Subscription & Plan Foundation (Phase 4)
 
 **Phase 4 ของ business model C** — โครงสร้าง subscription แบบ per-workspace
