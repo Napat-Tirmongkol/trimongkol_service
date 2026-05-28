@@ -44,7 +44,7 @@
                         @csrf
                         <button type="submit"
                                 @disabled(! $webhookConfigured)
-                                class="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                                class="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">
                             {{ __('app.admin.system.run_pull') }}
                         </button>
                     </form>
