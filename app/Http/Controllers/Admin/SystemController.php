@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -25,6 +26,15 @@ class SystemController extends Controller
             'db_database' => DB::connection()->getDatabaseName(),
         ];
 
+        $mailInfo = [
+            'mailer' => config('mail.default'),
+            'host' => config('mail.mailers.smtp.host'),
+            'port' => config('mail.mailers.smtp.port'),
+            'encryption' => config('mail.mailers.smtp.encryption'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+        ];
+
         // Pending migrations: rows in /database/migrations not present in
         // the migrations table (if the table even exists).
         $pending = [];
@@ -38,7 +48,7 @@ class SystemController extends Controller
         $webhookConfigured = ! empty(Setting::get('deploy.webhook_url'));
         $lastResult = session('system_result');
 
-        return view('admin.system', compact('info', 'pending', 'webhookConfigured', 'lastResult'));
+        return view('admin.system', compact('info', 'mailInfo', 'pending', 'webhookConfigured', 'lastResult'));
     }
 
     public function pull(Request $request)
@@ -88,6 +98,51 @@ class SystemController extends Controller
             ->with('system_result', [
                 'command' => 'php artisan migrate --force',
                 'output' => $output->fetch(),
+                'exit_code' => $exitCode,
+            ]);
+    }
+
+    public function testEmail(Request $request)
+    {
+        $data = $request->validate([
+            'to' => 'required|email|max:160',
+        ]);
+
+        $to = $data['to'];
+        $body = "This is a test email from " . config('app.name') . ".\n\n"
+              . "If you received this, SMTP is configured correctly.\n\n"
+              . "Sent at: " . now()->toDateTimeString() . "\n"
+              . "From host: " . request()->getHost() . "\n";
+
+        try {
+            Mail::raw($body, function ($mail) use ($to) {
+                $mail->to($to)
+                     ->subject('Test email — ' . config('app.name'));
+            });
+
+            $output = "Mail dispatched to {$to}.\n\n"
+                    . "'Dispatched' only means the SMTP server accepted the message. The recipient should check their inbox AND junk/spam folder.\n\n"
+                    . "Mail config used:\n"
+                    . "  MAIL_MAILER     = " . config('mail.default') . "\n"
+                    . "  MAIL_HOST       = " . config('mail.mailers.smtp.host') . "\n"
+                    . "  MAIL_PORT       = " . config('mail.mailers.smtp.port') . "\n"
+                    . "  MAIL_ENCRYPTION = " . (config('mail.mailers.smtp.encryption') ?: '(none)') . "\n"
+                    . "  MAIL_FROM       = " . config('mail.from.address');
+            $exitCode = 0;
+        } catch (\Throwable $e) {
+            $output = "Send failed.\n\n" . $e->getMessage();
+            $exitCode = 1;
+        }
+
+        AuditLog::record('system.test_email', null, $to, [
+            'ok' => $exitCode === 0,
+            'error' => $exitCode === 0 ? null : substr($e->getMessage() ?? '', 0, 500),
+        ]);
+
+        return redirect()->route('admin.system')
+            ->with('system_result', [
+                'command' => "Test email to {$to}",
+                'output' => $output,
                 'exit_code' => $exitCode,
             ]);
     }

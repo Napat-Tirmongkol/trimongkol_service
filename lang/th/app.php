@@ -137,6 +137,10 @@ return [
             'run_pull' => 'Pull จาก Git',
             'pull_confirm' => 'Pull code ล่าสุดจาก Git? (Plesk จะ download ไฟล์ใหม่ลง server)',
             'no_webhook_url' => 'ยังไม่ได้ตั้งค่า Plesk webhook URL ใน /admin/site → Deployment',
+            'mail_heading' => 'ทดสอบส่งอีเมล',
+            'mail_to_label' => 'ส่งไปที่อีเมล',
+            'mail_send' => 'ส่งอีเมลทดสอบ',
+            'mail_hint' => 'ส่งอีเมลทดสอบสั้นๆ ไปยังที่อยู่นี้ — ใช้ดูว่าค่า SMTP ใน .env ถูกหรือยัง ดูทั้ง inbox และ junk/spam',
         ],
 
         'security' => [

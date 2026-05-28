@@ -134,6 +134,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/system/pull', [AdminSystemController::class, 'pull'])->name('system.pull');
         Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
         Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
+        Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
 
         // Product-specific moderation. New products get a sibling group here +
         // an entry in config/admin-products.php and the nav picks them up.

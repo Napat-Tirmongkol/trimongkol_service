@@ -99,6 +99,34 @@
                 </div>
             </div>
 
+            {{-- Test email --}}
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.system.mail_heading') }}</h3>
+
+                <dl class="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                    <div><dt class="text-slate-500">MAIL_MAILER</dt><dd class="font-mono text-slate-700">{{ $mailInfo['mailer'] ?: '—' }}</dd></div>
+                    <div><dt class="text-slate-500">MAIL_HOST</dt><dd class="font-mono text-slate-700">{{ $mailInfo['host'] ?: '—' }}</dd></div>
+                    <div><dt class="text-slate-500">MAIL_PORT</dt><dd class="font-mono text-slate-700">{{ $mailInfo['port'] ?: '—' }}</dd></div>
+                    <div><dt class="text-slate-500">MAIL_ENCRYPTION</dt><dd class="font-mono text-slate-700">{{ $mailInfo['encryption'] ?: '(none)' }}</dd></div>
+                    <div class="sm:col-span-2"><dt class="text-slate-500">MAIL_FROM</dt><dd class="font-mono text-slate-700">{{ $mailInfo['from_address'] ?: '—' }} @if ($mailInfo['from_name']) <span class="text-slate-400">({{ $mailInfo['from_name'] }})</span> @endif</dd></div>
+                </dl>
+
+                <form method="POST" action="{{ route('admin.system.test-email') }}" class="mt-5 flex flex-wrap items-end gap-2 border-t border-slate-100 pt-5">
+                    @csrf
+                    <div class="flex-1 min-w-[220px]">
+                        <label for="to" class="block text-xs font-medium text-slate-600">{{ __('app.admin.system.mail_to_label') }}</label>
+                        <input id="to" name="to" type="email" required
+                               value="{{ auth()->user()->email }}"
+                               class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        @error('to') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                    <button type="submit" class="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                        {{ __('app.admin.system.mail_send') }}
+                    </button>
+                </form>
+                <p class="mt-2 text-xs text-slate-500">{{ __('app.admin.system.mail_hint') }}</p>
+            </div>
+
             {{-- Last command output --}}
             @if ($lastResult)
                 <div class="rounded-xl border border-slate-200 bg-slate-950 p-6 shadow-sm">

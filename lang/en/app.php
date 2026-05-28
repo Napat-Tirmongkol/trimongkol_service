@@ -137,6 +137,10 @@ return [
             'run_pull' => 'Pull from Git',
             'pull_confirm' => 'Pull latest code from Git? Plesk will download new files to the server.',
             'no_webhook_url' => 'Plesk webhook URL not set. Configure it in /admin/site → Deployment.',
+            'mail_heading' => 'Test email',
+            'mail_to_label' => 'Send to',
+            'mail_send' => 'Send test email',
+            'mail_hint' => 'Sends a short test message to confirm SMTP credentials work. Check the inbox AND junk/spam folder.',
         ],
 
         'security' => [
