@@ -1,6 +1,34 @@
 # Changelog
 
-ฟีเจอร์ทั้งหมดที่เพิ่มในสาขา `claude/lucid-wozniak-Ogl8h` เรียงตามลำดับเวลา
+ฟีเจอร์ทั้งหมดที่เพิ่มในสาขา `claude/lucid-wozniak-Ogl8h` เรียงตามลำดับเวลา (ใหม่สุดอยู่บน)
+
+---
+
+## 🔒 Login Attempt Tracking + Security Dashboard
+
+**Phase 2 ของ business model C** — security baseline ก่อนเปิดให้ user สมัครเอง
+
+- ตาราง `login_attempts` เก็บทุก login (success + fail) พร้อม IP / user-agent
+- Event listeners ใน `AppServiceProvider` (`Login` / `Failed`)
+- หน้า `/admin/security` แสดง:
+  - Failed/success count 24h + 7d
+  - Fail/success ratio bar
+  - Top 10 failing IPs (น่าจะเป็น brute-force probes)
+  - Recent 50 attempts — filter เฉพาะ fail / success
+- **ยังไม่มี 2FA** — เก็บไว้เป็น Phase 2.5 ถ้าจะทำต้อง add composer dep
+
+---
+
+## 📨 Lead Management — เก็บ + จัดการ contact form leads
+
+**Phase 1 ของ business model C** — service business (consultancy)
+
+- ตาราง `leads` (name/email/phone/company/message + status + assignee + notes + IP/UA)
+- Contact form POST `/contact` เก็บลง DB (เคยแค่ redirect)
+- หน้า `/admin/leads` พร้อม status pipeline: new → contacted → qualified → won/lost
+- หน้า detail: เปลี่ยน status, assign admin คนหนึ่ง, ใส่ internal notes
+- กล่อง "ลีดใหม่" ใน admin dashboard ลิงก์ไปหน้า new leads
+- เปลี่ยน status / ลบ → audit log
 
 ---
 

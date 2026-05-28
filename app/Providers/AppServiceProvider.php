@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\LoginAttempt;
 use App\Models\User;
 use Illuminate\Auth\Events\Authenticated;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Http\Request;
@@ -52,11 +54,32 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Stamp last_login_at on each successful login.
+        // Stamp last_login_at + record a successful login attempt on each login.
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {
                 $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
             }
+
+            $request = request();
+            LoginAttempt::create([
+                'email' => $event->user?->email,
+                'user_id' => $event->user?->id,
+                'success' => true,
+                'ip' => $request?->ip(),
+                'user_agent' => substr((string) $request?->userAgent(), 0, 500),
+            ]);
+        });
+
+        // Record failed login attempts so admins can see brute-force probes.
+        Event::listen(Failed::class, function (Failed $event) {
+            $request = request();
+            LoginAttempt::create([
+                'email' => $event->credentials['email'] ?? null,
+                'user_id' => $event->user?->id,
+                'success' => false,
+                'ip' => $request?->ip(),
+                'user_agent' => substr((string) $request?->userAgent(), 0, 500),
+            ]);
         });
     }
 }

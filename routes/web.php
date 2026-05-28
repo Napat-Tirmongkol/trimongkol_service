@@ -83,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Platform-wide tools (cut across all products)
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
+        Route::get('/security', [AdminController::class, 'security'])->name('security');
 
         Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
         Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');

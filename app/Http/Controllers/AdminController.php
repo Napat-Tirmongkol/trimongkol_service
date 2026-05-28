@@ -6,6 +6,7 @@ use App\Models\AdminAction;
 use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\Lead;
+use App\Models\LoginAttempt;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\AuditLog;
@@ -200,6 +201,41 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.dashboard');
+    }
+
+    public function security(Request $request)
+    {
+        $now = now();
+        $since24h = $now->copy()->subDay();
+        $since7d = $now->copy()->subDays(7);
+
+        $stats = [
+            'failed_24h' => LoginAttempt::where('success', false)->where('created_at', '>=', $since24h)->count(),
+            'failed_7d' => LoginAttempt::where('success', false)->where('created_at', '>=', $since7d)->count(),
+            'success_24h' => LoginAttempt::where('success', true)->where('created_at', '>=', $since24h)->count(),
+            'success_7d' => LoginAttempt::where('success', true)->where('created_at', '>=', $since7d)->count(),
+        ];
+
+        // Top failing IPs in last 7 days — surface brute-force-style probes.
+        $topFailingIps = LoginAttempt::query()
+            ->selectRaw('ip, COUNT(*) as attempts, MAX(created_at) as last_seen')
+            ->where('success', false)
+            ->where('created_at', '>=', $since7d)
+            ->whereNotNull('ip')
+            ->groupBy('ip')
+            ->orderByDesc('attempts')
+            ->limit(10)
+            ->get();
+
+        $recentAttempts = LoginAttempt::query()
+            ->with('user:id,name,email,is_admin')
+            ->when($request->query('only') === 'failed', fn ($qb) => $qb->where('success', false))
+            ->when($request->query('only') === 'success', fn ($qb) => $qb->where('success', true))
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        return view('admin.security', compact('stats', 'topFailingIps', 'recentAttempts'));
     }
 
     public function logs(Request $request)
