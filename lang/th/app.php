@@ -96,6 +96,13 @@ return [
         'field_max_score_hint' => 'ใส่เลขที่ใช้คิดเป็น % เช่น 20 = คะแนนเต็ม 20 · ว่างไว้ระบบเดาให้',
         'field_weight' => 'น้ำหนัก',
         'field_weight_hint' => '1 = ปกติ, 2 = มีน้ำหนัก 2 เท่า (เช่น สอบกลางภาค)',
+        'field_category' => 'หมวดหมู่',
+        'category_homework' => 'การบ้าน',
+        'category_classwork' => 'งานในชั้น',
+        'category_quiz' => 'ควิซ',
+        'category_exam' => 'สอบ',
+        'category_project' => 'โปรเจกต์',
+        'category_other' => 'อื่นๆ',
     ],
 
     'scan' => [

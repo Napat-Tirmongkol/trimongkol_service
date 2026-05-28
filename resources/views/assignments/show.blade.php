@@ -3,7 +3,10 @@
         <div class="flex items-start justify-between gap-3">
             <div>
                 <a href="{{ route('classrooms.show', $classroom) }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ $classroom->name }}</a>
-                <h2 class="mt-1 text-xl font-semibold leading-tight text-gray-800">{{ $assignment->name }}</h2>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ $assignment->name }}</h2>
+                    <x-assignment-category-badge :category="$assignment->category" />
+                </div>
                 @if ($assignment->due_date)
                     <p class="mt-1 text-xs text-slate-500">{{ __('app.assignments.due') }}: {{ $assignment->due_date->format('d M Y') }}</p>
                 @endif

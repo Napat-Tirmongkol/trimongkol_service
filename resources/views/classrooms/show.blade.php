@@ -126,6 +126,7 @@
                                         <div class="min-w-0">
                                             <div class="truncate text-sm font-medium text-slate-900">{{ $assignment->name }}</div>
                                             <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                                                <x-assignment-category-badge :category="$assignment->category" />
                                                 <span class="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
                                                     {{ __("app.assignments.mode_{$assignment->scoring_mode}_title") }}
                                                 </span>

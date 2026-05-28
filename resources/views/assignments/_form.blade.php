@@ -16,6 +16,21 @@
     </div>
 
     <div>
+        <label for="category" class="block text-sm font-medium text-slate-700">
+            {{ __('app.assignments.field_category') }} <span class="text-rose-500">*</span>
+        </label>
+        <select id="category" name="category" required
+                class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+            @foreach (\App\Models\Assignment::CATEGORIES as $cat)
+                <option value="{{ $cat }}" @selected(old('category', $assignment?->category ?? 'homework') === $cat)>
+                    {{ __("app.assignments.category_{$cat}") }}
+                </option>
+            @endforeach
+        </select>
+        @error('category') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+    </div>
+
+    <div>
         <label for="due_date" class="block text-sm font-medium text-slate-700">{{ __('app.assignments.field_due') }}</label>
         <input id="due_date" name="due_date" type="date"
                value="{{ old('due_date', $assignment?->due_date?->format('Y-m-d')) }}"

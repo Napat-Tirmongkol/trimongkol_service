@@ -20,6 +20,7 @@ class AssignmentController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:150',
+            'category' => 'required|in:' . implode(',', Assignment::CATEGORIES),
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',
@@ -57,6 +58,7 @@ class AssignmentController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:150',
+            'category' => 'required|in:' . implode(',', Assignment::CATEGORIES),
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',

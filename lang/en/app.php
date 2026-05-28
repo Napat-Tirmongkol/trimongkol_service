@@ -96,6 +96,13 @@ return [
         'field_max_score_hint' => 'The total this is graded out of (e.g. 20). Leave blank to auto-fill from mode.',
         'field_weight' => 'Weight',
         'field_weight_hint' => '1 = normal weight; 2 = counts twice (e.g. midterm exam).',
+        'field_category' => 'Category',
+        'category_homework' => 'Homework',
+        'category_classwork' => 'Classwork',
+        'category_quiz' => 'Quiz',
+        'category_exam' => 'Exam',
+        'category_project' => 'Project',
+        'category_other' => 'Other',
     ],
 
     'scan' => [

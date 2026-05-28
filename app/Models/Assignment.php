@@ -9,9 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Assignment extends Model
 {
     protected $fillable = [
-        'classroom_id', 'name', 'due_date', 'scoring_mode', 'default_score',
+        'classroom_id', 'name', 'category', 'due_date', 'scoring_mode', 'default_score',
         'max_score', 'weight', 'description',
     ];
+
+    public const CATEGORIES = ['homework', 'classwork', 'quiz', 'exam', 'project', 'other'];
 
     protected $casts = [
         'due_date' => 'date',
