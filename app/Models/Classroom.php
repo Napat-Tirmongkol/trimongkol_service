@@ -19,4 +19,9 @@ class Classroom extends Model
     {
         return $this->hasMany(Student::class)->orderByRaw('LENGTH(number), number')->orderBy('name');
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class)->latest();
+    }
 }

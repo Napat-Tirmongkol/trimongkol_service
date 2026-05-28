@@ -42,7 +42,7 @@ class ClassroomController extends Controller
     public function show(Classroom $classroom)
     {
         $this->ensureOwner($classroom);
-        $classroom->load('students');
+        $classroom->load('students', 'assignments');
 
         return view('classrooms.show', compact('classroom'));
     }
