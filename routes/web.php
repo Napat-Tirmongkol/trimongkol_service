@@ -18,6 +18,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Controllers\WorkspaceInvitationController;
 use Illuminate\Support\Facades\Route;
 
 // Marketing site
@@ -30,6 +31,13 @@ Route::post('/contact', [ContactController::class, 'submit'])->name('contact.sub
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
     ->name('locale.switch');
+
+// Workspace invitation links — handle guest + authenticated cases.
+Route::get('/workspace-invite/{token}', [WorkspaceInvitationController::class, 'show'])
+    ->name('workspace-invitations.show');
+Route::post('/workspace-invite/{token}/accept', [WorkspaceInvitationController::class, 'accept'])
+    ->middleware('auth')
+    ->name('workspace-invitations.accept');
 
 // Admin portal (separate login from the regular Breeze /login)
 Route::middleware('guest')->group(function () {
@@ -53,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
     Route::post('/workspaces/{workspace}/members', [WorkspaceController::class, 'inviteMember'])->name('workspaces.members.invite');
     Route::delete('/workspaces/{workspace}/members/{user}', [WorkspaceController::class, 'removeMember'])->name('workspaces.members.remove');
+    Route::delete('/workspaces/{workspace}/invitations/{invitation}', [WorkspaceController::class, 'revokeInvitation'])->name('workspaces.invitations.revoke');
     Route::post('/workspaces/{workspace}/leave', [WorkspaceController::class, 'leave'])->name('workspaces.leave');
     Route::post('/workspaces/{workspace}/transfer', [WorkspaceController::class, 'transferOwnership'])->name('workspaces.transfer');
 

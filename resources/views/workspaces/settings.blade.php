@@ -69,6 +69,46 @@
                     @endforeach
                 </ul>
 
+                {{-- Pending invitations (email invites awaiting accept) --}}
+                @if ($canManage && $pendingInvitations->isNotEmpty())
+                    <div class="border-t border-slate-200 bg-slate-50 px-6 py-4">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            {{ __('app.workspaces.pending_invites_heading') }} ({{ $pendingInvitations->count() }})
+                        </h4>
+                        <ul class="mt-2 space-y-2">
+                            @foreach ($pendingInvitations as $inv)
+                                @php $link = route('workspace-invitations.show', $inv->token); @endphp
+                                <li class="rounded-md border border-slate-200 bg-white p-3">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-medium text-slate-900">{{ $inv->email }}</div>
+                                            <div class="text-xs text-slate-500">
+                                                {{ __("app.workspaces.role_{$inv->role}") }} ·
+                                                {{ __('app.workspaces.expires_in', ['at' => $inv->expires_at->diffForHumans()]) }}
+                                            </div>
+                                        </div>
+                                        <form method="POST" action="{{ route('workspaces.invitations.revoke', [$workspace, $inv]) }}"
+                                              data-confirm="{{ __('app.workspaces.invite_revoke_confirm', ['email' => $inv->email]) }}" data-confirm-danger="1">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-xs font-medium text-rose-600 hover:text-rose-700">{{ __('app.workspaces.invite_revoke') }}</button>
+                                        </form>
+                                    </div>
+                                    <div class="mt-2 flex items-center gap-2" x-data="{ copied: false }">
+                                        <input type="text" readonly value="{{ $link }}"
+                                               class="flex-1 rounded border-slate-200 bg-slate-50 px-2 py-1 font-mono text-xs text-slate-700">
+                                        <button type="button"
+                                                @click="navigator.clipboard.writeText('{{ $link }}').then(() => { copied = true; setTimeout(() => copied = false, 1500); })"
+                                                class="rounded border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                                            <span x-show="!copied">{{ __('app.workspaces.invite_copy') }}</span>
+                                            <span x-show="copied" x-cloak class="text-emerald-600">✓ {{ __('app.workspaces.invite_copied') }}</span>
+                                        </button>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 {{-- Invite form --}}
                 @if ($canManage)
                     <div class="border-t border-slate-200 px-6 py-4">
@@ -76,7 +116,7 @@
                         <form method="POST" action="{{ route('workspaces.members.invite', $workspace) }}" class="mt-3 flex flex-wrap items-end gap-2">
                             @csrf
                             <div class="flex-1 min-w-[200px]">
-                                <label for="email" class="block text-xs font-medium text-slate-600">{{ __('app.workspaces.invite_email') }}</label>
+                                <label for="email" class="block text-xs font-medium text-slate-600">{{ __('app.workspaces.invite_email_label') }}</label>
                                 <input id="email" name="email" type="email" required placeholder="user@example.com"
                                        class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 @error('email') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
@@ -92,7 +132,7 @@
                                 {{ __('app.workspaces.invite_submit') }}
                             </button>
                         </form>
-                        <p class="mt-2 text-xs text-slate-500">{{ __('app.workspaces.invite_hint') }}</p>
+                        <p class="mt-2 text-xs text-slate-500">{{ __('app.workspaces.invite_hint_v2') }}</p>
                     </div>
                 @endif
             </div>

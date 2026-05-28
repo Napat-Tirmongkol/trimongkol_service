@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\WorkspaceInvitation;
 use App\Models\WorkspaceMember;
 use App\Services\AuditLog;
 use App\Services\CurrentWorkspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -78,7 +81,14 @@ class WorkspaceController extends Controller
             ->orderBy('joined_at')
             ->get();
 
-        return view('workspaces.settings', compact('workspace', 'members', 'role'));
+        $pendingInvitations = WorkspaceInvitation::query()
+            ->where('workspace_id', $workspace->id)
+            ->whereNull('accepted_at')
+            ->where('expires_at', '>', now())
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('workspaces.settings', compact('workspace', 'members', 'role', 'pendingInvitations'));
     }
 
     public function update(Request $request, Workspace $workspace)
@@ -125,30 +135,102 @@ class WorkspaceController extends Controller
         ]);
 
         $invitee = User::where('email', $data['email'])->first();
-        if (! $invitee) {
+
+        if ($invitee) {
+            if ($workspace->hasMember($invitee)) {
+                throw ValidationException::withMessages([
+                    'email' => __('app.workspaces.invite_already_member'),
+                ]);
+            }
+
+            WorkspaceMember::create([
+                'workspace_id' => $workspace->id,
+                'user_id' => $invitee->id,
+                'role' => $data['role'],
+                'joined_at' => now(),
+            ]);
+
+            AuditLog::record('workspace.invite_member', $workspace, $invitee->email, [
+                'role' => $data['role'],
+            ]);
+
+            return back()->with('status', __('app.workspaces.invite_sent', ['email' => $invitee->email]));
+        }
+
+        // Pending invitation: the email isn't a registered user yet.
+        $existing = WorkspaceInvitation::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('email', $data['email'])
+            ->whereNull('accepted_at')
+            ->where('expires_at', '>', now())
+            ->exists();
+
+        if ($existing) {
             throw ValidationException::withMessages([
-                'email' => __('app.workspaces.invite_no_user'),
+                'email' => __('app.workspaces.invite_already_pending'),
             ]);
         }
 
-        if ($workspace->hasMember($invitee)) {
-            throw ValidationException::withMessages([
-                'email' => __('app.workspaces.invite_already_member'),
-            ]);
-        }
-
-        WorkspaceMember::create([
+        $invitation = WorkspaceInvitation::create([
             'workspace_id' => $workspace->id,
-            'user_id' => $invitee->id,
+            'email' => $data['email'],
             'role' => $data['role'],
-            'joined_at' => now(),
+            'token' => WorkspaceInvitation::generateToken(),
+            'invited_by' => $request->user()->id,
+            'expires_at' => now()->addDays(7),
         ]);
 
-        AuditLog::record('workspace.invite_member', $workspace, $invitee->email, [
-            'role' => $data['role'],
+        $emailSent = $this->tryToSendInviteEmail($invitation, $workspace, $request->user());
+
+        AuditLog::record('workspace.invite_pending', $workspace, $invitation->email, [
+            'role' => $invitation->role,
+            'email_sent' => $emailSent,
         ]);
 
-        return back()->with('status', __('app.workspaces.invite_sent', ['email' => $invitee->email]));
+        return back()->with('status', __(
+            $emailSent ? 'app.workspaces.invite_email_sent' : 'app.workspaces.invite_link_created',
+            ['email' => $invitation->email],
+        ));
+    }
+
+    public function revokeInvitation(Request $request, Workspace $workspace, WorkspaceInvitation $invitation)
+    {
+        $this->ensureManager($workspace, $request->user());
+        abort_if($invitation->workspace_id !== $workspace->id, 404);
+
+        $email = $invitation->email;
+        $invitation->delete();
+
+        AuditLog::record('workspace.invite_revoke', $workspace, $email);
+
+        return back()->with('status', __('app.workspaces.invite_revoked', ['email' => $email]));
+    }
+
+    private function tryToSendInviteEmail(WorkspaceInvitation $invitation, Workspace $workspace, User $inviter): bool
+    {
+        try {
+            $link = route('workspace-invitations.show', $invitation->token);
+            $body = __('app.workspaces.invite_email_body', [
+                'workspace' => $workspace->name,
+                'inviter' => $inviter->name,
+                'link' => $link,
+                'expires' => $invitation->expires_at->format('d M Y'),
+            ]);
+
+            Mail::raw($body, function ($mail) use ($invitation, $workspace) {
+                $mail->to($invitation->email)
+                     ->subject(__('app.workspaces.invite_email_subject', ['workspace' => $workspace->name]));
+            });
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Workspace invite email failed to send', [
+                'invitation_id' => $invitation->id,
+                'email' => $invitation->email,
+                'error' => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     public function removeMember(Request $request, Workspace $workspace, User $user)
