@@ -41,6 +41,7 @@ return [
         'confirmPromote' => 'Promote :name to admin? They will have access to all admin pages and can edit site content.',
         'confirmDemote' => "Remove :name's admin access?",
         'cannotChangeSelf' => "You can't change your own role.",
+        'account_suspended' => 'This account has been suspended. Please contact the administrator.',
     ],
 
     'cms' => [

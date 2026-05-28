@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use Illuminate\Auth\Events\Authenticated;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
@@ -48,6 +49,13 @@ class AppServiceProvider extends ServiceProvider
             if (in_array(strtolower((string) $user->email), $allowed, true)) {
                 $user->is_admin = true;
                 $user->save();
+            }
+        });
+
+        // Stamp last_login_at on each successful login.
+        Event::listen(Login::class, function (Login $event) {
+            if ($event->user instanceof User) {
+                $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
             }
         });
     }
