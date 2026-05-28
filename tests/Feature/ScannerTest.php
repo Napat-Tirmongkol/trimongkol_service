@@ -250,4 +250,33 @@ class ScannerTest extends TestCase
 
         $this->assertTrue((bool) $target->fresh()->is_admin, 'toggleAdmin must persist past Fillable attribute');
     }
+
+    public function test_admin_emails_env_auto_promotes_on_authentication(): void
+    {
+        $user = User::factory()->create(['email' => 'owner@example.com']);
+        $this->assertFalse((bool) $user->is_admin);
+
+        putenv('ADMIN_EMAILS=owner@example.com,ops@example.com');
+        try {
+            $this->actingAs($user)->get('/scanner')->assertOk();
+        } finally {
+            putenv('ADMIN_EMAILS');
+        }
+
+        $this->assertTrue((bool) $user->fresh()->is_admin);
+    }
+
+    public function test_admin_emails_env_does_not_promote_other_users(): void
+    {
+        $user = User::factory()->create(['email' => 'random@example.com']);
+
+        putenv('ADMIN_EMAILS=owner@example.com');
+        try {
+            $this->actingAs($user)->get('/scanner')->assertOk();
+        } finally {
+            putenv('ADMIN_EMAILS');
+        }
+
+        $this->assertFalse((bool) $user->fresh()->is_admin);
+    }
 }
