@@ -118,6 +118,13 @@ return [
         'undone' => 'Undid :name',
         'mark_submitted' => 'Mark submitted',
         'recent_submitted' => 'Recently submitted',
+        'starting' => 'Starting camera',
+        'switch_camera' => 'Switch camera',
+        'stop_camera' => 'Stop camera',
+        'camera_failed' => 'Camera failed to start',
+        'tip_https' => 'Make sure the URL begins with https://',
+        'tip_permission' => 'Tap the lock icon → allow camera for this site',
+        'tip_inapp' => 'If opened inside LINE/Facebook, tap "Open in browser"',
     ],
 
     'submissions' => [

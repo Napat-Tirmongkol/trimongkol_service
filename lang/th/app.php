@@ -118,6 +118,13 @@ return [
         'undone' => 'ยกเลิก :name แล้ว',
         'mark_submitted' => 'มาร์กว่าส่ง',
         'recent_submitted' => 'ส่งล่าสุด',
+        'starting' => 'กำลังเปิดกล้อง',
+        'switch_camera' => 'สลับกล้อง',
+        'stop_camera' => 'ปิดกล้อง',
+        'camera_failed' => 'เปิดกล้องไม่สำเร็จ',
+        'tip_https' => 'ตรวจสอบว่า URL เป็น https://',
+        'tip_permission' => 'แตะรูปกุญแจที่ address bar → อนุญาตกล้อง',
+        'tip_inapp' => 'ถ้าเปิดจากแอป LINE/Facebook ให้แตะเมนู "เปิดในเบราว์เซอร์"',
     ],
 
     'submissions' => [

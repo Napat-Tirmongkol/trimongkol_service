@@ -212,17 +212,33 @@ new class extends Component {
     </header>
 
     <style>
-        #scanner-region { background: #000; }
+        #scanner-region {
+            background: #000 !important;
+            position: relative !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
         #scanner-region video {
             width: 100% !important;
             height: 100% !important;
+            min-width: 100% !important;
+            min-height: 100% !important;
             object-fit: cover !important;
             position: absolute !important;
+            inset: 0 !important;
             top: 0 !important;
             left: 0 !important;
-            display: block;
+            display: block !important;
+            background: transparent !important;
+            z-index: 1 !important;
         }
-        #scanner-region > *:not(video) { display: none !important; }
+        /* Hide html5-qrcode's own canvas/shading/paused overlay without hiding the video wrapper. */
+        #scanner-region > canvas,
+        #scanner-region > img,
+        #scanner-region > div[style*="position: absolute"] {
+            display: none !important;
+        }
     </style>
 
     <main class="mx-auto max-w-3xl px-4 pb-32 pt-4">
@@ -239,24 +255,48 @@ new class extends Component {
                 </div>
             </div>
 
-            <div x-show="!cameraOn" class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+            <div x-show="!cameraOn" class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 p-6 text-center">
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-slate-500">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
                     <circle cx="12" cy="13" r="4"/>
                 </svg>
-                <p class="text-sm text-slate-400">{{ __('app.scan.camera_off_hint') }}</p>
-                <button type="button" @click="startCamera()"
-                        class="rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-brand-700">
-                    {{ __('app.scan.start_camera') }}
+                <p class="text-sm text-slate-400" x-show="!cameraError">{{ __('app.scan.camera_off_hint') }}</p>
+
+                <template x-if="cameraError">
+                    <div class="max-w-xs rounded-lg bg-rose-500/15 px-4 py-3 text-left text-xs text-rose-200 ring-1 ring-rose-500/40">
+                        <div class="font-semibold text-rose-100">{{ __('app.scan.camera_failed') }}</div>
+                        <div class="mt-1 break-words" x-text="cameraError"></div>
+                        <ul class="mt-2 list-inside list-disc space-y-0.5 text-rose-200/80">
+                            <li>{{ __('app.scan.tip_https') }}</li>
+                            <li>{{ __('app.scan.tip_permission') }}</li>
+                            <li>{{ __('app.scan.tip_inapp') }}</li>
+                        </ul>
+                    </div>
+                </template>
+
+                <button type="button" @click="startCamera()" :disabled="starting"
+                        class="rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 disabled:opacity-60">
+                    <span x-show="!starting">{{ __('app.scan.start_camera') }}</span>
+                    <span x-show="starting" x-cloak>{{ __('app.scan.starting') }}…</span>
                 </button>
             </div>
 
-            <button x-show="cameraOn" @click="stopCamera()"
-                    class="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-2 text-white backdrop-blur hover:bg-black/70">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+            <div x-show="cameraOn" class="absolute right-3 top-3 z-30 flex items-center gap-2">
+                <button x-show="cameras.length > 1" @click="switchCamera()" type="button"
+                        class="rounded-full bg-black/50 p-2 text-white backdrop-blur hover:bg-black/70"
+                        aria-label="{{ __('app.scan.switch_camera') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+                <button @click="stopCamera()" type="button"
+                        class="rounded-full bg-black/50 p-2 text-white backdrop-blur hover:bg-black/70"
+                        aria-label="{{ __('app.scan.stop_camera') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         {{-- Custom-score modal --}}
@@ -433,42 +473,121 @@ new class extends Component {
     <script>
         Alpine.data('scanDashboard', () => ({
             cameraOn: false,
+            starting: false,
             scanner: null,
             lastScanAt: 0,
             audioCtx: null,
+            cameras: [],
+            currentCameraIdx: 0,
+            cameraError: null,
+
+            onScan(decodedText) {
+                const now = Date.now();
+                if (now - this.lastScanAt < 1500) return;
+                this.lastScanAt = now;
+                this.$wire.set('code', decodedText, false);
+                this.$wire.scan();
+            },
 
             async startCamera() {
-                if (! window.Html5Qrcode) {
-                    alert('Scanner library not loaded');
-                    return;
-                }
+                if (this.starting) return;
+                this.cameraError = null;
+                this.starting = true;
                 try {
+                    if (!window.Html5Qrcode) {
+                        throw new Error('Scanner library not loaded — please reload the page.');
+                    }
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error('This browser does not support camera access. Try the default browser (Chrome / Safari) instead of an in-app browser.');
+                    }
+                    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                        throw new Error('Camera requires HTTPS. Current page is loaded over ' + window.location.protocol);
+                    }
+
+                    // Probe permission with a throwaway stream so we surface
+                    // a clean error message instead of a cryptic getUserMedia failure later.
+                    try {
+                        const probe = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+                        probe.getTracks().forEach((t) => t.stop());
+                    } catch (e) {
+                        const msg = (e && e.name === 'NotAllowedError')
+                            ? 'Camera permission was denied. Allow camera access for this site and tap Start camera again.'
+                            : (e && e.name === 'NotFoundError')
+                                ? 'No camera was found on this device.'
+                                : (e && e.message) || String(e);
+                        throw new Error(msg);
+                    }
+
+                    if (this.cameras.length === 0) {
+                        try {
+                            this.cameras = await Html5Qrcode.getCameras();
+                        } catch (e) {
+                            this.cameras = [];
+                        }
+                    }
+
                     this.scanner = new Html5Qrcode('scanner-region', { verbose: false });
-                    await this.scanner.start(
-                        { facingMode: 'environment' },
-                        { fps: 10, disableFlip: false },
-                        (decodedText) => {
-                            const now = Date.now();
-                            if (now - this.lastScanAt < 1500) return;
-                            this.lastScanAt = now;
-                            this.$wire.set('code', decodedText, false);
-                            this.$wire.scan();
-                        },
-                        () => {}
-                    );
+
+                    const callbacks = (decoded) => this.onScan(decoded);
+                    const config = { fps: 10, disableFlip: false, aspectRatio: 1.0 };
+
+                    let started = false;
+                    if (this.cameras.length > 0) {
+                        // Prefer back camera by label keyword; otherwise the first one.
+                        let preferred = this.cameras.findIndex((c) => /back|rear|environment/i.test(c.label));
+                        if (preferred < 0) preferred = this.currentCameraIdx % this.cameras.length;
+                        this.currentCameraIdx = preferred;
+                        try {
+                            await this.scanner.start(this.cameras[preferred].id, config, callbacks, () => {});
+                            started = true;
+                        } catch (e) {
+                            // Fall through to facingMode attempt.
+                        }
+                    }
+                    if (!started) {
+                        await this.scanner.start({ facingMode: { ideal: 'environment' } }, config, callbacks, () => {});
+                    }
+
                     this.cameraOn = true;
                 } catch (e) {
-                    alert('Camera error: ' + e.message);
+                    this.cameraError = (e && e.message) ? e.message : String(e);
+                    if (this.scanner) {
+                        try { await this.scanner.stop(); } catch (_) {}
+                        try { this.scanner.clear(); } catch (_) {}
+                        this.scanner = null;
+                    }
+                    this.cameraOn = false;
+                } finally {
+                    this.starting = false;
                 }
             },
 
             async stopCamera() {
                 if (this.scanner) {
                     try { await this.scanner.stop(); } catch (e) {}
-                    this.scanner.clear();
+                    try { this.scanner.clear(); } catch (e) {}
                     this.scanner = null;
                 }
                 this.cameraOn = false;
+                this.cameraError = null;
+            },
+
+            async switchCamera() {
+                if (this.cameras.length < 2) return;
+                this.currentCameraIdx = (this.currentCameraIdx + 1) % this.cameras.length;
+                await this.stopCamera();
+                this.scanner = new Html5Qrcode('scanner-region', { verbose: false });
+                try {
+                    await this.scanner.start(
+                        this.cameras[this.currentCameraIdx].id,
+                        { fps: 10, disableFlip: false, aspectRatio: 1.0 },
+                        (d) => this.onScan(d),
+                        () => {}
+                    );
+                    this.cameraOn = true;
+                } catch (e) {
+                    this.cameraError = (e && e.message) ? e.message : String(e);
+                }
             },
 
             beep() {
