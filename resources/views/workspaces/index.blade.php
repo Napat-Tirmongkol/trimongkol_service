@@ -1,8 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('app.workspaces.heading') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                {{ __('app.workspaces.heading') }}
+            </h2>
+            <a href="{{ route('workspaces.create') }}"
+               class="rounded-md bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">
+                + {{ __('app.workspaces.create_button') }}
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-8">
@@ -39,20 +45,23 @@
                                     {{ $w->classrooms_count }} {{ __('app.classrooms.heading') }}
                                 </div>
                             </div>
-                            @unless ($isCurrent)
-                                <form method="POST" action="{{ route('workspaces.switch', $w) }}">
-                                    @csrf
-                                    <button type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                                        {{ __('app.workspaces.switch') }}
-                                    </button>
-                                </form>
-                            @endunless
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('workspaces.settings', $w) }}"
+                                   class="text-xs font-medium text-slate-500 hover:text-slate-700">{{ __('app.workspaces.settings_link') }}</a>
+                                @unless ($isCurrent)
+                                    <form method="POST" action="{{ route('workspaces.switch', $w) }}">
+                                        @csrf
+                                        <button type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                            {{ __('app.workspaces.switch') }}
+                                        </button>
+                                    </form>
+                                @endunless
+                            </div>
                         </li>
                     @endforeach
                 </ul>
             </div>
 
-            <p class="text-xs text-slate-500">{{ __('app.workspaces.create_hint') }}</p>
         </div>
     </div>
 </x-app-layout>

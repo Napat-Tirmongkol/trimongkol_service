@@ -4,6 +4,35 @@
 
 ---
 
+## 🏢 Workspaces — Multi-Tenant Foundation (Phase 3a + 3b)
+
+**Phase 3 ของ business model C** — โครงสร้าง Workspace ใหม่เพื่อรองรับ SaaS
+
+**Phase 3a — Foundation:**
+- ตาราง `workspaces` + `workspace_members` (roles: owner/admin/member)
+- เพิ่ม `workspace_id` ใน `classrooms`
+- Backfill migration: user ทุกคนได้ workspace ของตัวเอง + classrooms ผูกเข้าไป
+- Auto-create workspace สำหรับ user ใหม่ที่สมัคร (Registered event)
+- `Classroom::canBeAccessedBy()` ตรวจสมาชิกใน workspace แทนการเช็ก `user_id`
+- Service `CurrentWorkspace` (session-backed) + workspace switcher dropdown ใน nav
+- หน้า `/workspaces` ดู workspaces ทั้งหมดของ user
+
+**Phase 3b — Member management:**
+- สร้าง workspace ใหม่ (`/workspaces/create`)
+- ตั้งค่า workspace (`/workspaces/{id}/settings`): rename, ดู members, invite, delete
+- Invite member ด้วย email (ต้องเป็น user ในระบบอยู่แล้ว — email-invite ทีหลัง)
+- Remove member (owner/admin ทำได้ ยกเว้น owner)
+- Leave workspace (member/admin ออกได้ owner ออกไม่ได้)
+- Delete workspace (owner เท่านั้น ต้องใส่ password)
+- ทุก action log ลง audit
+
+**ยังไม่ได้ทำใน 3:**
+- Transfer ownership
+- Email invite สำหรับคนที่ยังไม่มีบัญชี
+- Workspace-level admin (ตอนนี้ admin role ทำเหมือน owner ยกเว้น delete)
+
+---
+
 ## 🔐 Two-Factor Authentication (TOTP)
 
 **Phase 2.5 ของ business model C** — security ก่อนเปิดให้คนสมัครเอง

@@ -45,7 +45,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
+    Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('/workspaces/{workspace}/switch', [WorkspaceController::class, 'switchTo'])->name('workspaces.switch');
+    Route::get('/workspaces/{workspace}/settings', [WorkspaceController::class, 'settings'])->name('workspaces.settings');
+    Route::patch('/workspaces/{workspace}', [WorkspaceController::class, 'update'])->name('workspaces.update');
+    Route::delete('/workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
+    Route::post('/workspaces/{workspace}/members', [WorkspaceController::class, 'inviteMember'])->name('workspaces.members.invite');
+    Route::delete('/workspaces/{workspace}/members/{user}', [WorkspaceController::class, 'removeMember'])->name('workspaces.members.remove');
+    Route::post('/workspaces/{workspace}/leave', [WorkspaceController::class, 'leave'])->name('workspaces.leave');
 
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 
