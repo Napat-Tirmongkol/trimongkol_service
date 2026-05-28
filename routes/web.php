@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
         Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');

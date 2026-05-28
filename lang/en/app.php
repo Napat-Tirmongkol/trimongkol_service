@@ -91,6 +91,18 @@ return [
         'trend_heading' => 'Daily signups',
         'trend_subtitle' => 'Last 30 days',
         'top_users' => 'Top teachers by classrooms',
+
+        'tab_classrooms' => 'Classrooms',
+        'tab_logs' => 'Audit Log',
+        'logs_heading' => 'Audit Log — admin action history',
+        'logs_when' => 'When',
+        'logs_who' => 'Who',
+        'logs_action' => 'Action',
+        'logs_target' => 'Target',
+        'logs_ip' => 'IP',
+        'logs_meta' => 'Metadata',
+        'logs_empty' => 'No logs yet',
+        'logs_deleted_admin' => '(deleted admin)',
     ],
 
     'cms' => [

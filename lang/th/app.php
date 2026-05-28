@@ -91,6 +91,18 @@ return [
         'trend_heading' => 'สมัครใหม่ตามวัน',
         'trend_subtitle' => '30 วันย้อนหลัง',
         'top_users' => 'ครูที่มีห้องเยอะสุด',
+
+        'tab_classrooms' => 'ห้องเรียน',
+        'tab_logs' => 'Audit Log',
+        'logs_heading' => 'Audit Log — ประวัติการใช้สิทธิ์ admin',
+        'logs_when' => 'เมื่อ',
+        'logs_who' => 'ใคร',
+        'logs_action' => 'การกระทำ',
+        'logs_target' => 'เป้าหมาย',
+        'logs_ip' => 'IP',
+        'logs_meta' => 'รายละเอียด',
+        'logs_empty' => 'ยังไม่มี log',
+        'logs_deleted_admin' => '(admin ถูกลบแล้ว)',
     ],
 
     'cms' => [

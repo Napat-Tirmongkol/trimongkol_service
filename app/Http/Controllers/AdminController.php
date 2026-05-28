@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAction;
 use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\Submission;
@@ -157,6 +158,22 @@ class AdminController extends Controller
         AuditLog::record('user.password_reset', $user, $user->email);
 
         return back()->with('status', __('app.admin.password_reset_sent', ['email' => $user->email]));
+    }
+
+    public function logs(Request $request)
+    {
+        $action = $request->query('action');
+
+        $logs = AdminAction::query()
+            ->with('admin')
+            ->when($action, fn ($qb) => $qb->where('action', $action))
+            ->orderByDesc('created_at')
+            ->paginate(50)
+            ->withQueryString();
+
+        $actions = AdminAction::query()->distinct()->orderBy('action')->pluck('action');
+
+        return view('admin.logs', compact('logs', 'actions', 'action'));
     }
 
     public function exportUsers(): StreamedResponse
