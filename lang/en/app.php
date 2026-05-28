@@ -57,6 +57,7 @@ return [
         'save' => 'Save',
         'cancel' => 'Cancel',
         'edit' => 'Edit',
+        'view' => 'View',
         'delete' => 'Delete',
         'back' => 'Back',
         'dangerZone' => 'Danger zone',
@@ -90,6 +91,11 @@ return [
         'deleteButton' => 'Delete assignment',
         'field_fixed_score' => 'Score per student (e.g. 5)',
         'field_default_score' => 'Default score (editable on scan)',
+        'field_max_score' => 'Max score',
+        'field_max_score_placeholder' => 'auto',
+        'field_max_score_hint' => 'The total this is graded out of (e.g. 20). Leave blank to auto-fill from mode.',
+        'field_weight' => 'Weight',
+        'field_weight_hint' => '1 = normal weight; 2 = counts twice (e.g. midterm exam).',
     ],
 
     'scan' => [
@@ -136,6 +142,22 @@ return [
         'button' => 'Export CSV',
         'score' => 'Score',
         'avg' => 'Average',
+    ],
+
+    'gradebook' => [
+        'nav' => 'Gradebook',
+        'heading' => 'Gradebook',
+        'subtitle' => 'All students × all assignments in this classroom',
+        'empty' => 'No students or assignments yet.',
+        'col_submitted' => 'Done',
+        'col_weighted' => 'Final',
+        'col_avg_percent' => 'Avg %',
+        'row_submitted' => 'Submitted',
+        'row_avg' => 'Average',
+        'row_minmax' => 'Min – Max',
+        'total_weight' => 'Total weight',
+        'legend' => 'Legend',
+        'per_assignment' => 'Per-assignment scores',
     ],
 
     'dashboard' => [

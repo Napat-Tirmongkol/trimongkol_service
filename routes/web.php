@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
@@ -39,15 +40,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 
-    Route::resource('classrooms.students', StudentController::class)
-        ->only(['create', 'store', 'edit', 'update', 'destroy']);
-
+    // Static student routes must be registered before the {student} resource
+    // routes, otherwise /students/bulk would match show with student="bulk".
     Route::get('classrooms/{classroom}/students/bulk', [StudentController::class, 'bulkCreate'])
         ->name('classrooms.students.bulk');
     Route::post('classrooms/{classroom}/students/bulk', [StudentController::class, 'bulkStore'])
         ->name('classrooms.students.bulk.store');
     Route::get('classrooms/{classroom}/students/print', [StudentController::class, 'print'])
         ->name('classrooms.students.print');
+
+    Route::resource('classrooms.students', StudentController::class)
+        ->only(['show', 'create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::get('classrooms/{classroom}/gradebook', [GradebookController::class, 'show'])
+        ->name('classrooms.gradebook');
+    Route::get('classrooms/{classroom}/gradebook/export', [GradebookController::class, 'export'])
+        ->name('classrooms.gradebook.export');
 
     Route::resource('classrooms.assignments', AssignmentController::class)
         ->only(['create', 'store', 'show', 'edit', 'update', 'destroy']);

@@ -57,6 +57,7 @@ return [
         'save' => 'บันทึก',
         'cancel' => 'ยกเลิก',
         'edit' => 'แก้ไข',
+        'view' => 'ดู',
         'delete' => 'ลบ',
         'back' => 'กลับ',
         'dangerZone' => 'พื้นที่อันตราย',
@@ -90,6 +91,11 @@ return [
         'deleteButton' => 'ลบการบ้าน',
         'field_fixed_score' => 'คะแนนต่อคน (เช่น 5)',
         'field_default_score' => 'คะแนนเริ่มต้น (แก้ตอนสแกนได้)',
+        'field_max_score' => 'คะแนนเต็ม',
+        'field_max_score_placeholder' => 'อัตโนมัติ',
+        'field_max_score_hint' => 'ใส่เลขที่ใช้คิดเป็น % เช่น 20 = คะแนนเต็ม 20 · ว่างไว้ระบบเดาให้',
+        'field_weight' => 'น้ำหนัก',
+        'field_weight_hint' => '1 = ปกติ, 2 = มีน้ำหนัก 2 เท่า (เช่น สอบกลางภาค)',
     ],
 
     'scan' => [
@@ -136,6 +142,22 @@ return [
         'button' => 'ส่งออก CSV',
         'score' => 'คะแนน',
         'avg' => 'คะแนนเฉลี่ย',
+    ],
+
+    'gradebook' => [
+        'nav' => 'สรุปคะแนน',
+        'heading' => 'ตารางคะแนน (Gradebook)',
+        'subtitle' => 'รวมคะแนนทุกคน × ทุกการบ้านในห้องนี้',
+        'empty' => 'ยังไม่มีนักเรียนหรือการบ้าน',
+        'col_submitted' => 'ส่ง',
+        'col_weighted' => 'คะแนนรวม',
+        'col_avg_percent' => '% เฉลี่ย',
+        'row_submitted' => 'จำนวนที่ส่ง',
+        'row_avg' => 'เฉลี่ย',
+        'row_minmax' => 'ต่ำ – สูง',
+        'total_weight' => 'น้ำหนักรวม',
+        'legend' => 'สี',
+        'per_assignment' => 'คะแนนรายการบ้าน',
     ],
 
     'dashboard' => [

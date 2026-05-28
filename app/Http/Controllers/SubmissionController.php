@@ -17,7 +17,7 @@ class SubmissionController extends Controller
 
         $data = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
-            'score' => 'nullable|integer|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:1000',
         ]);
 
         $student = Student::where('classroom_id', $classroom->id)
@@ -45,7 +45,7 @@ class SubmissionController extends Controller
         abort_if($submission->assignment_id !== $assignment->id, 404);
 
         $data = $request->validate([
-            'score' => 'nullable|integer|min:0|max:100',
+            'score' => 'nullable|numeric|min:0|max:1000',
         ]);
 
         $submission->update(['score' => $data['score']]);

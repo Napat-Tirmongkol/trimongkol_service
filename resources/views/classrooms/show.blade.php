@@ -43,7 +43,7 @@
             @endif
 
             {{-- Quick stats --}}
-            <div class="grid gap-3 sm:grid-cols-3">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex items-center gap-3">
                         <span class="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -70,11 +70,23 @@
                         </div>
                     </div>
                 </div>
+                <a href="{{ route('classrooms.gradebook', $classroom) }}"
+                   class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.gradebook.nav') }}</div>
+                        <div class="mt-1 text-base font-bold text-slate-900 group-hover:text-brand-700">{{ __('app.gradebook.heading') }} →</div>
+                    </div>
+                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </span>
+                </a>
                 <a href="{{ route('classrooms.assignments.create', $classroom) }}"
                    class="group flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20 transition hover:from-brand-700 hover:to-brand-900">
                     <div>
                         <div class="text-xs uppercase tracking-wider text-brand-200">{{ __('app.assignments.add') }}</div>
-                        <div class="mt-1 text-lg font-bold">{{ __('app.assignments.createHeading') }} →</div>
+                        <div class="mt-1 text-base font-bold">{{ __('app.assignments.createHeading') }} →</div>
                     </div>
                     <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/20">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -197,9 +209,15 @@
                                 @foreach ($classroom->students as $student)
                                     <tr class="text-sm hover:bg-slate-50/50">
                                         <td class="px-6 py-3 tabular-nums text-slate-600">{{ $student->number ?: '—' }}</td>
-                                        <td class="px-6 py-3 font-medium text-slate-900">{{ $student->name }}</td>
+                                        <td class="px-6 py-3 font-medium text-slate-900">
+                                            <a href="{{ route('classrooms.students.show', [$classroom, $student]) }}"
+                                               class="hover:text-brand-700">{{ $student->name }}</a>
+                                        </td>
                                         <td class="px-6 py-3"><span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">{{ $student->code }}</span></td>
                                         <td class="px-6 py-3 text-right">
+                                            <a href="{{ route('classrooms.students.show', [$classroom, $student]) }}"
+                                               class="text-sm font-medium text-slate-500 hover:text-slate-700">{{ __('app.common.view') }}</a>
+                                            <span class="text-slate-300">·</span>
                                             <a href="{{ route('classrooms.students.edit', [$classroom, $student]) }}"
                                                class="text-sm font-medium text-brand-700 hover:text-brand-800">{{ __('app.common.edit') }}</a>
                                         </td>

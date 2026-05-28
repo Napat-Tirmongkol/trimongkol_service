@@ -51,6 +51,30 @@
         </div>
     </div>
 
+    <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+            <label for="max_score" class="block text-sm font-medium text-slate-700">
+                {{ __('app.assignments.field_max_score') }}
+            </label>
+            <input id="max_score" name="max_score" type="number" min="0" max="1000" step="0.01"
+                   value="{{ old('max_score', $assignment?->max_score) }}"
+                   placeholder="{{ __('app.assignments.field_max_score_placeholder') }}"
+                   class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+            <p class="mt-1 text-xs text-slate-500">{{ __('app.assignments.field_max_score_hint') }}</p>
+            @error('max_score') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label for="weight" class="block text-sm font-medium text-slate-700">
+                {{ __('app.assignments.field_weight') }}
+            </label>
+            <input id="weight" name="weight" type="number" min="0" max="100" step="0.01"
+                   value="{{ old('weight', $assignment?->weight ?? '1') }}"
+                   class="mt-1.5 block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+            <p class="mt-1 text-xs text-slate-500">{{ __('app.assignments.field_weight_hint') }}</p>
+            @error('weight') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+        </div>
+    </div>
+
     <div>
         <label for="description" class="block text-sm font-medium text-slate-700">{{ __('app.assignments.field_description') }}</label>
         <textarea id="description" name="description" rows="2"

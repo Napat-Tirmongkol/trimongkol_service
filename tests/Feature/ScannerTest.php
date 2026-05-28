@@ -279,4 +279,137 @@ class ScannerTest extends TestCase
 
         $this->assertFalse((bool) $user->fresh()->is_admin);
     }
+
+    public function test_gradebook_aggregates_weighted_percent_across_modes(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'Mix']);
+        $alice = $classroom->students()->create(['name' => 'Alice']);
+        $bob = $classroom->students()->create(['name' => 'Bob']);
+
+        // Assignment 1: custom mode, max 20, weight 1, Alice 16/20=80%, Bob missing.
+        $a1 = $classroom->assignments()->create([
+            'name' => 'HW1', 'scoring_mode' => 'custom', 'max_score' => 20, 'weight' => 1,
+        ]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $alice->id, 'submitted_at' => now(), 'score' => 16]);
+
+        // Assignment 2: fixed 5 points, weight 1, both submitted = 100%.
+        $a2 = $classroom->assignments()->create([
+            'name' => 'HW2', 'scoring_mode' => 'fixed', 'default_score' => 5, 'weight' => 1,
+        ]);
+        Submission::create(['assignment_id' => $a2->id, 'student_id' => $alice->id, 'submitted_at' => now(), 'score' => 5]);
+        Submission::create(['assignment_id' => $a2->id, 'student_id' => $bob->id, 'submitted_at' => now(), 'score' => 5]);
+
+        // Assignment 3: midterm — custom max 100 weight 2, Alice 90, Bob 70.
+        $a3 = $classroom->assignments()->create([
+            'name' => 'Midterm', 'scoring_mode' => 'custom', 'max_score' => 100, 'weight' => 2,
+        ]);
+        Submission::create(['assignment_id' => $a3->id, 'student_id' => $alice->id, 'submitted_at' => now(), 'score' => 90]);
+        Submission::create(['assignment_id' => $a3->id, 'student_id' => $bob->id, 'submitted_at' => now(), 'score' => 70]);
+
+        $g = (new \App\Services\Gradebook($classroom))->build();
+
+        // Alice: (0.8 * 1 + 1.0 * 1 + 0.9 * 2) / 4 = 3.6/4 = 90.0
+        // Bob:   (0   * 1 + 1.0 * 1 + 0.7 * 2) / 4 = 2.4/4 = 60.0
+        $this->assertEqualsWithDelta(90.0, $g['student_totals'][$alice->id]['weighted_percent'], 0.01);
+        $this->assertEqualsWithDelta(60.0, $g['student_totals'][$bob->id]['weighted_percent'], 0.01);
+
+        // Assignment stats for HW1: only Alice submitted, 16
+        $this->assertSame(16.0, $g['assignment_stats'][$a1->id]['avg']);
+        $this->assertSame(1, $g['assignment_stats'][$a1->id]['submitted']);
+        $this->assertSame(2, $g['assignment_stats'][$a1->id]['total_students']);
+    }
+
+    public function test_gradebook_check_mode_treats_submission_as_one_point(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'C']);
+        $s = $classroom->students()->create(['name' => 'S']);
+        $a = $classroom->assignments()->create(['name' => 'A', 'scoring_mode' => 'check']);
+        Submission::create(['assignment_id' => $a->id, 'student_id' => $s->id, 'submitted_at' => now()]);
+
+        $g = (new \App\Services\Gradebook($classroom))->build();
+
+        $this->assertSame(1.0, $g['cells'][$s->id][$a->id]['score']);
+        $this->assertSame(1.0, $g['cells'][$s->id][$a->id]['max_score']);
+        $this->assertEqualsWithDelta(100.0, $g['student_totals'][$s->id]['weighted_percent'], 0.01);
+    }
+
+    public function test_gradebook_page_renders_with_inline_score_inputs(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('custom');
+        Submission::create([
+            'assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'submitted_at' => now(),
+            'score' => 42,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('classrooms.gradebook', $classroom))
+            ->assertOk()
+            ->assertSee($student->name)
+            ->assertSee($assignment->name)
+            ->assertSee('42'); // raw score visible in input or cell
+    }
+
+    public function test_gradebook_csv_export_includes_assignment_columns_and_weighted_row(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('fixed', 10);
+        Submission::create([
+            'assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'submitted_at' => now(),
+            'score' => 10,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('classrooms.gradebook.export', $classroom));
+        $response->assertOk();
+        $body = $response->streamedContent();
+
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $body);
+        $this->assertStringContainsString('HW1', $body);
+        $this->assertStringContainsString('Ann', $body);
+        $this->assertStringContainsString('100%', $body); // weighted result
+    }
+
+    public function test_student_profile_renders_per_assignment_breakdown(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('custom');
+        Submission::create([
+            'assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'submitted_at' => now(),
+            'score' => 73,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('classrooms.students.show', [$classroom, $student]))
+            ->assertOk()
+            ->assertSee($student->name)
+            ->assertSee('HW1')
+            ->assertSee('73');
+    }
+
+    public function test_gradebook_blocked_for_non_owner(): void
+    {
+        $owner = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $owner->id, 'name' => 'X']);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)
+            ->get(route('classrooms.gradebook', $classroom))
+            ->assertForbidden();
+    }
+
+    public function test_bulk_route_still_resolves_after_adding_show_route(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'C']);
+
+        // Ensure /students/bulk is matched as the bulk page, not the show route with student='bulk'.
+        $this->actingAs($user)
+            ->get(route('classrooms.students.bulk', $classroom))
+            ->assertOk();
+    }
 }

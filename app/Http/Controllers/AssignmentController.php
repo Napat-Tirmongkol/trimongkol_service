@@ -23,6 +23,8 @@ class AssignmentController extends Controller
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:0|max:1000',
+            'weight' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -58,6 +60,8 @@ class AssignmentController extends Controller
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:0|max:1000',
+            'weight' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string|max:1000',
         ]);
 
