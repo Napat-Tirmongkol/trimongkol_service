@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#0f172a;padding:24px;display:flex;gap:16px}
+  .tile{flex:1;height:120px;border-radius:16px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:13px;color:#fff;font-size:12px;font-weight:600}
+  .logo{background:linear-gradient(135deg,#3366ff,#1936b8)}
+  .cta{background:linear-gradient(135deg,#1f47e6,#1936b8 50%,#1c2e74)}
+  .grid::before{content:"";position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,.18) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.18) 1px,transparent 1px);background-size:26px 26px}
+  .txt{background:#f8fafc;color:#0f172a;align-items:center;justify-content:center;font-size:26px;font-weight:800}
+  .grad-text{background:linear-gradient(135deg,#3366ff,#1936b8);-webkit-background-clip:text;background-clip:text;color:transparent}
+  span.lbl{position:relative;z-index:1}
+</style></head><body>
+  <div class="tile logo"><span class="lbl">logo · 500→700</span></div>
+  <div class="tile cta grid"><span class="lbl">CTA · 600→700→900 + bg-grid</span></div>
+  <div class="tile txt"><span class="grad-text">text&nbsp;gradient</span></div>
+</body></html>

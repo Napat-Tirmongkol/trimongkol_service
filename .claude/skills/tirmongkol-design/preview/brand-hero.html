@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif}
+  .hero{position:relative;height:260px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+  .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(15,23,42,.7),rgba(15,23,42,.4),rgba(15,23,42,.7))}
+  .c{position:relative;z-index:1;color:#fff}
+  .eyebrow{display:inline-block;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);backdrop-filter:blur(6px);padding:5px 16px;border-radius:9999px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.18em}
+  h1{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:14px 0 0;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .hl{background:linear-gradient(to right,#8eb6ff,#bcd3ff,#fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  p{font-size:14px;color:rgba(255,255,255,.85);margin-top:10px}
+</style></head><body>
+  <div class="hero">
+    <img src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80" alt="">
+    <div class="overlay"></div>
+    <div class="c">
+      <span class="eyebrow">Software Solutions</span>
+      <h1>Build Software That <span class="hl">Powers</span></h1>
+      <p>Full-bleed photo · slate-900 /70→/40→/70 overlay · gradient highlight word</p>
+    </div>
+  </div>
+</body></html>

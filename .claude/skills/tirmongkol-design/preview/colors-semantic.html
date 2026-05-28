@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#0f172a;padding:22px;display:flex;gap:16px}
+  .col{flex:1}
+  .name{font-size:12px;font-weight:700;margin-bottom:8px}
+  .chips{display:flex;gap:6px;margin-bottom:10px}
+  .chip{height:44px;flex:1;border-radius:9px}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:9999px}
+  .dot{width:7px;height:7px;border-radius:50%}
+</style></head><body>
+  <div class="col">
+    <div class="name" style="color:#047857">Emerald · success</div>
+    <div class="chips"><div class="chip" style="background:#ecfdf5"></div><div class="chip" style="background:#10b981"></div><div class="chip" style="background:#059669"></div></div>
+    <span class="pill" style="background:#ecfdf5;color:#047857"><span class="dot" style="background:#10b981"></span>Submitted</span>
+  </div>
+  <div class="col">
+    <div class="name" style="color:#b45309">Amber · pending</div>
+    <div class="chips"><div class="chip" style="background:#fffbeb"></div><div class="chip" style="background:#f59e0b"></div><div class="chip" style="background:#d97706"></div></div>
+    <span class="pill" style="background:#fffbeb;color:#b45309"><span class="dot" style="background:#f59e0b"></span>Coming soon</span>
+  </div>
+  <div class="col">
+    <div class="name" style="color:#be123c">Rose · destructive</div>
+    <div class="chips"><div class="chip" style="background:#fff1f2"></div><div class="chip" style="background:#f43f5e"></div><div class="chip" style="background:#e11d48"></div></div>
+    <span class="pill" style="background:#fff1f2;color:#be123c"><span class="dot" style="background:#f43f5e"></span>Delete</span>
+  </div>
+</body></html>
