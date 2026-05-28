@@ -87,6 +87,10 @@ class SiteSettingsController extends Controller
             'footer.tagline' => ['type' => 'i18n', 'label' => 'Footer tagline'],
             'footer.copyright' => ['type' => 'i18n', 'label' => 'Copyright line'],
         ],
+        'Maintenance' => [
+            'maintenance.enabled' => ['type' => 'shared', 'label' => 'Enable maintenance mode (1 = on, blank = off)'],
+            'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
+        ],
         'Hero images' => [
             'hero_image.home' => ['type' => 'shared', 'label' => 'Home (URL or /images/...)', 'wide' => true],
             'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true],

@@ -113,6 +113,14 @@ return [
         'classroom_delete_hint' => 'Deletes all students, assignments, and submissions in this classroom — irreversible.',
         'classroom_delete_confirm' => 'Delete classroom :name? Everything inside will be permanently lost.',
         'danger_zone' => 'Danger zone',
+
+        'impersonate' => 'Log in as this user',
+        'confirm_impersonate' => 'Log in as :name? For support purposes only — every action is logged.',
+        'impersonating_as' => '⚠️ You are signed in as :name',
+        'stop_impersonating' => 'Return to admin',
+
+        'maintenance_title' => 'Under maintenance',
+        'maintenance_default' => 'The site is temporarily unavailable for maintenance. Please check back shortly.',
     ],
 
     'cms' => [

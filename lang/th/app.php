@@ -113,6 +113,14 @@ return [
         'classroom_delete_hint' => 'การลบจะลบนักเรียน การบ้าน และการส่งทั้งหมดของห้องนี้ — กู้คืนไม่ได้',
         'classroom_delete_confirm' => 'ลบห้อง :name? ข้อมูลทุกอย่างในห้องจะหายถาวร',
         'danger_zone' => 'Danger Zone',
+
+        'impersonate' => 'Login เป็นผู้ใช้นี้',
+        'confirm_impersonate' => 'เข้าสู่ระบบเป็น :name? ใช้สำหรับช่วยเหลือผู้ใช้เท่านั้น — ทุกการกระทำจะถูกบันทึก',
+        'impersonating_as' => '⚠️ คุณกำลังใช้งานในนาม :name',
+        'stop_impersonating' => 'กลับเป็น admin',
+
+        'maintenance_title' => 'ระบบกำลังปรับปรุง',
+        'maintenance_default' => 'ขออภัย ระบบกำลังอยู่ในระหว่างการปรับปรุง กรุณากลับมาใหม่อีกครั้ง',
     ],
 
     'cms' => [

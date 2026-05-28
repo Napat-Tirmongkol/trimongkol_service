@@ -82,6 +82,16 @@
                                 {{ __('app.admin.send_password_reset') }}
                             </button>
                         </form>
+                        @if ($user->is_active)
+                            <form method="POST" action="{{ route('admin.users.impersonate', $user) }}">
+                                @csrf
+                                <button type="submit"
+                                        onclick="return confirm('{{ __('app.admin.confirm_impersonate', ['name' => $user->name]) }}')"
+                                        class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                    {{ __('app.admin.impersonate') }}
+                                </button>
+                            </form>
+                        @endif
                         <form method="POST" action="{{ route('admin.users.destroy', $user) }}">
                             @csrf @method('DELETE')
                             <button type="submit"

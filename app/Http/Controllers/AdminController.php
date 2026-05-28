@@ -9,6 +9,7 @@ use App\Models\Submission;
 use App\Models\User;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -203,6 +204,44 @@ class AdminController extends Controller
 
         return redirect()->route('admin.classrooms')
             ->with('status', __('app.admin.classroom_deleted', ['name' => $classroom->name]));
+    }
+
+    public function impersonate(Request $request, User $user)
+    {
+        abort_if($user->id === $request->user()->id, 422, __('app.admin.cannotChangeSelf'));
+        abort_if(! $user->is_active, 422, __('app.admin.account_suspended'));
+
+        $adminId = $request->user()->id;
+        AuditLog::record('user.impersonate_start', $user, $user->email);
+
+        Auth::guard('web')->login($user);
+        $request->session()->put('impersonator_id', $adminId);
+
+        return redirect()->route('dashboard');
+    }
+
+    public function stopImpersonating(Request $request)
+    {
+        $originalId = $request->session()->pull('impersonator_id');
+        abort_unless($originalId, 404);
+
+        $currentUser = $request->user();
+        $original = User::findOrFail($originalId);
+
+        Auth::guard('web')->login($original);
+
+        // Manually log here — the impersonated user is who acted, but the admin is back in control.
+        AdminAction::create([
+            'admin_user_id' => $originalId,
+            'action' => 'user.impersonate_stop',
+            'target_type' => 'User',
+            'target_id' => $currentUser?->id,
+            'target_label' => $currentUser?->email,
+            'metadata' => null,
+            'ip' => $request->ip(),
+        ]);
+
+        return redirect()->route('admin.dashboard');
     }
 
     public function logs(Request $request)

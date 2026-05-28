@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/toggle-active', [AdminController::class, 'toggleActive'])->name('users.toggle-active');
         Route::post('/users/{user}/password-reset', [AdminController::class, 'sendPasswordReset'])->name('users.password-reset');
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+        Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
         Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
         Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
     });
@@ -98,6 +99,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/impersonate/stop', [AdminController::class, 'stopImpersonating'])->name('impersonate.stop');
 });
 
 require __DIR__.'/auth.php';
