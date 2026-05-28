@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
 // Marketing site
@@ -17,10 +19,15 @@ Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
     ->name('locale.switch');
 
-// Authenticated dashboard
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Authenticated app
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [ClassroomController::class, 'index'])->name('dashboard');
+
+    Route::resource('classrooms', ClassroomController::class)->except(['index']);
+
+    Route::resource('classrooms.students', StudentController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy']);
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

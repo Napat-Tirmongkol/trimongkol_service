@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'common' => [
+        'save' => 'Save',
+        'cancel' => 'Cancel',
+        'edit' => 'Edit',
+        'delete' => 'Delete',
+        'dangerZone' => 'Danger zone',
+    ],
+
+    'classrooms' => [
+        'heading' => 'My Classrooms',
+        'add' => 'Add Classroom',
+        'createHeading' => 'Add a New Classroom',
+        'editHeading' => 'Edit Classroom',
+        'emptyTitle' => 'No classrooms yet',
+        'emptyDesc' => 'Start by creating your first classroom — add students, then scan to check homework.',
+        'field_name' => 'Classroom name',
+        'field_grade' => 'Grade level',
+        'field_grade_placeholder' => 'e.g. Grade 5, Year 7, M.2',
+        'field_description' => 'Description',
+        'created' => 'Classroom created.',
+        'updated' => 'Classroom updated.',
+        'deleted' => 'Classroom deleted.',
+        'deleteConfirm' => 'Delete this classroom? All students in it will also be deleted.',
+        'deleteWarning' => 'Deleting permanently removes the classroom and all its students. This cannot be undone.',
+        'deleteButton' => 'Delete classroom',
+    ],
+
+    'students' => [
+        'heading' => 'Students',
+        'label' => 'students',
+        'add' => 'Add Student',
+        'empty' => 'No students yet — click "Add Student" to begin.',
+        'createHeading' => 'Add a New Student',
+        'editHeading' => 'Edit Student',
+        'col_number' => 'No.',
+        'col_name' => 'Name',
+        'col_code' => 'Code (barcode)',
+        'col_actions' => 'Actions',
+        'field_number' => 'No.',
+        'field_name' => 'Full name',
+        'field_code' => 'Code (barcode)',
+        'field_code_hint' => 'This code prints as a barcode/QR for the student. Editable but must be unique in this classroom.',
+        'code_autogen_hint' => 'The system will auto-generate the barcode code on save.',
+        'created' => 'Student added.',
+        'updated' => 'Student updated.',
+        'deleted' => 'Student deleted.',
+        'deleteConfirm' => 'Delete this student?',
+    ],
+];
