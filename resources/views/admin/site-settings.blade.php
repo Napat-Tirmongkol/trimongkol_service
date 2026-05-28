@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-admin-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">
@@ -13,10 +13,6 @@
 
     <div class="py-8">
         <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div class="mb-6">
-                @include('admin._nav')
-            </div>
-
             @if (session('status'))
                 <div class="mb-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                     {{ session('status') }}
@@ -83,4 +79,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+</x-admin-layout>

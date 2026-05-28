@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-admin-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800">
             {{ __('app.admin.heading') }}
@@ -7,7 +7,6 @@
 
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-            @include('admin._nav')
 
             @if (session('status'))
                 <div class="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -72,4 +71,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-admin-layout>
