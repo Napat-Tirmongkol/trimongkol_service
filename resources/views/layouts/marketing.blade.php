@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="flex min-h-screen flex-col bg-white text-slate-900">
     @include('partials.marketing-navbar')
@@ -22,5 +23,7 @@
     </main>
 
     @include('partials.marketing-footer')
+
+    @livewireScripts
 </body>
 </html>
