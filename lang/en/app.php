@@ -1,6 +1,16 @@
 <?php
 
 return [
+    'cms' => [
+        'heading' => 'Edit Site Content',
+        'save' => 'Save',
+        'saved' => 'Saved.',
+        'savedHint' => 'Changes go live immediately after saving.',
+        'previewSite' => 'View site',
+        'placeholderHint' => 'Leave empty to use the default (placeholder text shown).',
+        'nav' => 'Edit Site',
+    ],
+
     'common' => [
         'save' => 'Save',
         'cancel' => 'Cancel',

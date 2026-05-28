@@ -1,13 +1,13 @@
 @extends('layouts.marketing')
 
-@section('title', __('site.services.heading') . ' — ' . __('site.brand.name'))
+@section('title', t('services.heading') . ' — ' . t('brand.name'))
 
 @section('content')
     @include('partials.hero', [
-        'image' => config('site.hero_images.services'),
-        'eyebrow' => __('site.nav.services'),
-        'title' => __('site.services.heading'),
-        'subtitle' => __('site.services.subheading'),
+        'image' => setting('hero_image.services', config('site.hero_images.services')),
+        'eyebrow' => t('nav.services'),
+        'title' => t('services.heading'),
+        'subtitle' => t('services.subheading'),
         'minHeight' => 'min-h-[60vh]',
     ])
 
@@ -16,9 +16,9 @@
         <div class="rounded-3xl bg-white p-6 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200/50 sm:p-10 md:p-12">
             {{-- Pill tags row --}}
             <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-6">
-                <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('site.home.servicesHeading') }}</span>
+                <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ t('home.servicesHeading') }}</span>
                 <span class="text-slate-300">·</span>
-                @foreach (__('site.services.items') as $service)
+                @foreach (t('services.items') as $service)
                     <span class="rounded-full bg-brand-50 px-3.5 py-1 text-xs font-medium text-brand-700">
                         {{ $service['title'] }}
                     </span>
@@ -27,7 +27,7 @@
 
             {{-- Service list --}}
             <ul class="mt-2 divide-y divide-slate-100">
-                @foreach (__('site.services.items') as $i => $service)
+                @foreach (t('services.items') as $i => $service)
                     <li x-data="{ open: false }" class="group">
                         <button type="button" @click="open = !open"
                                 class="flex w-full items-center justify-between gap-4 py-5 text-left">
@@ -67,10 +67,10 @@
     <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6 md:mt-24">
         <div class="rounded-3xl bg-slate-900 p-8 text-white shadow-xl md:p-12">
             <div class="mx-auto max-w-2xl text-center">
-                <h2 class="text-3xl font-bold tracking-tight md:text-4xl">{{ __('site.services.includedHeading') }}</h2>
+                <h2 class="text-3xl font-bold tracking-tight md:text-4xl">{{ t('services.includedHeading') }}</h2>
             </div>
             <ul class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach (__('site.services.included') as $item)
+                @foreach (t('services.included') as $item)
                     <li class="flex items-start gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
                         <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-brand-500 text-white">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -86,11 +86,11 @@
 
     {{-- CTA --}}
     <section class="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 md:py-28">
-        <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.home.ctaHeading') }}</h2>
-        <p class="mt-4 text-base text-slate-600 md:text-lg">{{ __('site.home.ctaSubheading') }}</p>
+        <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ t('home.ctaHeading') }}</h2>
+        <p class="mt-4 text-base text-slate-600 md:text-lg">{{ t('home.ctaSubheading') }}</p>
         <a href="{{ route('contact') }}"
            class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-slate-800">
-            {{ __('site.home.ctaButton') }}
+            {{ t('home.ctaButton') }}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>

@@ -1,6 +1,16 @@
 <?php
 
 return [
+    'cms' => [
+        'heading' => 'แก้ไขเนื้อหาเว็บ',
+        'save' => 'บันทึก',
+        'saved' => 'บันทึกเรียบร้อย',
+        'savedHint' => 'การเปลี่ยนแปลงจะ live ทันทีหลังบันทึก',
+        'previewSite' => 'ดูเว็บ',
+        'placeholderHint' => 'ปล่อยว่าง = ใช้ค่าเริ่มต้น (placeholder)',
+        'nav' => 'แก้ไขเว็บ',
+    ],
+
     'common' => [
         'save' => 'บันทึก',
         'cancel' => 'ยกเลิก',

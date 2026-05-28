@@ -6,6 +6,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('classrooms/{classroom}/assignments/{assignment}/scan', [AssignmentController::class, 'scan'])
         ->name('classrooms.assignments.scan');
+
+    Route::get('admin/site', [SiteSettingsController::class, 'edit'])->name('admin.site-settings.edit');
+    Route::patch('admin/site', [SiteSettingsController::class, 'update'])->name('admin.site-settings.update');
 });
 
 Route::middleware('auth')->group(function () {
