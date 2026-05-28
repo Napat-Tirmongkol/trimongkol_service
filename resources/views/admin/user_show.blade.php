@@ -17,6 +17,9 @@
                 @else
                     <span class="rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-700">{{ __('app.admin.status_suspended') }}</span>
                 @endif
+                @if ($user->hasTwoFactorEnabled())
+                    <span class="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700" title="2FA enabled">🔐 2FA</span>
+                @endif
             </div>
         </div>
     </x-slot>

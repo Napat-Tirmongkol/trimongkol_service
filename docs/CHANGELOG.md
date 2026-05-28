@@ -4,6 +4,20 @@
 
 ---
 
+## 🔐 Two-Factor Authentication (TOTP)
+
+**Phase 2.5 ของ business model C** — security ก่อนเปิดให้คนสมัครเอง
+
+- คอลัมน์ `two_factor_secret`, `two_factor_recovery_codes`, `two_factor_confirmed_at` บน users (เข้ารหัสด้วย Laravel encrypted cast)
+- `App\Services\Totp` — RFC 6238 TOTP implementation แบบ pure PHP (ไม่ต้องเพิ่ม composer dep)
+- หน้า Profile มี section ใหม่: เปิด/ปิด 2FA, ดู QR, recovery codes
+- Login challenge หลังกรอก password → ใส่รหัส 6 หลัก หรือ recovery code
+- Middleware `RequireTwoFactor` บังคับ challenge ทุก request จนกว่าจะผ่าน (admin impersonate ผ่านได้โดยไม่ต้อง challenge)
+- รองรับ Google Authenticator / Microsoft Authenticator / 1Password / ทุกแอปที่ใช้ otpauth://
+- ทุก action ของ 2FA log ลง audit (enable / disable / regenerate / pass / fail / recovery_used)
+
+---
+
 ## 🔒 Login Attempt Tracking + Security Dashboard
 
 **Phase 2 ของ business model C** — security baseline ก่อนเปิดให้ user สมัครเอง
