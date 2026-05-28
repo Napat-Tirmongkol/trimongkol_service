@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
+use App\Models\Classroom;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LocaleController;
@@ -77,11 +79,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.assignments.submissions.destroy');
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        // Platform-wide tools (cut across all products)
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
-        Route::get('/classrooms', [AdminController::class, 'classrooms'])->name('classrooms');
-        Route::get('/classrooms/{classroom}', [AdminController::class, 'showClassroom'])->name('classrooms.show');
-        Route::delete('/classrooms/{classroom}', [AdminController::class, 'destroyClassroom'])->name('classrooms.destroy');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
         Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
@@ -92,6 +92,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
         Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
         Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+
+        // Product-specific moderation. New products get a sibling group here +
+        // an entry in config/admin-products.php and the nav picks them up.
+        Route::prefix('products/scanner')->name('scanner.')->group(function () {
+            Route::get('/', [AdminScannerController::class, 'dashboard'])->name('dashboard');
+            Route::get('/classrooms', [AdminScannerController::class, 'classrooms'])->name('classrooms');
+            Route::get('/classrooms/{classroom}', [AdminScannerController::class, 'showClassroom'])->name('classrooms.show');
+            Route::delete('/classrooms/{classroom}', [AdminScannerController::class, 'destroyClassroom'])->name('classrooms.destroy');
+        });
+
+        // Back-compat redirects for the old flat URLs.
+        Route::get('/classrooms', fn () => redirect()->route('admin.scanner.classrooms', request()->query()));
+        Route::get('/classrooms/{classroom}', fn (Classroom $classroom) => redirect()->route('admin.scanner.classrooms.show', $classroom));
     });
 });
 

@@ -94,6 +94,19 @@ return [
 
         'tab_classrooms' => 'Classrooms',
         'tab_logs' => 'Audit Log',
+        'nav_products' => 'Products',
+
+        'products' => [
+            'scanner' => [
+                'label' => 'Homework Scanner',
+                'desc' => 'Check homework submissions with QR/Barcode',
+                'tab_overview' => 'Overview',
+                'tab_classrooms' => 'Classrooms',
+                'this_week' => 'past 7 days',
+                'today' => 'today',
+                'top_classrooms' => 'Top classrooms by assignment count',
+            ],
+        ],
         'logs_heading' => 'Audit Log — admin action history',
         'logs_when' => 'When',
         'logs_who' => 'Who',

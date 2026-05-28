@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-start justify-between gap-3">
             <div>
-                <a href="{{ route('admin.classrooms') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.admin.classrooms_heading') }}</a>
+                <a href="{{ route('admin.scanner.classrooms') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.admin.classrooms_heading') }}</a>
                 <h2 class="mt-1 text-xl font-semibold leading-tight text-gray-800">{{ $classroom->name }}</h2>
                 @if ($classroom->user)
                     <p class="text-sm text-slate-500">
@@ -72,7 +72,7 @@
             <div class="rounded-xl border border-rose-200 bg-rose-50/50 p-5">
                 <h3 class="text-sm font-semibold text-rose-900">{{ __('app.admin.danger_zone') }}</h3>
                 <p class="mt-1 text-xs text-rose-700">{{ __('app.admin.classroom_delete_hint') }}</p>
-                <form method="POST" action="{{ route('admin.classrooms.destroy', $classroom) }}" class="mt-3">
+                <form method="POST" action="{{ route('admin.scanner.classrooms.destroy', $classroom) }}" class="mt-3">
                     @csrf @method('DELETE')
                     <button type="submit"
                             onclick="return confirm('{{ __('app.admin.classroom_delete_confirm', ['name' => $classroom->name]) }}')"

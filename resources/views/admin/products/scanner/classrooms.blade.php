@@ -20,7 +20,7 @@
                     {{ __('app.admin.search') }}
                 </button>
                 @if ($q !== '')
-                    <a href="{{ route('admin.classrooms') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{{ __('app.admin.clear') }}</a>
+                    <a href="{{ route('admin.scanner.classrooms') }}" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{{ __('app.admin.clear') }}</a>
                 @endif
             </form>
 
@@ -41,7 +41,7 @@
                             @forelse ($classrooms as $c)
                                 <tr>
                                     <td class="px-6 py-3 font-medium text-slate-900">
-                                        <a href="{{ route('admin.classrooms.show', $c) }}" class="hover:text-brand-700">{{ $c->name }}</a>
+                                        <a href="{{ route('admin.scanner.classrooms.show', $c) }}" class="hover:text-brand-700">{{ $c->name }}</a>
                                         @if ($c->grade_level)
                                             <span class="ml-2 text-xs text-slate-500">{{ $c->grade_level }}</span>
                                         @endif
@@ -58,7 +58,7 @@
                                     <td class="px-6 py-3 text-center text-slate-700">{{ $c->assignments_count }}</td>
                                     <td class="px-6 py-3 text-xs text-slate-500">{{ $c->created_at->format('d M Y') }}</td>
                                     <td class="px-6 py-3 text-right">
-                                        <a href="{{ route('admin.classrooms.show', $c) }}" class="text-xs font-medium text-slate-600 hover:text-slate-900">{{ __('app.common.view') }}</a>
+                                        <a href="{{ route('admin.scanner.classrooms.show', $c) }}" class="text-xs font-medium text-slate-600 hover:text-slate-900">{{ __('app.common.view') }}</a>
                                     </td>
                                 </tr>
                             @empty

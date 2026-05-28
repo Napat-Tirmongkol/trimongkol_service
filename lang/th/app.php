@@ -94,6 +94,19 @@ return [
 
         'tab_classrooms' => 'ห้องเรียน',
         'tab_logs' => 'Audit Log',
+        'nav_products' => 'Products',
+
+        'products' => [
+            'scanner' => [
+                'label' => 'Homework Scanner',
+                'desc' => 'ระบบเช็กส่งการบ้านด้วย QR/Barcode',
+                'tab_overview' => 'ภาพรวม',
+                'tab_classrooms' => 'ห้องเรียน',
+                'this_week' => '7 วันล่าสุด',
+                'today' => 'วันนี้',
+                'top_classrooms' => 'ห้องที่มีการบ้านเยอะสุด',
+            ],
+        ],
         'logs_heading' => 'Audit Log — ประวัติการใช้สิทธิ์ admin',
         'logs_when' => 'เมื่อ',
         'logs_who' => 'ใคร',
