@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
@@ -21,6 +22,15 @@ Route::post('/contact', [ContactController::class, 'submit'])->name('contact.sub
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
     ->name('locale.switch');
+
+// Admin portal (separate login from the regular Breeze /login)
+Route::middleware('guest')->group(function () {
+    Route::get('/admin/login', [AdminLoginController::class, 'create'])->name('admin.login');
+    Route::post('/admin/login', [AdminLoginController::class, 'store'])->name('admin.login.store');
+});
+Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('admin.logout');
 
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {

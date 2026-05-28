@@ -3,6 +3,14 @@
 return [
     'admin' => [
         'nav' => 'Admin',
+        'portalLabel' => 'Restricted area',
+        'portalTitle' => 'Admin Portal',
+        'portalSubtitle' => 'Sign-in for administrators only.',
+        'signIn' => 'Sign in',
+        'notAdmin' => 'Not an admin?',
+        'regularLogin' => 'Use the regular login',
+        'notAuthorized' => 'This account is not an administrator.',
+        'logout' => 'Sign out',
         'heading' => 'Admin Dashboard',
         'usersHeading' => 'User Management',
         'tab_overview' => 'Overview',

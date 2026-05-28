@@ -3,6 +3,14 @@
 return [
     'admin' => [
         'nav' => 'Admin',
+        'portalLabel' => 'พื้นที่ผู้ดูแลระบบ',
+        'portalTitle' => 'Admin Portal',
+        'portalSubtitle' => 'เข้าสู่ระบบสำหรับแอดมินเท่านั้น',
+        'signIn' => 'เข้าสู่ระบบ',
+        'notAdmin' => 'ไม่ใช่แอดมิน?',
+        'regularLogin' => 'เข้าสู่ระบบทั่วไป',
+        'notAuthorized' => 'บัญชีนี้ไม่ใช่แอดมิน',
+        'logout' => 'ออกจากระบบ',
         'heading' => 'แอดมินแดชบอร์ด',
         'usersHeading' => 'จัดการผู้ใช้',
         'tab_overview' => 'ภาพรวม',
