@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdminAction;
 use App\Models\Assignment;
 use App\Models\Classroom;
+use App\Models\Lead;
 use App\Models\Submission;
 use App\Models\User;
 use App\Services\AuditLog;
@@ -29,6 +30,8 @@ class AdminController extends Controller
             'new_users_month' => User::where('created_at', '>=', $now->copy()->subDays(30))->count(),
             'submissions_today' => Submission::whereDate('created_at', $now->toDateString())->count(),
             'active_30d' => User::where('last_login_at', '>=', $now->copy()->subDays(30))->count(),
+            'leads_new' => Lead::where('status', 'new')->count(),
+            'leads_week' => Lead::where('created_at', '>=', $now->copy()->subDays(7))->count(),
         ];
 
         $recentUsers = User::latest()->limit(5)->get();

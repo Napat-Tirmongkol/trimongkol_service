@@ -1,6 +1,7 @@
 @php
     $platformTabs = [
         ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard'],
+        ['route' => 'admin.leads.index', 'label' => __('app.admin.tab_leads'), 'pattern' => 'admin.leads.*'],
         ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*'],
         ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs'],
         ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],

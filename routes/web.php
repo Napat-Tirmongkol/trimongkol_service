@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\AdminController;
@@ -82,6 +83,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Platform-wide tools (cut across all products)
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
+
+        Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
+        Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');
+        Route::patch('/leads/{lead}', [AdminLeadController::class, 'update'])->name('leads.update');
+        Route::delete('/leads/{lead}', [AdminLeadController::class, 'destroy'])->name('leads.destroy');
+
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
         Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
