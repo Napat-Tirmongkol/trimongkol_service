@@ -419,6 +419,21 @@ return [
         'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
     ],
 
+    'workspaces' => [
+        'heading' => 'Workspaces',
+        'intro' => 'Each workspace keeps its own classrooms, students, and assignments separate. You can belong to multiple workspaces but work in one at a time.',
+        'switch' => 'Switch in',
+        'switched' => 'Switched to workspace :name.',
+        'current' => 'Current',
+        'manage' => 'Manage workspaces',
+        'role_owner' => 'Owner',
+        'role_admin' => 'Admin',
+        'role_member' => 'Member',
+        'members' => 'members',
+        'no_workspace' => 'You are not a member of any workspace yet — please contact an admin.',
+        'create_hint' => 'Creating a new workspace and inviting members will land in a follow-up release.',
+    ],
+
     'two_factor' => [
         'heading' => 'Two-factor authentication (2FA)',
         'description' => 'Add an extra layer of security — after your password you will also enter a 6-digit code from an authenticator app.',

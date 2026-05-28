@@ -10,13 +10,13 @@ class AssignmentController extends Controller
 {
     public function create(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         return view('assignments.create', compact('classroom'));
     }
 
     public function store(Request $request, Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $data = $request->validate([
             'name' => 'required|string|max:150',
@@ -37,7 +37,7 @@ class AssignmentController extends Controller
 
     public function show(Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         return view('assignments.show', compact('classroom', 'assignment'));
@@ -45,7 +45,7 @@ class AssignmentController extends Controller
 
     public function edit(Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         return view('assignments.edit', compact('classroom', 'assignment'));
@@ -53,7 +53,7 @@ class AssignmentController extends Controller
 
     public function update(Request $request, Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         $data = $request->validate([
@@ -75,7 +75,7 @@ class AssignmentController extends Controller
 
     public function destroy(Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         $assignment->delete();
@@ -86,7 +86,7 @@ class AssignmentController extends Controller
 
     public function scan(Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         return view('assignments.scan', compact('classroom', 'assignment'));
@@ -94,7 +94,7 @@ class AssignmentController extends Controller
 
     public function export(Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         $students = $classroom->students()->get();
@@ -133,9 +133,9 @@ class AssignmentController extends Controller
         ]);
     }
 
-    private function ensureOwner(Classroom $classroom): void
+    private function ensureAccess(Classroom $classroom): void
     {
-        abort_if($classroom->user_id !== auth()->id(), 403);
+        abort_unless($classroom->canBeAccessedBy(auth()->user()), 403);
     }
 
     private function ensureBelongs(Classroom $classroom, Assignment $assignment): void

@@ -11,14 +11,14 @@ class StudentController extends Controller
 {
     public function create(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         return view('students.create', compact('classroom'));
     }
 
     public function show(Classroom $classroom, Student $student)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $student);
 
         $gradebook = (new Gradebook($classroom))->build();
@@ -28,7 +28,7 @@ class StudentController extends Controller
 
     public function store(Request $request, Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -44,7 +44,7 @@ class StudentController extends Controller
 
     public function edit(Classroom $classroom, Student $student)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $student);
 
         return view('students.edit', compact('classroom', 'student'));
@@ -52,7 +52,7 @@ class StudentController extends Controller
 
     public function update(Request $request, Classroom $classroom, Student $student)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $student);
 
         $data = $request->validate([
@@ -69,7 +69,7 @@ class StudentController extends Controller
 
     public function destroy(Classroom $classroom, Student $student)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $student);
 
         $student->delete();
@@ -80,14 +80,14 @@ class StudentController extends Controller
 
     public function bulkCreate(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         return view('students.bulk', compact('classroom'));
     }
 
     public function bulkStore(Request $request, Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $data = $request->validate([
             'roster' => 'required|string|max:50000',
@@ -129,7 +129,7 @@ class StudentController extends Controller
 
     public function print(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $students = $classroom->students()->get();
 
@@ -138,15 +138,15 @@ class StudentController extends Controller
 
     public function printQr(Classroom $classroom, Student $student)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $student);
 
         return view('students.qr', compact('classroom', 'student'));
     }
 
-    private function ensureOwner(Classroom $classroom): void
+    private function ensureAccess(Classroom $classroom): void
     {
-        abort_if($classroom->user_id !== auth()->id(), 403);
+        abort_unless($classroom->canBeAccessedBy(auth()->user()), 403);
     }
 
     private function ensureBelongs(Classroom $classroom, Student $student): void

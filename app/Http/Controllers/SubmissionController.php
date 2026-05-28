@@ -12,7 +12,7 @@ class SubmissionController extends Controller
 {
     public function store(Request $request, Classroom $classroom, Assignment $assignment)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
 
         $data = $request->validate([
@@ -40,7 +40,7 @@ class SubmissionController extends Controller
 
     public function update(Request $request, Classroom $classroom, Assignment $assignment, Submission $submission)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
         abort_if($submission->assignment_id !== $assignment->id, 404);
 
@@ -55,7 +55,7 @@ class SubmissionController extends Controller
 
     public function destroy(Classroom $classroom, Assignment $assignment, Submission $submission)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $this->ensureBelongs($classroom, $assignment);
         abort_if($submission->assignment_id !== $assignment->id, 404);
 
@@ -73,9 +73,9 @@ class SubmissionController extends Controller
         };
     }
 
-    private function ensureOwner(Classroom $classroom): void
+    private function ensureAccess(Classroom $classroom): void
     {
-        abort_if($classroom->user_id !== auth()->id(), 403);
+        abort_unless($classroom->canBeAccessedBy(auth()->user()), 403);
     }
 
     private function ensureBelongs(Classroom $classroom, Assignment $assignment): void

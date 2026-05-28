@@ -9,7 +9,7 @@ class GradebookController extends Controller
 {
     public function show(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $gradebook = (new Gradebook($classroom))->build();
 
@@ -18,7 +18,7 @@ class GradebookController extends Controller
 
     public function export(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $g = (new Gradebook($classroom))->build();
         $filename = preg_replace('/[^A-Za-z0-9_\-]/u', '_', $classroom->name . '_gradebook') . '.csv';
@@ -68,8 +68,8 @@ class GradebookController extends Controller
         ]);
     }
 
-    private function ensureOwner(Classroom $classroom): void
+    private function ensureAccess(Classroom $classroom): void
     {
-        abort_if($classroom->user_id !== auth()->id(), 403);
+        abort_unless($classroom->canBeAccessedBy(auth()->user()), 403);
     }
 }

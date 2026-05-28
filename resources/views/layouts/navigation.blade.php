@@ -6,6 +6,8 @@
         ->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
         ->implode('') ?: '·';
     $otherLocale = app()->getLocale() === 'th' ? 'en' : 'th';
+    $currentWorkspace = \App\Services\CurrentWorkspace::get($user);
+    $userWorkspaces = $user ? $user->workspaces()->orderBy('name')->get() : collect();
 @endphp
 <nav x-data="{ open: false }" class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -34,6 +36,42 @@
             </div>
 
             <div class="hidden items-center gap-2 md:flex">
+                {{-- Workspace switcher: only when user has more than one workspace --}}
+                @if ($currentWorkspace && $userWorkspaces->count() > 1)
+                    <div x-data="{ ws: false }" @click.outside="ws = false" class="relative">
+                        <button @click="ws = !ws" type="button"
+                                class="flex max-w-[180px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-sm hover:bg-slate-50">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-slate-400">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+                            </svg>
+                            <span class="truncate font-medium text-slate-700">{{ $currentWorkspace->name }}</span>
+                            <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" class="shrink-0 text-slate-400">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                        <div x-show="ws" x-cloak x-transition
+                             class="absolute right-0 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-lg ring-1 ring-slate-900/5">
+                            @foreach ($userWorkspaces as $w)
+                                <form method="POST" action="{{ route('workspaces.switch', $w) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 {{ $currentWorkspace->id === $w->id ? 'bg-slate-100 font-semibold' : '' }}">
+                                        <span class="truncate text-slate-800">{{ $w->name }}</span>
+                                        @if ($currentWorkspace->id === $w->id)
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-emerald-600"><polyline points="20 6 9 17 4 12"/></svg>
+                                        @endif
+                                    </button>
+                                </form>
+                            @endforeach
+                            <div class="my-1 border-t border-slate-100"></div>
+                            <a href="{{ route('workspaces.index') }}" class="block rounded-lg px-3 py-2 text-xs text-slate-500 hover:bg-slate-50">
+                                {{ __('app.workspaces.manage') }} →
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
                 <a href="{{ route('locale.switch', $otherLocale) }}"
                    class="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:bg-slate-100">
                     {{ $otherLocale }}
@@ -57,6 +95,10 @@
                         <a href="{{ route('profile.edit') }}"
                            class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                             {{ __('Profile') }}
+                        </a>
+                        <a href="{{ route('workspaces.index') }}"
+                           class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            {{ __('app.workspaces.manage') }}
                         </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf

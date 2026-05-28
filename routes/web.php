@@ -17,6 +17,7 @@ use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TwoFactorAuthController;
+use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 // Marketing site
@@ -42,6 +43,9 @@ Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
+
+    Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
+    Route::post('/workspaces/{workspace}/switch', [WorkspaceController::class, 'switchTo'])->name('workspaces.switch');
 
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 

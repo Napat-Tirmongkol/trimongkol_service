@@ -3,19 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Services\CurrentWorkspace;
 use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
 {
     public function index()
     {
-        $classrooms = Classroom::where('user_id', auth()->id())
-            ->withCount(['students', 'assignments'])
-            ->with(['assignments' => fn ($q) => $q->latest('created_at')->limit(1)])
-            ->latest()
-            ->get();
+        $workspace = CurrentWorkspace::get();
+        $classrooms = collect();
 
-        return view('dashboard', compact('classrooms'));
+        if ($workspace) {
+            $classrooms = Classroom::where('workspace_id', $workspace->id)
+                ->withCount(['students', 'assignments'])
+                ->with(['assignments' => fn ($q) => $q->latest('created_at')->limit(1)])
+                ->latest()
+                ->get();
+        }
+
+        return view('dashboard', compact('classrooms', 'workspace'));
     }
 
     public function create()
@@ -25,6 +31,9 @@ class ClassroomController extends Controller
 
     public function store(Request $request)
     {
+        $workspace = CurrentWorkspace::get();
+        abort_unless($workspace, 422, __('app.workspaces.no_workspace'));
+
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'grade_level' => 'nullable|string|max:40',
@@ -34,6 +43,7 @@ class ClassroomController extends Controller
         $classroom = Classroom::create([
             ...$data,
             'user_id' => auth()->id(),
+            'workspace_id' => $workspace->id,
         ]);
 
         return redirect()->route('classrooms.show', $classroom)
@@ -42,7 +52,7 @@ class ClassroomController extends Controller
 
     public function show(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $classroom->load('students', 'assignments');
 
         return view('classrooms.show', compact('classroom'));
@@ -50,14 +60,14 @@ class ClassroomController extends Controller
 
     public function edit(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         return view('classrooms.edit', compact('classroom'));
     }
 
     public function update(Request $request, Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -73,15 +83,15 @@ class ClassroomController extends Controller
 
     public function destroy(Classroom $classroom)
     {
-        $this->ensureOwner($classroom);
+        $this->ensureAccess($classroom);
         $classroom->delete();
 
         return redirect()->route('dashboard')
             ->with('status', __('app.classrooms.deleted'));
     }
 
-    private function ensureOwner(Classroom $classroom): void
+    private function ensureAccess(Classroom $classroom): void
     {
-        abort_if($classroom->user_id !== auth()->id(), 403);
+        abort_unless($classroom->canBeAccessedBy(auth()->user()), 403);
     }
 }
