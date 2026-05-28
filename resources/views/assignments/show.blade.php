@@ -8,10 +8,16 @@
                     <p class="mt-1 text-xs text-slate-500">{{ __('app.assignments.due') }}: {{ $assignment->due_date->format('d M Y') }}</p>
                 @endif
             </div>
-            <a href="{{ route('classrooms.assignments.edit', [$classroom, $assignment]) }}"
-               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                {{ __('app.common.edit') }}
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('classrooms.assignments.export', [$classroom, $assignment]) }}"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    {{ __('app.export.button') }}
+                </a>
+                <a href="{{ route('classrooms.assignments.edit', [$classroom, $assignment]) }}"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    {{ __('app.common.edit') }}
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -22,9 +28,13 @@
             @endif
 
             @php
-                $submittedCount = $assignment->submissions()->count();
-                $totalCount = $classroom->students()->count();
+                $subs = $assignment->submissions()->with('student')->get()->keyBy('student_id');
+                $submittedCount = $subs->count();
+                $totalCount = $classroom->students->count();
                 $percent = $totalCount > 0 ? round($submittedCount / $totalCount * 100) : 0;
+                $isGraded = $assignment->scoring_mode !== 'check';
+                $scores = $subs->filter(fn ($s) => $s->score !== null)->pluck('score');
+                $avgScore = $scores->count() > 0 ? round($scores->avg(), 1) : null;
             @endphp
 
             <div class="grid gap-4 sm:grid-cols-3">
@@ -37,7 +47,15 @@
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.assignments.mode_label') }}</div>
-                    <div class="mt-2 text-base font-semibold text-slate-900">{{ __("app.assignments.mode_{$assignment->scoring_mode}_title") }}</div>
+                    <div class="mt-2 text-base font-semibold text-slate-900">
+                        {{ __("app.assignments.mode_{$assignment->scoring_mode}_title") }}
+                        @if ($assignment->scoring_mode === 'fixed' && $assignment->default_score !== null)
+                            · {{ $assignment->default_score }}
+                        @endif
+                    </div>
+                    @if ($isGraded && $avgScore !== null)
+                        <div class="mt-2 text-xs text-slate-500">{{ __('app.export.avg') }}: <span class="font-semibold text-slate-700">{{ $avgScore }}</span></div>
+                    @endif
                 </div>
                 <a href="{{ route('classrooms.assignments.scan', [$classroom, $assignment]) }}"
                    class="flex flex-col justify-center rounded-xl bg-brand-600 p-5 text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700">
@@ -62,11 +80,14 @@
                                 <th class="px-6 py-3">{{ __('app.students.col_number') }}</th>
                                 <th class="px-6 py-3">{{ __('app.students.col_name') }}</th>
                                 <th class="px-6 py-3">{{ __('app.scan.status') }}</th>
+                                @if ($isGraded)
+                                    <th class="px-6 py-3">{{ __('app.export.score') }}</th>
+                                @endif
                                 <th class="px-6 py-3">{{ __('app.scan.submitted_at') }}</th>
+                                <th class="px-6 py-3 text-right">{{ __('app.students.col_actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white text-sm">
-                            @php $subs = $assignment->submissions()->with('student')->get()->keyBy('student_id'); @endphp
                             @foreach ($classroom->students as $student)
                                 @php $sub = $subs->get($student->id); @endphp
                                 <tr>
@@ -82,7 +103,41 @@
                                             <span class="text-xs text-slate-400">{{ __('app.scan.pending') }}</span>
                                         @endif
                                     </td>
+                                    @if ($isGraded)
+                                        <td class="px-6 py-3">
+                                            @if ($sub)
+                                                @if ($assignment->scoring_mode === 'custom')
+                                                    <form method="POST" action="{{ route('classrooms.assignments.submissions.update', [$classroom, $assignment, $sub]) }}" class="flex items-center gap-1">
+                                                        @csrf @method('PATCH')
+                                                        <input type="number" name="score" min="0" max="100" step="1"
+                                                               value="{{ $sub->score }}"
+                                                               class="w-16 rounded-md border-slate-300 px-2 py-1 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                                        <button type="submit" class="text-xs text-brand-700 hover:text-brand-900">{{ __('app.common.save') }}</button>
+                                                    </form>
+                                                @else
+                                                    <span class="text-sm font-semibold text-slate-900">{{ $sub->score ?? '—' }}</span>
+                                                @endif
+                                            @else
+                                                <span class="text-xs text-slate-300">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                     <td class="px-6 py-3 text-xs text-slate-500">{{ $sub?->submitted_at?->format('H:i') ?: '—' }}</td>
+                                    <td class="px-6 py-3 text-right">
+                                        @if ($sub)
+                                            <form method="POST" action="{{ route('classrooms.assignments.submissions.destroy', [$classroom, $assignment, $sub]) }}"
+                                                  onsubmit="return confirm('{{ __('app.scan.undo_confirm') }}')" class="inline">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-xs text-rose-600 hover:text-rose-700">{{ __('app.scan.undo') }}</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('classrooms.assignments.submissions.store', [$classroom, $assignment]) }}" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="student_id" value="{{ $student->id }}">
+                                                <button type="submit" class="text-xs text-brand-700 hover:text-brand-900">{{ __('app.scan.mark_submitted') }}</button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

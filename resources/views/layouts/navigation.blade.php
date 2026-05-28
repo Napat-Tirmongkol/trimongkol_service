@@ -1,98 +1,117 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+@php
+    $user = auth()->user();
+    $initials = collect(preg_split('/\s+/', trim((string) $user?->name)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
+        ->implode('') ?: '·';
+    $otherLocale = app()->getLocale() === 'th' ? 'en' : 'th';
+@endphp
+<nav x-data="{ open: false }" class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between gap-3">
+            <div class="flex items-center gap-6">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">T</span>
+                    <span class="hidden text-sm font-semibold tracking-tight text-slate-900 sm:inline">{{ config('app.name') }}</span>
+                </a>
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                <div class="hidden items-center gap-1 md:flex">
+                    <a href="{{ route('dashboard') }}"
+                       class="rounded-full px-4 py-1.5 text-sm font-medium transition
+                              {{ request()->routeIs('dashboard') || request()->routeIs('classrooms.*')
+                                  ? 'bg-slate-900 text-white'
+                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                        {{ __('app.classrooms.heading') }}
+                    </a>
+                    @if ($user?->is_admin)
+                        <a href="{{ route('admin.dashboard') }}"
+                           class="rounded-full px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                            {{ __('app.admin.nav') }}
+                        </a>
+                    @endif
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+            <div class="hidden items-center gap-2 md:flex">
+                <a href="{{ route('locale.switch', $otherLocale) }}"
+                   class="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:bg-slate-100">
+                    {{ $otherLocale }}
+                </a>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
+                <div x-data="{ menu: false }" @click.outside="menu = false" class="relative">
+                    <button @click="menu = !menu" type="button"
+                            class="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm hover:bg-slate-50">
+                        <span class="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">{{ $initials }}</span>
+                        <span class="font-medium text-slate-800">{{ $user?->name }}</span>
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" class="text-slate-400">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    <div x-show="menu" x-cloak x-transition
+                         class="absolute right-0 mt-2 w-56 origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg ring-1 ring-slate-900/5">
+                        <div class="border-b border-slate-100 px-4 py-3">
+                            <div class="text-sm font-medium text-slate-900">{{ $user?->name }}</div>
+                            <div class="truncate text-xs text-slate-500">{{ $user?->email }}</div>
+                        </div>
+                        <a href="{{ route('profile.edit') }}"
+                           class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                             {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
+                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                            <button type="submit" class="block w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">
                                 {{ __('Log Out') }}
-                            </x-dropdown-link>
+                            </button>
                         </form>
-                    </x-slot>
-                </x-dropdown>
+                    </div>
+                </div>
             </div>
 
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            <button type="button" @click="open = !open" aria-label="Menu"
+                    class="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-700 md:hidden">
+                <svg x-show="!open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+                <svg x-show="open" x-cloak width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+        <div x-show="open" x-cloak class="border-t border-slate-200 py-3 md:hidden">
+            <div class="flex items-center gap-3 px-1 pb-3">
+                <span class="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">{{ $initials }}</span>
+                <div>
+                    <div class="text-sm font-medium text-slate-900">{{ $user?->name }}</div>
+                    <div class="text-xs text-slate-500">{{ $user?->email }}</div>
+                </div>
             </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
+            <div class="flex flex-col gap-1">
+                <a href="{{ route('dashboard') }}"
+                   class="rounded-md px-3 py-2 text-sm font-medium
+                          {{ request()->routeIs('dashboard') || request()->routeIs('classrooms.*')
+                              ? 'bg-slate-900 text-white'
+                              : 'text-slate-700 hover:bg-slate-100' }}">
+                    {{ __('app.classrooms.heading') }}
+                </a>
+                @if ($user?->is_admin)
+                    <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                        {{ __('app.admin.nav') }}
+                    </a>
+                @endif
+                <a href="{{ route('profile.edit') }}" class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
                     {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
+                </a>
+                <a href="{{ route('locale.switch', $otherLocale) }}"
+                   class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+                    {{ __('Language') }} · <span class="font-bold uppercase">{{ $otherLocale }}</span>
+                </a>
+                <form method="POST" action="{{ route('logout') }}" class="mt-2 border-t border-slate-200 pt-2">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
+                    <button type="submit" class="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-rose-600 hover:bg-rose-50">
                         {{ __('Log Out') }}
-                    </x-responsive-nav-link>
+                    </button>
                 </form>
             </div>
         </div>

@@ -23,6 +23,8 @@ class AssignmentController extends Controller
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:0|max:1000',
+            'weight' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -58,6 +60,8 @@ class AssignmentController extends Controller
             'due_date' => 'nullable|date',
             'scoring_mode' => 'required|in:check,fixed,custom',
             'default_score' => 'nullable|integer|min:0|max:100',
+            'max_score' => 'nullable|numeric|min:0|max:1000',
+            'weight' => 'nullable|numeric|min:0|max:100',
             'description' => 'nullable|string|max:1000',
         ]);
 
@@ -84,6 +88,47 @@ class AssignmentController extends Controller
         $this->ensureBelongs($classroom, $assignment);
 
         return view('assignments.scan', compact('classroom', 'assignment'));
+    }
+
+    public function export(Classroom $classroom, Assignment $assignment)
+    {
+        $this->ensureOwner($classroom);
+        $this->ensureBelongs($classroom, $assignment);
+
+        $students = $classroom->students()->get();
+        $subs = $assignment->submissions()->get()->keyBy('student_id');
+
+        $filename = preg_replace('/[^A-Za-z0-9_\-]/u', '_', $classroom->name . '_' . $assignment->name) . '.csv';
+
+        return new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($students, $subs, $assignment) {
+            $out = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel renders Thai correctly
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, [
+                __('app.students.col_number'),
+                __('app.students.col_name'),
+                __('app.students.col_code'),
+                __('app.scan.status'),
+                __('app.scan.submitted_at'),
+                __('app.export.score'),
+            ]);
+
+            foreach ($students as $student) {
+                $sub = $subs->get($student->id);
+                fputcsv($out, [
+                    $student->number,
+                    $student->name,
+                    $student->code,
+                    $sub ? __('app.scan.submitted_short') : __('app.scan.pending'),
+                    $sub?->submitted_at?->format('Y-m-d H:i:s'),
+                    $sub?->score,
+                ]);
+            }
+            fclose($out);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function ensureOwner(Classroom $classroom): void

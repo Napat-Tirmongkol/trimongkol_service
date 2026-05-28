@@ -46,7 +46,8 @@ class AdminController extends Controller
     {
         abort_if($user->id === $request->user()->id, 422, __('app.admin.cannotChangeSelf'));
 
-        $user->update(['is_admin' => ! $user->is_admin]);
+        $user->is_admin = ! $user->is_admin;
+        $user->save();
 
         return back()->with('status', $user->is_admin
             ? __('app.admin.promoted', ['name' => $user->name])

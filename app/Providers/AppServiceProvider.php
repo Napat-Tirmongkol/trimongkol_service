@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +24,31 @@ class AppServiceProvider extends ServiceProvider
             return $request->is('admin', 'admin/*')
                 ? route('admin.login')
                 : route('login');
+        });
+
+        // Auto-promote users whose email is listed in ADMIN_EMAILS (comma-
+        // or whitespace-separated). Lets the site owner bootstrap admin
+        // access on a fresh deploy without SSH — just edit .env in Plesk.
+        Event::listen(Authenticated::class, function (Authenticated $event) {
+            $raw = (string) env('ADMIN_EMAILS', '');
+            if ($raw === '') {
+                return;
+            }
+
+            $user = $event->user;
+            if (! $user instanceof User || $user->is_admin) {
+                return;
+            }
+
+            $allowed = array_filter(array_map(
+                fn ($e) => strtolower(trim($e)),
+                preg_split('/[,\s]+/', $raw) ?: []
+            ));
+
+            if (in_array(strtolower((string) $user->email), $allowed, true)) {
+                $user->is_admin = true;
+                $user->save();
+            }
         });
     }
 }

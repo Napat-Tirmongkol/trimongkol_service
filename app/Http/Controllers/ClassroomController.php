@@ -10,7 +10,8 @@ class ClassroomController extends Controller
     public function index()
     {
         $classrooms = Classroom::where('user_id', auth()->id())
-            ->withCount('students')
+            ->withCount(['students', 'assignments'])
+            ->with(['assignments' => fn ($q) => $q->latest('created_at')->limit(1)])
             ->latest()
             ->get();
 
