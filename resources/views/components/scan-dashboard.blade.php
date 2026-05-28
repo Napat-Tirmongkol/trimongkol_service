@@ -104,10 +104,49 @@ new class extends Component {
         </div>
     </header>
 
+    <style>
+        #scanner-region {
+            background: #000;
+        }
+        #scanner-region video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block;
+        }
+        /* hide html5-qrcode default UI chrome (file scan input, dashboard, camera select) */
+        #scanner-region__dashboard,
+        #scanner-region__dashboard_section,
+        #scanner-region__dashboard_section_csr,
+        #scanner-region__dashboard_section_swaplink,
+        #scanner-region__dashboard_section_fsr,
+        #scanner-region__filescan_input,
+        #scanner-region img[alt="Info icon"],
+        #scanner-region__camera_selection,
+        #scanner-region__camera_permission_button {
+            display: none !important;
+        }
+        /* override the inline border style of the qrbox shaded region */
+        #scanner-region__scan_region {
+            background: transparent !important;
+            border: none !important;
+        }
+    </style>
+
     <main class="mx-auto max-w-3xl px-4 pb-32 pt-4">
-        {{-- Camera viewfinder (mobile-first) --}}
-        <div class="relative overflow-hidden rounded-2xl bg-black" style="aspect-ratio: 4/3;">
+        {{-- Camera viewfinder (mobile-first portrait, landscape on tablet+) --}}
+        <div class="relative overflow-hidden rounded-2xl bg-black aspect-[3/4] sm:aspect-[4/3]">
             <div id="scanner-region" class="absolute inset-0"></div>
+
+            {{-- Custom scanning frame overlay --}}
+            <div x-show="cameraOn" x-cloak class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div class="relative h-64 w-64 max-h-[60%] max-w-[80%]">
+                    <span class="absolute -top-0.5 -left-0.5 h-8 w-8 border-t-4 border-l-4 border-brand-400 rounded-tl-lg"></span>
+                    <span class="absolute -top-0.5 -right-0.5 h-8 w-8 border-t-4 border-r-4 border-brand-400 rounded-tr-lg"></span>
+                    <span class="absolute -bottom-0.5 -left-0.5 h-8 w-8 border-b-4 border-l-4 border-brand-400 rounded-bl-lg"></span>
+                    <span class="absolute -bottom-0.5 -right-0.5 h-8 w-8 border-b-4 border-r-4 border-brand-400 rounded-br-lg"></span>
+                </div>
+            </div>
 
             <div x-show="!cameraOn" class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-slate-500">
@@ -219,10 +258,18 @@ new class extends Component {
                     return;
                 }
                 try {
-                    this.scanner = new Html5Qrcode('scanner-region');
+                    this.scanner = new Html5Qrcode('scanner-region', { verbose: false });
                     await this.scanner.start(
                         { facingMode: 'environment' },
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        {
+                            fps: 10,
+                            qrbox: (vw, vh) => {
+                                const s = Math.floor(Math.min(vw, vh) * 0.7);
+                                return { width: s, height: s };
+                            },
+                            aspectRatio: window.innerWidth < 640 ? 0.75 : 1.333,
+                            disableFlip: false,
+                        },
                         (decodedText) => {
                             this.$wire.set('code', decodedText, false);
                             this.$wire.scan();
