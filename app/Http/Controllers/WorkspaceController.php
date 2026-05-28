@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Models\WorkspaceInvitation;
 use App\Models\WorkspaceMember;
 use App\Services\AuditLog;
 use App\Services\CurrentWorkspace;
+use App\Services\PlanGate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -50,6 +52,14 @@ class WorkspaceController extends Controller
             'user_id' => $request->user()->id,
             'role' => 'owner',
             'joined_at' => now(),
+        ]);
+
+        // 14-day Basic trial on every new workspace.
+        Subscription::create([
+            'workspace_id' => $workspace->id,
+            'plan_key' => 'basic',
+            'status' => Subscription::STATUS_TRIAL,
+            'trial_ends_at' => now()->addDays(14),
         ]);
 
         CurrentWorkspace::set($workspace);
@@ -128,6 +138,10 @@ class WorkspaceController extends Controller
     public function inviteMember(Request $request, Workspace $workspace)
     {
         $this->ensureManager($workspace, $request->user());
+
+        if ($reason = PlanGate::reasonCannotAddMember($workspace)) {
+            return back()->with('error', $reason);
+        }
 
         $data = $request->validate([
             'email' => 'required|email|max:160',

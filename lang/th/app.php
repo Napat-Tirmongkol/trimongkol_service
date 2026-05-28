@@ -115,6 +115,14 @@ return [
             'delete_hint' => 'การลบจะลบทุกสิ่งใน workspace — ห้องเรียน นักเรียน การบ้าน และ membership ทั้งหมด ทำเฉพาะกรณีต้อง moderation เท่านั้น',
             'delete_confirm' => 'ลบ workspace :name แบบถาวร? ข้อมูลทั้งหมดจะหายไป',
             'deleted' => 'ลบ workspace :name แล้ว',
+
+            'plan_heading' => 'แพ็คเกจ / Subscription',
+            'plan_key' => 'แพ็คเกจ',
+            'plan_status' => 'สถานะ',
+            'plan_trial_days' => 'ระยะ trial (วัน)',
+            'plan_trial_days_hint' => 'ใช้เฉพาะเมื่อ status = trial — ที่อื่นจะถูก ignore',
+            'plan_save' => 'บันทึก subscription',
+            'plan_updated' => 'อัปเดตแพ็คเกจ workspace เรียบร้อย',
         ],
 
         'system' => [
@@ -439,6 +447,27 @@ return [
         'print_qr_button' => 'พิมพ์ QR',
         'print_qr_heading' => 'พิมพ์ QR เฉพาะคนนี้',
         'print_qr_intro' => 'หน้านี้พร้อมพิมพ์ — กดปุ่มพิมพ์มุมขวาบน เหมาะกับกรณีรหัสหาย ต้องการปริ้นใหม่เฉพาะคน',
+    ],
+
+    'plans' => [
+        'nav' => 'แพ็คเกจ',
+        'heading' => 'แพ็คเกจการใช้งาน',
+        'subtitle' => 'ดูเปรียบเทียบและจัดการแพ็คเกจของ workspace ":workspace"',
+        'current_plan' => 'แพ็คเกจปัจจุบัน',
+        'current_plan_label' => 'แพ็คเกจปัจจุบัน',
+        'month' => 'เดือน',
+        'forever' => 'ตลอดไป',
+        'upgrade_cta' => 'ติดต่อขออัปเกรด',
+        'contact_to_downgrade' => 'อยากลด แพ็คเกจ? ติดต่อทีมสนับสนุน',
+        'contact_note' => 'ราคาแสดงเป็นบาท/เดือน · การชำระเงินผ่านการติดต่อทีมงานในระยะแรก ระบบจ่ายเงินอัตโนมัติจะเปิดในเฟสถัดไป',
+        'view_all_plans' => 'ดูแพ็คเกจทั้งหมด',
+        'trial_remaining' => 'ทดลองใช้ :days วัน',
+        'trial_status' => 'อยู่ในช่วงทดลอง :plan เหลือ :days วัน — หลังจบจะลดเป็น Free อัตโนมัติ',
+        'trial_banner' => 'ทดลอง :plan ฟรี เหลืออีก :days วัน',
+        'banner_cta' => 'อัปเกรดเลย',
+        'limit_classrooms' => 'แพ็คเกจ ":plan" จำกัดที่ :limit ห้องเรียน — อัปเกรดเพื่อสร้างเพิ่ม',
+        'limit_members' => 'แพ็คเกจ ":plan" จำกัดที่ :limit สมาชิก — อัปเกรดเพื่อเพิ่มทีม',
+        'limit_students' => 'แพ็คเกจ ":plan" จำกัดที่ :limit นักเรียนต่อห้อง — อัปเกรดเพื่อเพิ่ม',
     ],
 
     'workspaces' => [

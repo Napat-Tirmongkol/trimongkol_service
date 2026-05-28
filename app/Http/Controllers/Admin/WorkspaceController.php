@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ class WorkspaceController extends Controller
     public function show(Workspace $workspace)
     {
         $workspace->loadCount(['members', 'classrooms']);
+        $workspace->load('subscription');
         $memberships = $workspace->memberships()
             ->with('user:id,name,email,is_admin,is_active')
             ->orderByRaw("CASE role WHEN 'owner' THEN 1 WHEN 'admin' THEN 2 ELSE 3 END")
@@ -47,8 +50,37 @@ class WorkspaceController extends Controller
             ->where('expires_at', '>', now())
             ->orderByDesc('created_at')
             ->get();
+        $plans = Plan::all();
 
-        return view('admin.workspaces.show', compact('workspace', 'memberships', 'classrooms', 'pendingInvitations'));
+        return view('admin.workspaces.show', compact('workspace', 'memberships', 'classrooms', 'pendingInvitations', 'plans'));
+    }
+
+    public function updatePlan(Request $request, Workspace $workspace)
+    {
+        $data = $request->validate([
+            'plan_key' => 'required|in:' . implode(',', array_keys(Plan::all())),
+            'status' => 'required|in:trial,active',
+            'trial_days' => 'nullable|integer|min:1|max:365',
+        ]);
+
+        $payload = [
+            'plan_key' => $data['plan_key'],
+            'status' => $data['status'],
+            'trial_ends_at' => $data['status'] === 'trial'
+                ? now()->addDays($data['trial_days'] ?? 14)
+                : null,
+        ];
+
+        $sub = $workspace->subscription;
+        if ($sub) {
+            $sub->update($payload);
+        } else {
+            Subscription::create([...$payload, 'workspace_id' => $workspace->id]);
+        }
+
+        AuditLog::record('workspace.update_plan', $workspace, $workspace->name, $data);
+
+        return back()->with('status', __('app.admin.workspaces.plan_updated'));
     }
 
     public function destroy(Workspace $workspace)

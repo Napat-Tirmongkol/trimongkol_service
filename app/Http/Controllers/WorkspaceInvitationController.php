@@ -6,6 +6,7 @@ use App\Models\WorkspaceInvitation;
 use App\Models\WorkspaceMember;
 use App\Services\AuditLog;
 use App\Services\CurrentWorkspace;
+use App\Services\PlanGate;
 use Illuminate\Http\Request;
 
 class WorkspaceInvitationController extends Controller
@@ -68,6 +69,10 @@ class WorkspaceInvitationController extends Controller
             ]);
 
             return redirect()->route('dashboard');
+        }
+
+        if ($reason = PlanGate::reasonCannotAddMember($invitation->workspace)) {
+            return back()->with('error', $reason);
         }
 
         WorkspaceMember::create([

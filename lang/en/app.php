@@ -115,6 +115,14 @@ return [
             'delete_hint' => 'Deletes everything inside the workspace — classrooms, students, assignments, and all memberships. Use only for moderation.',
             'delete_confirm' => 'Permanently delete workspace :name? All data will be lost.',
             'deleted' => 'Workspace :name deleted.',
+
+            'plan_heading' => 'Plan / Subscription',
+            'plan_key' => 'Plan',
+            'plan_status' => 'Status',
+            'plan_trial_days' => 'Trial length (days)',
+            'plan_trial_days_hint' => 'Used only when status = trial — ignored otherwise.',
+            'plan_save' => 'Save subscription',
+            'plan_updated' => 'Subscription updated.',
         ],
 
         'system' => [
@@ -439,6 +447,27 @@ return [
         'print_qr_button' => 'Print QR',
         'print_qr_heading' => 'Print QR for this student',
         'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
+    ],
+
+    'plans' => [
+        'nav' => 'Plans',
+        'heading' => 'Subscription plans',
+        'subtitle' => 'Compare plans and manage subscription for workspace ":workspace"',
+        'current_plan' => 'Current plan',
+        'current_plan_label' => 'Current plan',
+        'month' => 'mo',
+        'forever' => 'forever',
+        'upgrade_cta' => 'Contact us to upgrade',
+        'contact_to_downgrade' => 'Want to downgrade? Contact support.',
+        'contact_note' => 'Prices in THB per month. Payments are handled by contacting our team during this phase — self-serve billing will arrive in a follow-up release.',
+        'view_all_plans' => 'View all plans',
+        'trial_remaining' => 'Trial · :days days left',
+        'trial_status' => 'You are on a :plan trial with :days days left — will downgrade to Free automatically when it ends.',
+        'trial_banner' => 'Trial :plan · :days days left',
+        'banner_cta' => 'Upgrade',
+        'limit_classrooms' => 'The ":plan" plan is limited to :limit classrooms — upgrade to add more.',
+        'limit_members' => 'The ":plan" plan is limited to :limit members — upgrade to grow the team.',
+        'limit_students' => 'The ":plan" plan is limited to :limit students per classroom — upgrade to add more.',
     ],
 
     'workspaces' => [

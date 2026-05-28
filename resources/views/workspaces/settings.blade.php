@@ -15,6 +15,31 @@
     <div class="py-8">
         <div class="mx-auto max-w-3xl space-y-6 px-4 sm:px-6 lg:px-8">
 
+            {{-- Plan summary --}}
+            @php
+                $sub = $workspace->subscription;
+                $plan = $workspace->currentPlan();
+            @endphp
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.plans.current_plan_label') }}</div>
+                        <div class="mt-1 flex items-baseline gap-2">
+                            <span class="text-lg font-semibold text-slate-900">{{ $plan->name }}</span>
+                            @if ($sub?->isOnTrial())
+                                <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+                                    {{ __('app.plans.trial_remaining', ['days' => $sub->trialDaysLeft()]) }}
+                                </span>
+                            @endif
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">{{ $plan->tagline }}</p>
+                    </div>
+                    <a href="{{ route('plans.index') }}" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        {{ __('app.plans.view_all_plans') }}
+                    </a>
+                </div>
+            </div>
+
             {{-- Rename --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 class="text-sm font-semibold text-slate-900">{{ __('app.workspaces.section_general') }}</h3>

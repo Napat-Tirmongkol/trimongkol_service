@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\LoginAttempt;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMember;
@@ -113,6 +114,13 @@ class AppServiceProvider extends ServiceProvider
                 'user_id' => $event->user->id,
                 'role' => 'owner',
                 'joined_at' => now(),
+            ]);
+
+            Subscription::create([
+                'workspace_id' => $workspace->id,
+                'plan_key' => 'basic',
+                'status' => Subscription::STATUS_TRIAL,
+                'trial_ends_at' => now()->addDays(14),
             ]);
         });
     }

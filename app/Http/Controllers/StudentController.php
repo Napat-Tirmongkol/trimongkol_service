@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Classroom;
 use App\Models\Student;
 use App\Services\Gradebook;
+use App\Services\PlanGate;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -29,6 +30,11 @@ class StudentController extends Controller
     public function store(Request $request, Classroom $classroom)
     {
         $this->ensureAccess($classroom);
+
+        if ($reason = PlanGate::reasonCannotAddStudent($classroom)) {
+            return redirect()->route('plans.index')
+                ->with('error', $reason);
+        }
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -92,6 +98,15 @@ class StudentController extends Controller
         $data = $request->validate([
             'roster' => 'required|string|max:50000',
         ]);
+
+        // Pre-flight: peek at the roster size and refuse the whole batch
+        // when it would push past the plan limit, rather than importing
+        // a partial set.
+        $lineCount = count(array_filter(preg_split('/\R/', $data['roster']), fn ($l) => trim($l) !== ''));
+        if ($reason = PlanGate::reasonCannotAddStudent($classroom, $lineCount)) {
+            return redirect()->route('plans.index')
+                ->with('error', $reason);
+        }
 
         $created = 0;
         $skipped = 0;

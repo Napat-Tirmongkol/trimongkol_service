@@ -4,6 +4,32 @@
 
 ---
 
+## 💳 Subscription & Plan Foundation (Phase 4)
+
+**Phase 4 ของ business model C** — โครงสร้าง subscription แบบ per-workspace
+
+- ตาราง `subscriptions` (per workspace, 1:1)
+- 3 plans ใน `config/plans.php`: **Free** (฿0) / **Basic** (฿199/เดือน) / **Pro** (฿499/เดือน)
+- Limits:
+  - **Free**: 3 ห้องเรียน, 1 สมาชิก, 50 นักเรียน/ห้อง
+  - **Basic**: 20 ห้องเรียน, 5 สมาชิก, 200 นักเรียน/ห้อง
+  - **Pro**: ไม่จำกัด
+- **14-day Basic Trial** ทุก workspace ใหม่ → ถ้าหมด trial → effective plan = Free อัตโนมัติ (lazy check, ไม่ต้องรอ scheduler)
+- Backfill migration: workspace ที่มีอยู่ → Free / active
+- `App\Services\PlanGate` — return reason string ถ้าทำไม่ได้ (กดสร้างห้อง/เชิญสมาชิก/เพิ่มนักเรียนเกิน limit → redirect ไป `/plans` พร้อม toast แดง)
+- หน้า `/plans` แสดง 3 plans เปรียบเทียบ + ปุ่ม "ติดต่อขออัปเกรด" (ไปหน้า `/contact` — บันทึกเป็นข้อความติดต่อ → admin เห็นใน `/admin/leads`)
+- Trial banner แสดงทุกหน้า (สีเหลือง) เมื่ออยู่ใน trial
+- Workspace settings แสดง plan ปัจจุบัน + trial days left
+- Admin `/admin/workspaces/{id}` มี section "Plan / Subscription" — admin set plan ของ workspace ใดก็ได้ด้วยมือ (audit log `workspace.update_plan`)
+
+**ยังไม่ทำใน Phase 4 (เก็บไว้ Phase 5):**
+- Self-serve checkout
+- Payment gateway integration (PromptPay / Omise / Stripe)
+- Auto-billing / renewal
+- Pro-rated upgrades / downgrades
+
+---
+
 ## 🏢 Workspaces — Multi-Tenant Phase 3c (transfer + email invite + admin)
 
 **Phase 3c — completing Phase 3:**

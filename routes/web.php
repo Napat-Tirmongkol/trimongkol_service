@@ -13,6 +13,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PlansController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
@@ -52,6 +53,8 @@ Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
+
+    Route::get('/plans', [PlansController::class, 'index'])->name('plans.index');
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -112,6 +115,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
         Route::get('/workspaces/{workspace}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
+        Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
         Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
 
         Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');

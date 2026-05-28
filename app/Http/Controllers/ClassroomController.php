@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Services\CurrentWorkspace;
+use App\Services\PlanGate;
 use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
@@ -33,6 +34,11 @@ class ClassroomController extends Controller
     {
         $workspace = CurrentWorkspace::get();
         abort_unless($workspace, 422, __('app.workspaces.no_workspace'));
+
+        if ($reason = PlanGate::reasonCannotAddClassroom($workspace)) {
+            return redirect()->route('plans.index')
+                ->with('error', $reason);
+        }
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
