@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ContactController;
@@ -36,9 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('classrooms/{classroom}/assignments/{assignment}/scan', [AssignmentController::class, 'scan'])
         ->name('classrooms.assignments.scan');
 
-    Route::middleware('admin')->group(function () {
-        Route::get('admin/site', [SiteSettingsController::class, 'edit'])->name('admin.site-settings.edit');
-        Route::patch('admin/site', [SiteSettingsController::class, 'update'])->name('admin.site-settings.update');
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/users', [AdminController::class, 'users'])->name('users');
+        Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
+        Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
+        Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
     });
 });
 
