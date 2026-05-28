@@ -81,6 +81,16 @@ return [
         'send_password_reset' => 'ส่งลิงก์ตั้งรหัสใหม่',
         'password_reset_sent' => 'ส่งลิงก์ตั้งรหัสใหม่ไปที่ :email แล้ว',
         'confirm_password_reset' => 'ส่งอีเมลตั้งรหัสใหม่ไปที่ :email?',
+
+        'stat_suspended' => 'บัญชีถูกระงับ',
+        'stat_new_week' => 'สมัครใหม่ 7 วัน',
+        'stat_new_month_hint' => '30 วัน: +:n คน',
+        'stat_active_30d' => 'Active 30 วัน',
+        'stat_active_hint' => 'ล็อกอินภายใน 30 วันล่าสุด',
+        'stat_submissions_today' => 'ส่งงานวันนี้',
+        'trend_heading' => 'สมัครใหม่ตามวัน',
+        'trend_subtitle' => '30 วันย้อนหลัง',
+        'top_users' => 'ครูที่มีห้องเยอะสุด',
     ],
 
     'cms' => [

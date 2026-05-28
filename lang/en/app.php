@@ -81,6 +81,16 @@ return [
         'send_password_reset' => 'Send password reset',
         'password_reset_sent' => 'Password reset link sent to :email.',
         'confirm_password_reset' => 'Send a password reset email to :email?',
+
+        'stat_suspended' => 'Suspended',
+        'stat_new_week' => 'New (7 days)',
+        'stat_new_month_hint' => '30 days: +:n',
+        'stat_active_30d' => 'Active (30d)',
+        'stat_active_hint' => 'Logged in within 30 days',
+        'stat_submissions_today' => 'Submissions today',
+        'trend_heading' => 'Daily signups',
+        'trend_subtitle' => 'Last 30 days',
+        'top_users' => 'Top teachers by classrooms',
     ],
 
     'cms' => [
