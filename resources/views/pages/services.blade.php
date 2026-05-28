@@ -3,33 +3,53 @@
 @section('title', __('site.services.heading') . ' — ' . __('site.brand.name'))
 
 @section('content')
-    <section class="relative overflow-hidden border-b border-slate-200 bg-slate-50">
-        <div class="bg-grid absolute inset-0 opacity-30" aria-hidden="true"></div>
-        <div class="relative mx-auto max-w-4xl px-6 py-20 text-center md:py-24">
-            <h1 class="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{{ __('site.services.heading') }}</h1>
-            <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-600">{{ __('site.services.subheading') }}</p>
-        </div>
-    </section>
+    @include('partials.hero', [
+        'image' => config('site.hero_images.services'),
+        'eyebrow' => __('site.nav.services'),
+        'title' => __('site.services.heading'),
+        'subtitle' => __('site.services.subheading'),
+        'minHeight' => 'min-h-[60vh]',
+    ])
 
-    <section class="py-20">
-        <div class="mx-auto max-w-7xl px-6">
-            <div class="grid gap-8 md:grid-cols-2">
+    {{-- Floating services card --}}
+    <section class="relative z-20 mx-auto -mt-24 max-w-7xl px-4 sm:px-6">
+        <div class="rounded-3xl bg-white p-6 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200/50 sm:p-10 md:p-12">
+            {{-- Pill tags row --}}
+            <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-6">
+                <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ __('site.home.servicesHeading') }}</span>
+                <span class="text-slate-300">·</span>
+                @foreach (__('site.services.items') as $service)
+                    <span class="rounded-full bg-brand-50 px-3.5 py-1 text-xs font-medium text-brand-700">
+                        {{ $service['title'] }}
+                    </span>
+                @endforeach
+            </div>
+
+            {{-- Service list --}}
+            <ul class="mt-2 divide-y divide-slate-100">
                 @foreach (__('site.services.items') as $i => $service)
-                    <div class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 transition hover:border-brand-300 hover:shadow-xl hover:shadow-brand-100/40">
-                        <div class="absolute right-0 top-0 -mt-12 -mr-12 h-32 w-32 rounded-full bg-brand-100 opacity-0 transition group-hover:opacity-60" aria-hidden="true"></div>
-                        <div class="relative">
-                            <div class="flex items-center gap-3">
-                                <span class="grid h-10 w-10 place-items-center rounded-lg bg-brand-600 font-bold text-white">
+                    <li x-data="{ open: false }" class="group">
+                        <button type="button" @click="open = !open"
+                                class="flex w-full items-center justify-between gap-4 py-5 text-left">
+                            <div class="flex min-w-0 items-center gap-4">
+                                <span class="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white shadow-md shadow-brand-500/20">
                                     {{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}
                                 </span>
-                                <h2 class="text-xl font-semibold text-slate-900">{{ $service['title'] }}</h2>
+                                <span class="truncate text-lg font-semibold text-slate-900 md:text-xl">{{ $service['title'] }}</span>
                             </div>
-                            <p class="mt-4 text-sm leading-relaxed text-slate-600">{{ $service['description'] }}</p>
-                            <ul class="mt-6 grid gap-2 sm:grid-cols-2">
+                            <span :class="open ? 'rotate-45 bg-brand-600 text-white' : 'bg-slate-100 text-slate-700'"
+                                  class="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full transition">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                            </span>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="pl-14 pb-6">
+                            <p class="text-sm leading-relaxed text-slate-600 md:text-base">{{ $service['description'] }}</p>
+                            <ul class="mt-4 grid gap-2 sm:grid-cols-2">
                                 @foreach ($service['features'] as $feature)
                                     <li class="flex items-start gap-2 text-sm text-slate-700">
-                                        <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none"
-                                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="20 6 9 17 4 12"/>
                                         </svg>
                                         {{ $feature }}
@@ -37,38 +57,43 @@
                                 @endforeach
                             </ul>
                         </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <section class="border-y border-slate-200 bg-slate-50 py-20">
-        <div class="mx-auto max-w-5xl px-6">
-            <h2 class="text-center text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.services.includedHeading') }}</h2>
-            <ul class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach (__('site.services.included') as $item)
-                    <li class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
-                        <span class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-700">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </span>
-                        <span class="text-sm text-slate-700">{{ $item }}</span>
                     </li>
                 @endforeach
             </ul>
         </div>
     </section>
 
-    <section class="py-20">
-        <div class="mx-auto max-w-3xl px-6 text-center">
-            <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.home.ctaHeading') }}</h2>
-            <p class="mt-4 text-lg text-slate-600">{{ __('site.home.ctaSubheading') }}</p>
-            <a href="{{ route('contact') }}" class="mt-8 inline-block rounded-md bg-brand-600 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700">
-                {{ __('site.home.ctaButton') }}
-            </a>
+    {{-- Included card --}}
+    <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6 md:mt-24">
+        <div class="rounded-3xl bg-slate-900 p-8 text-white shadow-xl md:p-12">
+            <div class="mx-auto max-w-2xl text-center">
+                <h2 class="text-3xl font-bold tracking-tight md:text-4xl">{{ __('site.services.includedHeading') }}</h2>
+            </div>
+            <ul class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach (__('site.services.included') as $item)
+                    <li class="flex items-start gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                        <span class="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-brand-500 text-white">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </span>
+                        <span class="text-sm">{{ $item }}</span>
+                    </li>
+                @endforeach
+            </ul>
         </div>
+    </section>
+
+    {{-- CTA --}}
+    <section class="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 md:py-28">
+        <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">{{ __('site.home.ctaHeading') }}</h2>
+        <p class="mt-4 text-base text-slate-600 md:text-lg">{{ __('site.home.ctaSubheading') }}</p>
+        <a href="{{ route('contact') }}"
+           class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-slate-800">
+            {{ __('site.home.ctaButton') }}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+        </a>
     </section>
 @endsection
