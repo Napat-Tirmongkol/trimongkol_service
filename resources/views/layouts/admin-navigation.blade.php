@@ -2,6 +2,8 @@
     $tabs = [
         ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard'],
         ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*'],
+        ['route' => 'admin.classrooms', 'label' => __('app.admin.tab_classrooms'), 'pattern' => 'admin.classrooms*'],
+        ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs'],
         ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],
     ];
 @endphp
