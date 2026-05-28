@@ -154,6 +154,9 @@ return [
         'delete' => 'Delete',
         'back' => 'Back',
         'dangerZone' => 'Danger zone',
+        'confirm' => 'Confirm',
+        'confirm_title' => 'Are you sure?',
+        'confirm_danger_title' => 'This cannot be undone',
     ],
 
     'assignments' => [

@@ -154,6 +154,9 @@ return [
         'delete' => 'ลบ',
         'back' => 'กลับ',
         'dangerZone' => 'พื้นที่อันตราย',
+        'confirm' => 'ยืนยัน',
+        'confirm_title' => 'ยืนยันการดำเนินการ',
+        'confirm_danger_title' => 'ดำเนินการนี้กู้คืนไม่ได้',
     ],
 
     'assignments' => [

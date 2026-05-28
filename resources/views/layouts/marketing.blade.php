@@ -24,6 +24,7 @@
 
     @include('partials.marketing-footer')
 
+    @include('partials.sweetalert')
     @livewireScripts
 </body>
 </html>

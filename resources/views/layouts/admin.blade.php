@@ -29,6 +29,7 @@
         {{ $slot }}
     </main>
 
+    @include('partials.sweetalert')
     @livewireScripts
 </body>
 </html>

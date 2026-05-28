@@ -46,7 +46,6 @@
     <div class="flex items-center justify-between pt-2">
         @if ($student)
             <button form="delete-form" type="submit"
-                    onclick="return confirm('{{ __('app.students.deleteConfirm') }}')"
                     class="text-sm text-rose-600 hover:text-rose-700">
                 {{ __('app.common.delete') }}
             </button>
@@ -67,7 +66,8 @@
 </form>
 
 @if ($student)
-    <form id="delete-form" method="POST" action="{{ route('classrooms.students.destroy', [$classroom, $student]) }}" class="hidden">
+    <form id="delete-form" method="POST" action="{{ route('classrooms.students.destroy', [$classroom, $student]) }}" class="hidden"
+          data-confirm="{{ __('app.students.deleteConfirm') }}" data-confirm-danger="1">
         @csrf
         @method('DELETE')
     </form>

@@ -16,7 +16,7 @@
             </div>
 
             <form method="POST" action="{{ route('classrooms.destroy', $classroom) }}"
-                  onsubmit="return confirm('{{ __('app.classrooms.deleteConfirm') }}')"
+                  data-confirm="{{ __('app.classrooms.deleteConfirm') }}" data-confirm-danger="1"
                   class="rounded-xl border border-rose-200 bg-rose-50 p-6">
                 @csrf
                 @method('DELETE')

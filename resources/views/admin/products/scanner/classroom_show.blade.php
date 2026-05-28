@@ -72,10 +72,11 @@
             <div class="rounded-xl border border-rose-200 bg-rose-50/50 p-5">
                 <h3 class="text-sm font-semibold text-rose-900">{{ __('app.admin.danger_zone') }}</h3>
                 <p class="mt-1 text-xs text-rose-700">{{ __('app.admin.classroom_delete_hint') }}</p>
-                <form method="POST" action="{{ route('admin.scanner.classrooms.destroy', $classroom) }}" class="mt-3">
+                <form method="POST" action="{{ route('admin.scanner.classrooms.destroy', $classroom) }}" class="mt-3"
+                      data-confirm="{{ __('app.admin.classroom_delete_confirm', ['name' => $classroom->name]) }}"
+                      data-confirm-danger="1">
                     @csrf @method('DELETE')
                     <button type="submit"
-                            onclick="return confirm('{{ __('app.admin.classroom_delete_confirm', ['name' => $classroom->name]) }}')"
                             class="rounded-md border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50">
                         {{ __('app.admin.classroom_delete') }}
                     </button>

@@ -129,7 +129,7 @@
                                     <td class="px-6 py-3 text-right">
                                         @if ($sub)
                                             <form method="POST" action="{{ route('classrooms.assignments.submissions.destroy', [$classroom, $assignment, $sub]) }}"
-                                                  onsubmit="return confirm('{{ __('app.scan.undo_confirm') }}')" class="inline">
+                                                  data-confirm="{{ __('app.scan.undo_confirm') }}" class="inline">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="text-xs text-rose-600 hover:text-rose-700">{{ __('app.scan.undo') }}</button>
                                             </form>

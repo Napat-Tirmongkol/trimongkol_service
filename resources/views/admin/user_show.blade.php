@@ -58,44 +58,47 @@
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.actions_heading') }}</h3>
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <form method="POST" action="{{ route('admin.users.toggle-admin', $user) }}">
+                        <form method="POST" action="{{ route('admin.users.toggle-admin', $user) }}"
+                              data-confirm="{{ $user->is_admin ? __('app.admin.confirmDemote', ['name' => $user->name]) : __('app.admin.confirmPromote', ['name' => $user->name]) }}"
+                              @if ($user->is_admin) data-confirm-danger="1" @endif>
                             @csrf
                             <button type="submit"
-                                    onclick="return confirm('{{ $user->is_admin ? __('app.admin.confirmDemote', ['name' => $user->name]) : __('app.admin.confirmPromote', ['name' => $user->name]) }}')"
                                     class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium {{ $user->is_admin ? 'text-rose-700 hover:bg-rose-50' : 'text-brand-700 hover:bg-brand-50' }}">
                                 {{ $user->is_admin ? __('app.admin.demote') : __('app.admin.promote') }}
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}">
+                        <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}"
+                              data-confirm="{{ $user->is_active ? __('app.admin.confirm_suspend', ['name' => $user->name]) : __('app.admin.confirm_activate', ['name' => $user->name]) }}"
+                              @if ($user->is_active) data-confirm-danger="1" @endif>
                             @csrf
                             <button type="submit"
-                                    onclick="return confirm('{{ $user->is_active ? __('app.admin.confirm_suspend', ['name' => $user->name]) : __('app.admin.confirm_activate', ['name' => $user->name]) }}')"
                                     class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium {{ $user->is_active ? 'text-amber-700 hover:bg-amber-50' : 'text-emerald-700 hover:bg-emerald-50' }}">
                                 {{ $user->is_active ? __('app.admin.suspend') : __('app.admin.activate') }}
                             </button>
                         </form>
-                        <form method="POST" action="{{ route('admin.users.password-reset', $user) }}">
+                        <form method="POST" action="{{ route('admin.users.password-reset', $user) }}"
+                              data-confirm="{{ __('app.admin.confirm_password_reset', ['email' => $user->email]) }}">
                             @csrf
                             <button type="submit"
-                                    onclick="return confirm('{{ __('app.admin.confirm_password_reset', ['email' => $user->email]) }}')"
                                     class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                                 {{ __('app.admin.send_password_reset') }}
                             </button>
                         </form>
                         @if ($user->is_active)
-                            <form method="POST" action="{{ route('admin.users.impersonate', $user) }}">
+                            <form method="POST" action="{{ route('admin.users.impersonate', $user) }}"
+                                  data-confirm="{{ __('app.admin.confirm_impersonate', ['name' => $user->name]) }}">
                                 @csrf
                                 <button type="submit"
-                                        onclick="return confirm('{{ __('app.admin.confirm_impersonate', ['name' => $user->name]) }}')"
                                         class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                                     {{ __('app.admin.impersonate') }}
                                 </button>
                             </form>
                         @endif
-                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}">
+                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
+                              data-confirm="{{ __('app.admin.confirm_delete_user', ['name' => $user->name]) }}"
+                              data-confirm-danger="1">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                    onclick="return confirm('{{ __('app.admin.confirm_delete_user', ['name' => $user->name]) }}')"
                                     class="rounded-md border border-rose-300 bg-white px-3 py-1.5 text-sm font-medium text-rose-700 hover:bg-rose-50">
                                 {{ __('app.admin.delete_user') }}
                             </button>
