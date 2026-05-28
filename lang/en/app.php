@@ -87,6 +87,8 @@ return [
         'deleteConfirm' => 'Delete this assignment? All submission records will be lost.',
         'deleteWarning' => 'Deleting permanently removes the assignment and all submission records.',
         'deleteButton' => 'Delete assignment',
+        'field_fixed_score' => 'Score per student (e.g. 5)',
+        'field_default_score' => 'Default score (editable on scan)',
     ],
 
     'scan' => [
@@ -107,6 +109,25 @@ return [
         'camera_off_hint' => 'Tap below to enable the camera and scan QR / barcode.',
         'not_yet' => 'Not yet submitted',
         'all_done' => '🎉 Everyone has submitted!',
+        'enter_score' => 'Enter score',
+        'save_score' => 'Save score',
+        'score_invalid' => 'Score must be 0–100',
+        'undo' => 'Undo',
+        'undo_confirm' => 'Undo this submission?',
+        'undone' => 'Undid :name',
+        'mark_submitted' => 'Mark submitted',
+        'recent_submitted' => 'Recently submitted',
+    ],
+
+    'submissions' => [
+        'updated' => 'Score updated.',
+        'deleted' => 'Submission removed.',
+    ],
+
+    'export' => [
+        'button' => 'Export CSV',
+        'score' => 'Score',
+        'avg' => 'Average',
     ],
 
     'classrooms' => [
@@ -148,5 +169,16 @@ return [
         'updated' => 'Student updated.',
         'deleted' => 'Student deleted.',
         'deleteConfirm' => 'Delete this student?',
+        'bulk_button' => 'Bulk import',
+        'bulk_heading' => 'Bulk-add students',
+        'bulk_intro' => 'Paste the whole roster — one student per line. Accepts "number name", "number, name" or just "name".',
+        'bulk_field' => 'Student roster',
+        'bulk_placeholder' => "1 Anna Smith\n2 Ben Jones\n3 Chai Suwan",
+        'bulk_hint' => 'A unique barcode code is generated automatically for each student.',
+        'bulk_submit' => 'Import all',
+        'bulk_done' => 'Imported :created students (skipped :skipped).',
+        'print_button' => 'Print QR',
+        'print_heading' => 'Print student QR codes',
+        'print_intro' => 'Ready to print — :count students. Use the Print button at the top right.',
     ],
 ];

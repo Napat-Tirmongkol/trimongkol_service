@@ -10,6 +10,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SubmissionController;
 use Illuminate\Support\Facades\Route;
 
 // Marketing site
@@ -41,11 +42,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('classrooms.students', StudentController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
 
+    Route::get('classrooms/{classroom}/students/bulk', [StudentController::class, 'bulkCreate'])
+        ->name('classrooms.students.bulk');
+    Route::post('classrooms/{classroom}/students/bulk', [StudentController::class, 'bulkStore'])
+        ->name('classrooms.students.bulk.store');
+    Route::get('classrooms/{classroom}/students/print', [StudentController::class, 'print'])
+        ->name('classrooms.students.print');
+
     Route::resource('classrooms.assignments', AssignmentController::class)
         ->only(['create', 'store', 'show', 'edit', 'update', 'destroy']);
 
     Route::get('classrooms/{classroom}/assignments/{assignment}/scan', [AssignmentController::class, 'scan'])
         ->name('classrooms.assignments.scan');
+
+    Route::get('classrooms/{classroom}/assignments/{assignment}/export', [AssignmentController::class, 'export'])
+        ->name('classrooms.assignments.export');
+
+    Route::post('classrooms/{classroom}/assignments/{assignment}/submissions', [SubmissionController::class, 'store'])
+        ->name('classrooms.assignments.submissions.store');
+    Route::patch('classrooms/{classroom}/assignments/{assignment}/submissions/{submission}', [SubmissionController::class, 'update'])
+        ->name('classrooms.assignments.submissions.update');
+    Route::delete('classrooms/{classroom}/assignments/{assignment}/submissions/{submission}', [SubmissionController::class, 'destroy'])
+        ->name('classrooms.assignments.submissions.destroy');
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');

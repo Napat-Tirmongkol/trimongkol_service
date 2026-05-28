@@ -73,10 +73,23 @@
                         {{ __('app.students.heading') }}
                         <span class="ml-1 text-sm font-normal text-slate-500">({{ $classroom->students->count() }})</span>
                     </h3>
-                    <a href="{{ route('classrooms.students.create', $classroom) }}"
-                       class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                        + {{ __('app.students.add') }}
-                    </a>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if ($classroom->students->isNotEmpty())
+                            <a href="{{ route('classrooms.students.print', $classroom) }}"
+                               target="_blank"
+                               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                {{ __('app.students.print_button') }}
+                            </a>
+                        @endif
+                        <a href="{{ route('classrooms.students.bulk', $classroom) }}"
+                           class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            {{ __('app.students.bulk_button') }}
+                        </a>
+                        <a href="{{ route('classrooms.students.create', $classroom) }}"
+                           class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                            + {{ __('app.students.add') }}
+                        </a>
+                    </div>
                 </div>
 
                 @if ($classroom->students->isEmpty())
