@@ -66,6 +66,7 @@ return [
         'heading' => 'Assignments',
         'add' => 'Add Assignment',
         'empty' => 'No assignments yet — create one to start scanning submissions.',
+        'empty_short' => 'No assignments yet',
         'createHeading' => 'Create Assignment',
         'editHeading' => 'Edit Assignment',
         'field_name' => 'Name',
@@ -128,6 +129,22 @@ return [
         'button' => 'Export CSV',
         'score' => 'Score',
         'avg' => 'Average',
+    ],
+
+    'dashboard' => [
+        'greeting_label' => 'Welcome back',
+        'greeting' => 'Hi, :name 👋',
+        'subtitle' => 'Manage your classrooms, add assignments, and scan student barcodes to track submissions in seconds.',
+        'stat_classrooms' => 'Classrooms',
+        'stat_students' => 'Students',
+        'stat_assignments' => 'Assignments',
+        'your_classrooms' => 'Your classrooms',
+        'count_suffix' => 'total',
+        'latest' => 'Latest',
+        'start_here' => 'Get started',
+        'step_1' => 'Create a classroom — name + grade level',
+        'step_2' => 'Add students one by one or paste the whole roster',
+        'step_3' => 'Print QR labels, stick them on notebooks, then scan',
     ],
 
     'classrooms' => [

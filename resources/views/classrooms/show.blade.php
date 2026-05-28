@@ -1,24 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-start justify-between">
-            <div>
-                <a href="{{ route('dashboard') }}" class="text-xs text-slate-500 hover:text-slate-700">
-                    ← {{ __('app.classrooms.heading') }}
+        <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    {{ __('app.classrooms.heading') }}
                 </a>
-                <h2 class="mt-1 text-xl font-semibold leading-tight text-gray-800">
-                    {{ $classroom->name }}
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <h2 class="text-2xl font-bold leading-tight text-slate-900">{{ $classroom->name }}</h2>
                     @if ($classroom->grade_level)
-                        <span class="ml-2 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700 align-middle">
+                        <span class="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
                             {{ $classroom->grade_level }}
                         </span>
                     @endif
-                </h2>
+                </div>
                 @if ($classroom->description)
-                    <p class="mt-1 text-sm text-slate-600">{{ $classroom->description }}</p>
+                    <p class="mt-1.5 text-sm text-slate-600">{{ $classroom->description }}</p>
                 @endif
             </div>
             <a href="{{ route('classrooms.edit', $classroom) }}"
-               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+               class="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 {{ __('app.common.edit') }}
             </a>
         </div>
@@ -27,37 +30,100 @@
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             @if (session('status'))
-                <div class="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                    {{ session('status') }}
+                <div class="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                     x-data="{ show: true }" x-show="show" x-transition>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mt-0.5 shrink-0 text-emerald-600">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <div class="flex-1">{{ session('status') }}</div>
+                    <button @click="show = false" class="text-emerald-500 hover:text-emerald-700">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
                 </div>
             @endif
 
-            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            {{-- Quick stats --}}
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
+                            <div class="text-2xl font-bold tabular-nums text-slate-900">{{ $classroom->students->count() }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-600">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
+                            <div class="text-2xl font-bold tabular-nums text-slate-900">{{ $classroom->assignments->count() }}</div>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('classrooms.assignments.create', $classroom) }}"
+                   class="group flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20 transition hover:from-brand-700 hover:to-brand-900">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-brand-200">{{ __('app.assignments.add') }}</div>
+                        <div class="mt-1 text-lg font-bold">{{ __('app.assignments.createHeading') }} →</div>
+                    </div>
+                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/10 ring-1 ring-white/20">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+
+            {{-- Assignments section --}}
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
                     <h3 class="text-base font-semibold text-slate-900">
                         {{ __('app.assignments.heading') }}
                         <span class="ml-1 text-sm font-normal text-slate-500">({{ $classroom->assignments->count() }})</span>
                     </h3>
-                    <a href="{{ route('classrooms.assignments.create', $classroom) }}"
-                       class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
-                        + {{ __('app.assignments.add') }}
-                    </a>
                 </div>
                 @if ($classroom->assignments->isEmpty())
-                    <div class="px-6 py-8 text-center text-sm text-slate-600">{{ __('app.assignments.empty') }}</div>
+                    <div class="px-6 py-12 text-center">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-slate-300">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p class="mt-3 text-sm text-slate-600">{{ __('app.assignments.empty') }}</p>
+                    </div>
                 @else
                     <ul class="divide-y divide-slate-100">
                         @foreach ($classroom->assignments as $assignment)
                             <li>
                                 <a href="{{ route('classrooms.assignments.show', [$classroom, $assignment]) }}"
-                                   class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
-                                    <div>
-                                        <div class="text-sm font-medium text-slate-900">{{ $assignment->name }}</div>
-                                        @if ($assignment->due_date)
-                                            <div class="text-xs text-slate-500">{{ __('app.assignments.due') }}: {{ $assignment->due_date->format('d M Y') }}</div>
-                                        @endif
+                                   class="flex items-center justify-between gap-3 px-6 py-3.5 hover:bg-slate-50">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-600">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                            </svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm font-medium text-slate-900">{{ $assignment->name }}</div>
+                                            <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                                                <span class="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
+                                                    {{ __("app.assignments.mode_{$assignment->scoring_mode}_title") }}
+                                                </span>
+                                                @if ($assignment->due_date)
+                                                    <span>· {{ __('app.assignments.due') }} {{ $assignment->due_date->format('d M Y') }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
-                                    <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg class="h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </a>
@@ -67,8 +133,9 @@
                 @endif
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            {{-- Students section --}}
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-6 py-4">
                     <h3 class="text-base font-semibold text-slate-900">
                         {{ __('app.students.heading') }}
                         <span class="ml-1 text-sm font-normal text-slate-500">({{ $classroom->students->count() }})</span>
@@ -77,12 +144,18 @@
                         @if ($classroom->students->isNotEmpty())
                             <a href="{{ route('classrooms.students.print', $classroom) }}"
                                target="_blank"
-                               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                               class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
                                 {{ __('app.students.print_button') }}
                             </a>
                         @endif
                         <a href="{{ route('classrooms.students.bulk', $classroom) }}"
-                           class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                           class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
                             {{ __('app.students.bulk_button') }}
                         </a>
                         <a href="{{ route('classrooms.students.create', $classroom) }}"
@@ -94,7 +167,20 @@
 
                 @if ($classroom->students->isEmpty())
                     <div class="px-6 py-12 text-center">
-                        <p class="text-sm text-slate-600">{{ __('app.students.empty') }}</p>
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-slate-300">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <p class="mt-3 text-sm text-slate-600">{{ __('app.students.empty') }}</p>
+                        <div class="mt-4 flex flex-wrap justify-center gap-2">
+                            <a href="{{ route('classrooms.students.bulk', $classroom) }}"
+                               class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                                {{ __('app.students.bulk_button') }}
+                            </a>
+                            <a href="{{ route('classrooms.students.create', $classroom) }}"
+                               class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                                + {{ __('app.students.add') }}
+                            </a>
+                        </div>
                     </div>
                 @else
                     <div class="overflow-x-auto">
@@ -109,13 +195,13 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100 bg-white">
                                 @foreach ($classroom->students as $student)
-                                    <tr class="text-sm">
-                                        <td class="px-6 py-3 text-slate-600">{{ $student->number ?: '—' }}</td>
+                                    <tr class="text-sm hover:bg-slate-50/50">
+                                        <td class="px-6 py-3 tabular-nums text-slate-600">{{ $student->number ?: '—' }}</td>
                                         <td class="px-6 py-3 font-medium text-slate-900">{{ $student->name }}</td>
-                                        <td class="px-6 py-3 font-mono text-xs text-slate-600">{{ $student->code }}</td>
+                                        <td class="px-6 py-3"><span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">{{ $student->code }}</span></td>
                                         <td class="px-6 py-3 text-right">
                                             <a href="{{ route('classrooms.students.edit', [$classroom, $student]) }}"
-                                               class="text-brand-700 hover:text-brand-800">{{ __('app.common.edit') }}</a>
+                                               class="text-sm font-medium text-brand-700 hover:text-brand-800">{{ __('app.common.edit') }}</a>
                                         </td>
                                     </tr>
                                 @endforeach
