@@ -218,4 +218,36 @@ class ScannerTest extends TestCase
             ->get(route('classrooms.assignments.scan', [$classroom, $assignment]))
             ->assertForbidden();
     }
+
+    public function test_make_admin_command_grants_and_revokes(): void
+    {
+        $u = User::factory()->create(['email' => 'foo@bar.com']);
+        $this->assertFalse((bool) $u->is_admin);
+
+        $this->artisan('app:make-admin', ['email' => 'foo@bar.com'])->assertExitCode(0);
+        $this->assertTrue((bool) $u->fresh()->is_admin);
+
+        $this->artisan('app:make-admin', ['email' => 'foo@bar.com', '--demote' => true])->assertExitCode(0);
+        $this->assertFalse((bool) $u->fresh()->is_admin);
+    }
+
+    public function test_make_admin_command_fails_on_unknown_email(): void
+    {
+        $this->artisan('app:make-admin', ['email' => 'nobody@nowhere.com'])->assertExitCode(1);
+    }
+
+    public function test_toggle_admin_actually_persists(): void
+    {
+        $admin = User::factory()->create();
+        $admin->is_admin = true;
+        $admin->save();
+
+        $target = User::factory()->create();
+
+        $this->actingAs($admin)
+            ->post(route('admin.users.toggle-admin', $target))
+            ->assertRedirect();
+
+        $this->assertTrue((bool) $target->fresh()->is_admin, 'toggleAdmin must persist past Fillable attribute');
+    }
 }
