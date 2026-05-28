@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py*)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/core.py*)",
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/design_system.py*)"
+    ]
+  }
+}
