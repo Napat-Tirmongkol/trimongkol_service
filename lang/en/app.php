@@ -570,6 +570,16 @@ return [
     ],
 
     'auth' => [
+        'unified_heading' => 'Log in or create account',
+        'unified_subtitle' => 'Enter your email to get started — we’ll sign you in if you have an account, otherwise we’ll set one up.',
+        'continue' => 'Continue',
+        'welcome_back' => 'Welcome back',
+        'create_account_heading' => 'Create your account',
+        'signin_with_email' => 'Signing in as :email',
+        'signup_with_email' => 'Creating an account for :email',
+        'change_email' => 'change',
+        'password_hint' => 'At least 8 characters. You can reset it later if you forget.',
+
         'login_heading' => 'Log in to your account',
         'register_heading' => 'Create your account',
         'register_subtitle' => 'Enter the details below to get started — 14 days free.',

@@ -9,18 +9,19 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\UnifiedAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    // Unified "log in or create account" front door — asks for email
+    // first, then branches based on whether the account exists.
+    Route::get('login', [UnifiedAuthController::class, 'show'])->name('login');
+    Route::get('register', [UnifiedAuthController::class, 'show'])->name('register');
+    Route::post('auth/identify', [UnifiedAuthController::class, 'identify'])->name('auth.identify');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
-
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-
+    // Submission endpoints (POST) for the two final-step forms.
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
