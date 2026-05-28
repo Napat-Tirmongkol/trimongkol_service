@@ -103,6 +103,16 @@ return [
         'logs_meta' => 'รายละเอียด',
         'logs_empty' => 'ยังไม่มี log',
         'logs_deleted_admin' => '(admin ถูกลบแล้ว)',
+
+        'classrooms_heading' => 'ห้องเรียนทั้งหมดในระบบ',
+        'classrooms_search' => 'ค้นหาชื่อห้อง / รายละเอียด / อีเมลเจ้าของ',
+        'classrooms_empty' => 'ไม่พบห้องเรียน',
+        'classroom_owner' => 'เจ้าของ',
+        'classroom_deleted' => 'ลบห้องเรียน :name แล้ว',
+        'classroom_delete' => 'ลบห้องเรียนนี้',
+        'classroom_delete_hint' => 'การลบจะลบนักเรียน การบ้าน และการส่งทั้งหมดของห้องนี้ — กู้คืนไม่ได้',
+        'classroom_delete_confirm' => 'ลบห้อง :name? ข้อมูลทุกอย่างในห้องจะหายถาวร',
+        'danger_zone' => 'Danger Zone',
     ],
 
     'cms' => [

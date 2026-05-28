@@ -79,6 +79,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
+        Route::get('/classrooms', [AdminController::class, 'classrooms'])->name('classrooms');
+        Route::get('/classrooms/{classroom}', [AdminController::class, 'showClassroom'])->name('classrooms.show');
+        Route::delete('/classrooms/{classroom}', [AdminController::class, 'destroyClassroom'])->name('classrooms.destroy');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
         Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');

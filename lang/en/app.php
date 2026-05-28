@@ -103,6 +103,16 @@ return [
         'logs_meta' => 'Metadata',
         'logs_empty' => 'No logs yet',
         'logs_deleted_admin' => '(deleted admin)',
+
+        'classrooms_heading' => 'All classrooms in the system',
+        'classrooms_search' => 'Search by name, description, or owner email',
+        'classrooms_empty' => 'No classrooms found.',
+        'classroom_owner' => 'Owner',
+        'classroom_deleted' => 'Classroom :name deleted.',
+        'classroom_delete' => 'Delete classroom',
+        'classroom_delete_hint' => 'Deletes all students, assignments, and submissions in this classroom — irreversible.',
+        'classroom_delete_confirm' => 'Delete classroom :name? Everything inside will be permanently lost.',
+        'danger_zone' => 'Danger zone',
     ],
 
     'cms' => [
