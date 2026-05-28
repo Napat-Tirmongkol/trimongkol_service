@@ -15,11 +15,12 @@
             @endif
 
             {{-- Primary totals --}}
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 @php
                     $cards = [
                         ['k' => __('app.admin.stat_users'), 'v' => $stats['users'], 'tone' => 'slate'],
                         ['k' => __('app.admin.stat_admins'), 'v' => $stats['admins'], 'tone' => 'brand'],
+                        ['k' => __('app.admin.stat_workspaces'), 'v' => $stats['workspaces'], 'tone' => 'slate'],
                         ['k' => __('app.admin.stat_classrooms'), 'v' => $stats['classrooms'], 'tone' => 'slate'],
                         ['k' => __('app.admin.stat_submissions'), 'v' => $stats['submissions'], 'tone' => 'slate'],
                     ];

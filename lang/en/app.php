@@ -97,7 +97,25 @@ return [
         'tab_leads' => 'Leads',
         'tab_security' => 'Security',
         'tab_system' => 'System',
+        'tab_workspaces' => 'Workspaces',
+        'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
+
+        'workspaces' => [
+            'heading' => 'All workspaces in the system',
+            'search' => 'Search by name / slug / member email',
+            'empty' => 'No workspaces found.',
+            'col_name' => 'Name',
+            'col_owner' => 'Owner',
+            'col_members' => 'Members',
+            'col_classrooms' => 'Classrooms',
+            'created_by' => 'Created by',
+            'user_workspaces' => 'Workspaces',
+            'delete' => 'Delete workspace permanently',
+            'delete_hint' => 'Deletes everything inside the workspace — classrooms, students, assignments, and all memberships. Use only for moderation.',
+            'delete_confirm' => 'Permanently delete workspace :name? All data will be lost.',
+            'deleted' => 'Workspace :name deleted.',
+        ],
 
         'system' => [
             'heading' => 'System — run migrations / clear cache',

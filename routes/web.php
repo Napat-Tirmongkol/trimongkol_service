@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
+use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
@@ -108,6 +109,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
+
+        Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
+        Route::get('/workspaces/{workspace}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
+        Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
 
         Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
         Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');

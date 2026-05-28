@@ -4,6 +4,16 @@
 
 ---
 
+## 🏢 Workspaces — Multi-Tenant Phase 3c (transfer + email invite + admin)
+
+**Phase 3c — completing Phase 3:**
+- **Transfer ownership**: owner เลือกสมาชิกแล้วโอน ownership ให้ ตัวเองลดลงเป็น admin (ใส่ password ยืนยัน)
+- **Email invitations**: invite อีเมลที่ยังไม่มี user ในระบบ → สร้าง `workspace_invitations` token + ส่ง email อัตโนมัติ (ถ้า mailer ตั้งไว้ใน .env) หรือคัดลอกลิงก์ส่งเอง — token หมดอายุ 7 วัน
+- Accept flow รองรับทั้ง guest (ไป login/register แล้วกลับมา auto) และ logged-in user
+- **Admin Platform Workspaces view** ใน `/admin/workspaces` — list + detail (members, classrooms, pending invites) + delete (admin moderation)
+- เพิ่ม Workspaces badge ใน admin user detail แสดงว่า user เป็นสมาชิก workspace ไหนบ้าง + role
+- เพิ่ม "Workspaces" stat ใน admin platform dashboard
+
 ## 🏢 Workspaces — Multi-Tenant Foundation (Phase 3a + 3b)
 
 **Phase 3 ของ business model C** — โครงสร้าง Workspace ใหม่เพื่อรองรับ SaaS

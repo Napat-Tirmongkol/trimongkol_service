@@ -111,6 +111,31 @@
                 </div>
             @endif
 
+            {{-- Workspaces --}}
+            @if ($workspaces->isNotEmpty())
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-200 px-6 py-3">
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.workspaces.user_workspaces') }} ({{ $workspaces->count() }})</h3>
+                    </div>
+                    <ul class="divide-y divide-slate-100">
+                        @foreach ($workspaces as $w)
+                            <li class="flex items-center justify-between px-6 py-3">
+                                <a href="{{ route('admin.workspaces.show', $w) }}" class="text-sm font-medium text-slate-900 hover:text-brand-700">{{ $w->name }}</a>
+                                <span class="text-xs text-slate-500">
+                                    @if ($w->pivot->role === 'owner')
+                                        <span class="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700 ring-1 ring-inset ring-amber-200">{{ __('app.workspaces.role_owner') }}</span>
+                                    @elseif ($w->pivot->role === 'admin')
+                                        <span class="rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700 ring-1 ring-inset ring-sky-200">{{ __('app.workspaces.role_admin') }}</span>
+                                    @else
+                                        <span class="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-600">{{ __('app.workspaces.role_member') }}</span>
+                                    @endif
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             {{-- Classrooms --}}
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-6 py-3">

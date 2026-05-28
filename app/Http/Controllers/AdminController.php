@@ -9,6 +9,7 @@ use App\Models\Lead;
 use App\Models\LoginAttempt;
 use App\Models\Submission;
 use App\Models\User;
+use App\Models\Workspace;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,7 @@ class AdminController extends Controller
             'active_30d' => User::where('last_login_at', '>=', $now->copy()->subDays(30))->count(),
             'leads_new' => Lead::where('status', 'new')->count(),
             'leads_week' => Lead::where('created_at', '>=', $now->copy()->subDays(7))->count(),
+            'workspaces' => Workspace::count(),
         ];
 
         $recentUsers = User::latest()->limit(5)->get();
@@ -99,7 +101,9 @@ class AdminController extends Controller
         $studentCount = $classrooms->sum('students_count');
         $assignmentCount = $classrooms->sum('assignments_count');
 
-        return view('admin.user_show', compact('user', 'classrooms', 'assignmentCount', 'studentCount'));
+        $workspaces = $user->workspaces()->orderBy('name')->get();
+
+        return view('admin.user_show', compact('user', 'classrooms', 'assignmentCount', 'studentCount', 'workspaces'));
     }
 
     public function toggleAdmin(Request $request, User $user)

@@ -97,7 +97,25 @@ return [
         'tab_leads' => 'ข้อความติดต่อ',
         'tab_security' => 'ความปลอดภัย',
         'tab_system' => 'System',
+        'tab_workspaces' => 'Workspaces',
+        'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
+
+        'workspaces' => [
+            'heading' => 'Workspaces ทั้งหมดในระบบ',
+            'search' => 'ค้นหาชื่อ workspace / slug / อีเมลสมาชิก',
+            'empty' => 'ไม่พบ workspace',
+            'col_name' => 'ชื่อ',
+            'col_owner' => 'เจ้าของ',
+            'col_members' => 'สมาชิก',
+            'col_classrooms' => 'ห้องเรียน',
+            'created_by' => 'สร้างโดย',
+            'user_workspaces' => 'Workspaces ที่อยู่',
+            'delete' => 'ลบ workspace ถาวร',
+            'delete_hint' => 'การลบจะลบทุกสิ่งใน workspace — ห้องเรียน นักเรียน การบ้าน และ membership ทั้งหมด ทำเฉพาะกรณีต้อง moderation เท่านั้น',
+            'delete_confirm' => 'ลบ workspace :name แบบถาวร? ข้อมูลทั้งหมดจะหายไป',
+            'deleted' => 'ลบ workspace :name แล้ว',
+        ],
 
         'system' => [
             'heading' => 'System — รัน migration / เคลียร์ cache',
