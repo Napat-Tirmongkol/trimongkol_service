@@ -79,7 +79,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
+        Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
+        Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
         Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
+        Route::post('/users/{user}/toggle-active', [AdminController::class, 'toggleActive'])->name('users.toggle-active');
+        Route::post('/users/{user}/password-reset', [AdminController::class, 'sendPasswordReset'])->name('users.password-reset');
+        Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
         Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
         Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
     });
