@@ -1,0 +1,29 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#0f172a;padding:26px;display:flex;flex-direction:column;gap:16px}
+  .grp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .cap{flex:0 0 84px;font-size:11px;color:#94a3b8;font-weight:500}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 11px;border-radius:9999px}
+  .ring{box-shadow:inset 0 0 0 1px currentColor}
+  .dot{width:6px;height:6px;border-radius:50%}
+  .num{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#3366ff,#1936b8);color:#fff;font-weight:700;font-size:13px;box-shadow:0 6px 12px -3px rgba(51,102,255,.4)}
+  svg{width:12px;height:12px}
+</style></head><body>
+  <div class="grp"><span class="cap">Status</span>
+    <span class="badge" style="background:#ecfdf5;color:#047857"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Submitted</span>
+    <span class="badge" style="background:#f1f5f9;color:#64748b">Pending</span>
+    <span class="badge" style="background:#fffbeb;color:#b45309">Coming soon</span>
+    <span class="badge" style="background:#ecfdf5;color:#047857"><span class="dot" style="background:#10b981"></span>Available</span>
+  </div>
+  <div class="grp"><span class="cap">Category</span>
+    <span class="badge" style="background:#eef4ff;color:#1936b8">Grade 5</span>
+    <span class="badge" style="background:#fff1f2;color:#be123c">Exam</span>
+    <span class="badge" style="background:#f1f5f9;color:#475569">Quiz</span>
+  </div>
+  <div class="grp"><span class="cap">Numbered</span>
+    <span class="num">01</span><span class="num">02</span><span class="num">03</span>
+    <span style="font-size:12px;color:#94a3b8;margin-left:6px">— service / step markers (used instead of icons)</span>
+  </div>
+</body></html>
