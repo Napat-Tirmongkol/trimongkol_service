@@ -112,6 +112,13 @@ return [
             'cache_hint' => 'เคลียร์ config / route / view / event cache ทั้งหมด — ใช้หลังเปลี่ยน .env, แก้ route, แก้ blade',
             'run_clear_cache' => 'Clear all caches',
             'cache_confirm' => 'เคลียร์ cache ทั้งหมด?',
+            'pull_heading' => 'Pull โค้ดล่าสุดจาก Git',
+            'pull_hint' => 'กดปุ่มเพื่อให้ Plesk pull code ล่าสุดจาก remote (เหมือนกด Pull Updates ในหน้า Git ของ Plesk)',
+            'pull_no_url' => 'ยังไม่ได้ตั้งค่า Plesk webhook URL —',
+            'pull_configure' => 'ตั้งค่าใน CMS',
+            'run_pull' => 'Pull จาก Git',
+            'pull_confirm' => 'Pull code ล่าสุดจาก Git? (Plesk จะ download ไฟล์ใหม่ลง server)',
+            'no_webhook_url' => 'ยังไม่ได้ตั้งค่า Plesk webhook URL ใน /admin/site → Deployment',
         ],
 
         'security' => [

@@ -91,6 +91,9 @@ class SiteSettingsController extends Controller
             'maintenance.enabled' => ['type' => 'shared', 'label' => 'Enable maintenance mode (1 = on, blank = off)'],
             'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
         ],
+        'Deployment' => [
+            'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
+        ],
         'Hero images' => [
             'hero_image.home' => ['type' => 'shared', 'label' => 'Home (URL or /images/...)', 'wide' => true],
             'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true],

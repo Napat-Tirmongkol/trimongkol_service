@@ -112,6 +112,13 @@ return [
             'cache_hint' => 'Clears config / route / view / event caches. Use after editing .env, routes, or Blade templates.',
             'run_clear_cache' => 'Clear all caches',
             'cache_confirm' => 'Clear all caches?',
+            'pull_heading' => 'Pull latest code from Git',
+            'pull_hint' => 'Triggers Plesk to pull the latest commits from the remote — same as clicking Pull Updates in the Plesk Git panel.',
+            'pull_no_url' => 'Plesk webhook URL is not configured —',
+            'pull_configure' => 'set it in CMS',
+            'run_pull' => 'Pull from Git',
+            'pull_confirm' => 'Pull latest code from Git? Plesk will download new files to the server.',
+            'no_webhook_url' => 'Plesk webhook URL not set. Configure it in /admin/site → Deployment.',
         ],
 
         'security' => [

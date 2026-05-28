@@ -21,6 +21,36 @@
                 </dl>
             </div>
 
+            {{-- Pull from Git --}}
+            <div class="rounded-xl border {{ $webhookConfigured ? 'border-sky-200 bg-sky-50/50' : 'border-slate-200 bg-white shadow-sm' }} p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-semibold {{ $webhookConfigured ? 'text-sky-900' : 'text-slate-900' }}">
+                            {{ __('app.admin.system.pull_heading') }}
+                        </h3>
+                        @if ($webhookConfigured)
+                            <p class="mt-1 text-xs text-sky-800">{{ __('app.admin.system.pull_hint') }}</p>
+                        @else
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ __('app.admin.system.pull_no_url') }}
+                                <a href="{{ route('admin.site-settings.edit') }}" class="font-semibold text-brand-700 underline hover:text-brand-800">
+                                    {{ __('app.admin.system.pull_configure') }} →
+                                </a>
+                            </p>
+                        @endif
+                    </div>
+                    <form method="POST" action="{{ route('admin.system.pull') }}"
+                          data-confirm="{{ __('app.admin.system.pull_confirm') }}">
+                        @csrf
+                        <button type="submit"
+                                @disabled(! $webhookConfigured)
+                                class="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                            {{ __('app.admin.system.run_pull') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             {{-- Pending migrations --}}
             <div class="rounded-xl border {{ count($pending) ? 'border-amber-200 bg-amber-50/50' : 'border-emerald-200 bg-emerald-50/50' }} p-6">
                 <div class="flex items-start justify-between gap-4">

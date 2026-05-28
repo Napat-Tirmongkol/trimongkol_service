@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -33,9 +35,44 @@ class SystemController extends Controller
             $pending = $files->diff($applied)->values()->all();
         }
 
+        $webhookConfigured = ! empty(Setting::get('deploy.webhook_url'));
         $lastResult = session('system_result');
 
-        return view('admin.system', compact('info', 'pending', 'lastResult'));
+        return view('admin.system', compact('info', 'pending', 'webhookConfigured', 'lastResult'));
+    }
+
+    public function pull(Request $request)
+    {
+        $url = Setting::get('deploy.webhook_url');
+
+        if (! $url) {
+            return redirect()->route('admin.system')
+                ->with('system_result', [
+                    'command' => 'pull (Plesk git webhook)',
+                    'output' => __('app.admin.system.no_webhook_url'),
+                    'exit_code' => 1,
+                ]);
+        }
+
+        try {
+            $response = Http::timeout(60)->withoutVerifying()->post($url);
+            $exitCode = $response->successful() ? 0 : 1;
+            $output = "HTTP {$response->status()}\n\n" . $response->body();
+        } catch (\Throwable $e) {
+            $exitCode = 1;
+            $output = 'Error: ' . $e->getMessage();
+        }
+
+        AuditLog::record('system.pull', null, 'git pull (via Plesk webhook)', [
+            'exit_code' => $exitCode,
+        ]);
+
+        return redirect()->route('admin.system')
+            ->with('system_result', [
+                'command' => 'pull (Plesk git webhook)',
+                'output' => $output,
+                'exit_code' => $exitCode,
+            ]);
     }
 
     public function migrate(Request $request)

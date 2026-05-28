@@ -103,6 +103,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
 
         Route::get('/system', [AdminSystemController::class, 'index'])->name('system');
+        Route::post('/system/pull', [AdminSystemController::class, 'pull'])->name('system.pull');
         Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
         Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
 
