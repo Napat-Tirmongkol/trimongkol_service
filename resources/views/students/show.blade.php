@@ -21,10 +21,20 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('classrooms.students.edit', [$classroom, $student]) }}"
-               class="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                {{ __('app.common.edit') }}
-            </a>
+            <div class="flex shrink-0 items-center gap-2">
+                <a href="{{ route('classrooms.students.qr', [$classroom, $student]) }}"
+                   target="_blank"
+                   class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                    </svg>
+                    {{ __('app.students.print_qr_button') }}
+                </a>
+                <a href="{{ route('classrooms.students.edit', [$classroom, $student]) }}"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    {{ __('app.common.edit') }}
+                </a>
+            </div>
         </div>
     </x-slot>
 

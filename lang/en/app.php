@@ -233,5 +233,8 @@ return [
         'print_button' => 'Print QR',
         'print_heading' => 'Print student QR codes',
         'print_intro' => 'Ready to print — :count students. Use the Print button at the top right.',
+        'print_qr_button' => 'Print QR',
+        'print_qr_heading' => 'Print QR for this student',
+        'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
     ],
 ];

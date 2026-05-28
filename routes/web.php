@@ -52,6 +52,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('classrooms.students', StudentController::class)
         ->only(['show', 'create', 'store', 'edit', 'update', 'destroy']);
 
+    Route::get('classrooms/{classroom}/students/{student}/qr', [StudentController::class, 'printQr'])
+        ->name('classrooms.students.qr');
+
     Route::get('classrooms/{classroom}/gradebook', [GradebookController::class, 'show'])
         ->name('classrooms.gradebook');
     Route::get('classrooms/{classroom}/gradebook/export', [GradebookController::class, 'export'])

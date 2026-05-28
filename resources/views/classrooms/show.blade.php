@@ -216,6 +216,10 @@
                                         </td>
                                         <td class="px-6 py-3"><span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700">{{ $student->code }}</span></td>
                                         <td class="px-6 py-3 text-right">
+                                            <a href="{{ route('classrooms.students.qr', [$classroom, $student]) }}"
+                                               target="_blank"
+                                               class="text-sm font-medium text-slate-500 hover:text-slate-700">QR</a>
+                                            <span class="text-slate-300">·</span>
                                             <a href="{{ route('classrooms.students.show', [$classroom, $student]) }}"
                                                class="text-sm font-medium text-slate-500 hover:text-slate-700">{{ __('app.common.view') }}</a>
                                             <span class="text-slate-300">·</span>

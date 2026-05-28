@@ -136,6 +136,14 @@ class StudentController extends Controller
         return view('students.print', compact('classroom', 'students'));
     }
 
+    public function printQr(Classroom $classroom, Student $student)
+    {
+        $this->ensureOwner($classroom);
+        $this->ensureBelongs($classroom, $student);
+
+        return view('students.qr', compact('classroom', 'student'));
+    }
+
     private function ensureOwner(Classroom $classroom): void
     {
         abort_if($classroom->user_id !== auth()->id(), 403);
