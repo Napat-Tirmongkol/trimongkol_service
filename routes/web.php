@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\LocaleController;
@@ -27,6 +28,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('classrooms.students', StudentController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::resource('classrooms.assignments', AssignmentController::class)
+        ->only(['create', 'store', 'show', 'edit', 'update', 'destroy']);
+
+    Route::get('classrooms/{classroom}/assignments/{assignment}/scan', [AssignmentController::class, 'scan'])
+        ->name('classrooms.assignments.scan');
 });
 
 Route::middleware('auth')->group(function () {

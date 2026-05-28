@@ -25,12 +25,47 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             @if (session('status'))
-                <div class="mb-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <div class="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                     {{ session('status') }}
                 </div>
             @endif
+
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <h3 class="text-base font-semibold text-slate-900">
+                        {{ __('app.assignments.heading') }}
+                        <span class="ml-1 text-sm font-normal text-slate-500">({{ $classroom->assignments->count() }})</span>
+                    </h3>
+                    <a href="{{ route('classrooms.assignments.create', $classroom) }}"
+                       class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                        + {{ __('app.assignments.add') }}
+                    </a>
+                </div>
+                @if ($classroom->assignments->isEmpty())
+                    <div class="px-6 py-8 text-center text-sm text-slate-600">{{ __('app.assignments.empty') }}</div>
+                @else
+                    <ul class="divide-y divide-slate-100">
+                        @foreach ($classroom->assignments as $assignment)
+                            <li>
+                                <a href="{{ route('classrooms.assignments.show', [$classroom, $assignment]) }}"
+                                   class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                    <div>
+                                        <div class="text-sm font-medium text-slate-900">{{ $assignment->name }}</div>
+                                        @if ($assignment->due_date)
+                                            <div class="text-xs text-slate-500">{{ __('app.assignments.due') }}: {{ $assignment->due_date->format('d M Y') }}</div>
+                                        @endif
+                                    </div>
+                                    <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
 
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
