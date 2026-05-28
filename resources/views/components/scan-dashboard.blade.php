@@ -112,24 +112,14 @@ new class extends Component {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             display: block;
         }
-        /* hide html5-qrcode default UI chrome (file scan input, dashboard, camera select) */
-        #scanner-region__dashboard,
-        #scanner-region__dashboard_section,
-        #scanner-region__dashboard_section_csr,
-        #scanner-region__dashboard_section_swaplink,
-        #scanner-region__dashboard_section_fsr,
-        #scanner-region__filescan_input,
-        #scanner-region img[alt="Info icon"],
-        #scanner-region__camera_selection,
-        #scanner-region__camera_permission_button {
+        /* nuke every html5-qrcode injection except the video itself */
+        #scanner-region > *:not(video) {
             display: none !important;
-        }
-        /* override the inline border style of the qrbox shaded region */
-        #scanner-region__scan_region {
-            background: transparent !important;
-            border: none !important;
         }
     </style>
 
@@ -261,15 +251,7 @@ new class extends Component {
                     this.scanner = new Html5Qrcode('scanner-region', { verbose: false });
                     await this.scanner.start(
                         { facingMode: 'environment' },
-                        {
-                            fps: 10,
-                            qrbox: (vw, vh) => {
-                                const s = Math.floor(Math.min(vw, vh) * 0.7);
-                                return { width: s, height: s };
-                            },
-                            aspectRatio: window.innerWidth < 640 ? 0.75 : 1.333,
-                            disableFlip: false,
-                        },
+                        { fps: 10, disableFlip: false },
                         (decodedText) => {
                             this.$wire.set('code', decodedText, false);
                             this.$wire.scan();
