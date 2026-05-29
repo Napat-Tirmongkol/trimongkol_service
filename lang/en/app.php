@@ -3,6 +3,7 @@
 return [
     'nav' => [
         'website_home' => 'Website home',
+        'support' => 'Support us',
     ],
 
     'admin' => [

@@ -26,6 +26,15 @@
                         </svg>
                         {{ __('app.nav.website_home') }}
                     </a>
+                    @if (setting('donate.enabled') === '1')
+                        <a href="{{ route('donate') }}"
+                           class="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" class="shrink-0">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            {{ __('app.nav.support') }}
+                        </a>
+                    @endif
                     <a href="{{ route('dashboard') }}"
                        class="rounded-full px-4 py-1.5 text-sm font-medium transition
                               {{ request()->routeIs('dashboard') || request()->routeIs('classrooms.*')
@@ -148,6 +157,15 @@
                     </svg>
                     {{ __('app.nav.website_home') }}
                 </a>
+                @if (setting('donate.enabled') === '1')
+                    <a href="{{ route('donate') }}"
+                       class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="shrink-0">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        {{ __('app.nav.support') }}
+                    </a>
+                @endif
                 <a href="{{ route('dashboard') }}"
                    class="rounded-md px-3 py-2 text-sm font-medium
                           {{ request()->routeIs('dashboard') || request()->routeIs('classrooms.*')

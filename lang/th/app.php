@@ -3,6 +3,7 @@
 return [
     'nav' => [
         'website_home' => 'หน้าแรกเว็บไซต์',
+        'support' => 'สนับสนุนเรา',
     ],
 
     'admin' => [

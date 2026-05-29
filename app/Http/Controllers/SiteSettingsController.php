@@ -103,6 +103,14 @@ class SiteSettingsController extends Controller
         'Deployment' => [
             'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
         ],
+        'Donation / บริจาค' => [
+            'donate.enabled' => ['type' => 'shared', 'label' => 'เปิดช่องทางบริจาค (1 = เปิด, 0 = ปิด)', 'wide' => true],
+            'donate.heading' => ['type' => 'i18n', 'label' => 'หัวข้อหน้าบริจาค'],
+            'donate.note' => ['type' => 'i18n', 'label' => 'ข้อความ / คำขอบคุณ', 'textarea' => true],
+            'donate.name' => ['type' => 'shared', 'label' => 'ชื่อบัญชี'],
+            'donate.account' => ['type' => 'shared', 'label' => 'เลขบัญชี / พร้อมเพย์'],
+            'donate.qr' => ['type' => 'shared', 'label' => 'รูป QR (PromptPay / ธนาคาร)', 'wide' => true, 'upload' => true],
+        ],
         'Hero / background images' => [
             'hero_image.login' => ['type' => 'shared', 'label' => 'Login / auth background', 'wide' => true, 'upload' => true],
             'hero_image.home' => ['type' => 'shared', 'label' => 'Home', 'wide' => true, 'upload' => true],

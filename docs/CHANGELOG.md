@@ -4,6 +4,16 @@
 
 ---
 
+## 🙏 เพิ่มช่องทางบริจาค (PromptPay QR)
+
+- หน้า **`/donate`** (marketing layout) โชว์ QR + ชื่อบัญชี/พร้อมเพย์ + ข้อความขอบคุณ
+- **จัดการผ่าน `/admin/site`** → section "Donation / บริจาค": อัปโหลดรูป QR + ชื่อ/เลขบัญชี + ข้อความ (TH/EN) + สวิตช์เปิด/ปิด
+- ลิงก์ **"สนับสนุนเรา"** โผล่ที่ footer เว็บ marketing + เมนูในแอป (โชว์เฉพาะเมื่อ `donate.enabled = 1`)
+- เพิ่ม key `site.donate.*` (TH/EN) + `app.nav.support`
+- ⚠️ หลัง deploy: ไปที่ `/admin/site` → อัปโหลดรูป QR + ตั้ง `donate.enabled = 1`
+
+---
+
 ## 🐛 แก้ปุ่ม Delete Account — modal ยืนยันไม่เด้งกลางจอ
 
 modal ยืนยันลบบัญชี (Breeze Alpine `<x-modal>`) render ผิดที่ — เกาะด้านบน ทับฟอร์ม ไม่ลอยอยู่บนสุดอย่างที่ควร

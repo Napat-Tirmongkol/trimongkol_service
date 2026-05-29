@@ -5,6 +5,9 @@
         ['route' => 'about', 'label' => t('nav.about')],
         ['route' => 'contact', 'label' => t('nav.contact')],
     ];
+    if (setting('donate.enabled') === '1') {
+        $links[] = ['route' => 'donate', 'label' => t('donate.nav')];
+    }
 @endphp
 <footer class="bg-slate-950 text-slate-300">
     <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-20">

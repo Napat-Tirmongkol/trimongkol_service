@@ -30,6 +30,7 @@ Route::get('/services', [PageController::class, 'services'])->name('services');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
+Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
