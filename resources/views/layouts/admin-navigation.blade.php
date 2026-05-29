@@ -74,6 +74,15 @@
             </div>
 
             <div class="hidden items-center gap-3 xl:flex">
+                {{-- Back to the public website --}}
+                <a href="{{ route('home') }}" title="{{ __('app.nav.website_home') }}"
+                   class="inline-flex items-center rounded-full p-2 text-slate-300 transition hover:bg-white/10 hover:text-white">
+                    <span class="sr-only">{{ __('app.nav.website_home') }}</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </a>
+
                 {{-- Products dropdown --}}
                 @if (! empty($products))
                     <div class="relative" @click.outside="products = false">
@@ -127,6 +136,15 @@
 
         <div x-show="open" x-cloak class="border-t border-white/10 pb-4 xl:hidden">
             <div class="flex flex-col gap-1 pt-3">
+                <a href="{{ route('home') }}"
+                   class="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-400">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    {{ __('app.nav.website_home') }}
+                </a>
+                <div class="my-1 border-t border-white/10"></div>
+
                 @foreach (array_merge($primaryTabs, $moreTabs) as $tab)
                     <a href="{{ route($tab['route']) }}"
                        class="rounded-md px-3 py-2.5 text-sm font-medium
