@@ -4,6 +4,18 @@
 
 ---
 
+## ✉️ เปิดใช้การยืนยันอีเมล (email verification)
+
+SMTP พร้อมแล้ว เลยเปิด email verification — `User implements MustVerifyEmail` (โครง Breeze + หน้า `verify-email` แบบ branded มีอยู่แล้ว แค่เปิดสวิตช์)
+
+- สมัครใหม่ → ส่งลิงก์ยืนยันอัตโนมัติ → ผู้ที่ยังไม่ยืนยันถูกพาไปหน้า "ยืนยันอีเมล" (กดส่งใหม่ได้)
+- **ยกเว้น `/admin` จาก middleware `verified`** — แอดมินไม่ถูกกั้น และตอน deploy ยังเข้า `/admin/system` ไป migrate ได้ ไม่ล็อกตัวเอง
+- Backfill `email_verified_at = now()` ให้ user เดิมทั้งหมด — ครู/ผู้ใช้เดิมไม่โดนล็อก
+- เปลี่ยนอีเมลในโปรไฟล์ → ต้องยืนยันใหม่ (พฤติกรรมมาตรฐาน Breeze ที่เพิ่งมีผล)
+- **ต้องรัน migrate** (backfill) ผ่าน `/admin/system`: **Pull → Migrate → Clear cache** (รีบ migrate หลัง pull เพื่อปลดล็อกผู้ใช้เดิม)
+
+---
+
 ## 🧭 แยก dashboard: /admin = ภาพรวม platform, สถิติสินค้าไปอยู่กับ product hub
 
 `/admin` เดิมโชว์สถิติของ Homework Scanner (ห้องเรียน / การส่ง / ส่งงานวันนี้ / ครูที่มีห้องเยอะสุด) ซึ่ง **ซ้ำกับหน้า product hub** `/admin/products/scanner` ที่มีอยู่แล้ว และผิดหลัก Platform vs Products ใน `docs/ADMIN.md`

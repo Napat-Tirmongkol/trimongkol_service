@@ -108,7 +108,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('classrooms/{classroom}/assignments/{assignment}/submissions/{submission}', [SubmissionController::class, 'destroy'])
         ->name('classrooms.assignments.submissions.destroy');
 
-    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+    // Admin back-office is exempt from email verification — staff are managed
+    // by a super admin, and this also avoids locking the deployer out before
+    // the backfill migration runs.
+    Route::middleware('admin')->withoutMiddleware('verified')->prefix('admin')->name('admin.')->group(function () {
         // Platform-wide tools (cut across all products). Every admin role can
         // see the dashboard; everything else is gated by a granular permission
         // (see config/permissions.php). Super Admin holds '*' and passes all.
