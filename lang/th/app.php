@@ -646,7 +646,8 @@ return [
         'signin_with_email' => 'เข้าสู่ระบบในนาม :email',
         'signup_with_email' => 'สร้างบัญชีใหม่ในนาม :email',
         'change_email' => 'เปลี่ยน',
-        'password_hint' => 'ขั้นต่ำ 8 ตัวอักษร — กรอกได้รหัสเดียว ถ้าพิมพ์ผิดสามารถ reset ได้ภายหลัง',
+        'password_hint' => 'ขั้นต่ำ 8 ตัวอักษร',
+        'confirm_password' => 'ยืนยันรหัสผ่าน',
 
         'login_heading' => 'เข้าสู่ระบบ',
         'register_heading' => 'สร้างบัญชีใหม่',

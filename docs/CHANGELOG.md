@@ -4,6 +4,15 @@
 
 ---
 
+## 🔒 เพิ่มช่อง "ยืนยันรหัสผ่าน" ตอนสมัคร
+
+- ฟอร์มสมัคร (email-first ใน `auth/login.blade.php`) เพิ่มช่อง **ยืนยันรหัสผ่าน** + ปุ่มดู/ซ่อน
+- เพิ่ม validate `confirmed` ใน `RegisteredUserController` (เดิมจงใจตัดออก ใช้รหัสเดียว)
+- ปรับ hint เป็น "ขั้นต่ำ 8 ตัวอักษร" + เพิ่ม key `app.auth.confirm_password` (TH/EN)
+- กระทบเฉพาะฟอร์มสมัคร — ฟอร์ม sign in ไม่เปลี่ยน
+
+---
+
 ## 🙏 เพิ่มช่องทางบริจาค (PromptPay QR)
 
 - หน้า **`/donate`** (marketing layout) โชว์ QR + ชื่อบัญชี/พร้อมเพย์ + ข้อความขอบคุณ

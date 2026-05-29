@@ -646,7 +646,8 @@ return [
         'signin_with_email' => 'Signing in as :email',
         'signup_with_email' => 'Creating an account for :email',
         'change_email' => 'change',
-        'password_hint' => 'At least 8 characters. You can reset it later if you forget.',
+        'password_hint' => 'At least 8 characters.',
+        'confirm_password' => 'Confirm password',
 
         'login_heading' => 'Log in to your account',
         'register_heading' => 'Create your account',
