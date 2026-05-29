@@ -4,6 +4,17 @@
 
 ---
 
+## 🐛 แก้ปุ่ม Delete Account — modal ยืนยันไม่เด้งกลางจอ
+
+modal ยืนยันลบบัญชี (Breeze Alpine `<x-modal>`) render ผิดที่ — เกาะด้านบน ทับฟอร์ม ไม่ลอยอยู่บนสุดอย่างที่ควร
+
+- เปลี่ยนเป็น **SweetAlert2** (เด้งกลางจอ z-index สูง ตรงกับ confirm อื่น ๆ ทั้งแอป) + ช่องกรอกรหัสผ่านในตัว → ส่งผ่าน hidden field ไป `profile.destroy`
+- กรอกรหัสผิด → เด้ง dialog ใหม่พร้อมข้อความ error อัตโนมัติ
+- localize เป็น TH/EN (เดิมเป็นอังกฤษล้วน) — เพิ่ม key `app.profile.delete_*`
+- ไม่ได้แตะ backend (`ProfileController::destroy`) — ลบได้อยู่แล้ว (FK cascade/null ครบ); ปัญหาคือฝั่ง modal ล้วน ๆ
+
+---
+
 ## ✉️ เปิดใช้การยืนยันอีเมล (email verification)
 
 SMTP พร้อมแล้ว เลยเปิด email verification — `User implements MustVerifyEmail` (โครง Breeze + หน้า `verify-email` แบบ branded มีอยู่แล้ว แค่เปิดสวิตช์)

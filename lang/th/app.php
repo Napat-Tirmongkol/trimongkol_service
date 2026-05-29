@@ -492,6 +492,16 @@ return [
         'unlimited' => 'ไม่จำกัด',
     ],
 
+    'profile' => [
+        'delete_heading' => 'ลบบัญชี',
+        'delete_desc' => 'เมื่อลบบัญชีแล้ว ข้อมูลและทรัพยากรทั้งหมดจะถูกลบถาวร โปรดดาวน์โหลดข้อมูลที่ต้องการเก็บไว้ก่อนลบ',
+        'delete_button' => 'ลบบัญชี',
+        'delete_confirm_title' => 'ลบบัญชีนี้?',
+        'delete_confirm_text' => 'ข้อมูลทั้งหมดจะถูกลบถาวรและกู้คืนไม่ได้ กรอกรหัสผ่านเพื่อยืนยัน',
+        'delete_password_placeholder' => 'รหัสผ่าน',
+        'delete_password_required' => 'กรุณากรอกรหัสผ่าน',
+    ],
+
     'roles' => [
         'nav' => 'Roles & สิทธิ์',
         'heading' => 'จัดการ Role & สิทธิ์',

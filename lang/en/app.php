@@ -492,6 +492,16 @@ return [
         'unlimited' => 'Unlimited',
     ],
 
+    'profile' => [
+        'delete_heading' => 'Delete account',
+        'delete_desc' => 'Once your account is deleted, all of its resources and data are permanently removed. Please download anything you want to keep first.',
+        'delete_button' => 'Delete account',
+        'delete_confirm_title' => 'Delete your account?',
+        'delete_confirm_text' => 'This permanently deletes all your data and cannot be undone. Enter your password to confirm.',
+        'delete_password_placeholder' => 'Password',
+        'delete_password_required' => 'Please enter your password.',
+    ],
+
     'roles' => [
         'nav' => 'Roles',
         'heading' => 'Roles & permissions',
