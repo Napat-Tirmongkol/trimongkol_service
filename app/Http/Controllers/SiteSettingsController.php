@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SiteSettingsController extends Controller
 {
@@ -94,11 +96,12 @@ class SiteSettingsController extends Controller
         'Deployment' => [
             'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
         ],
-        'Hero images' => [
-            'hero_image.home' => ['type' => 'shared', 'label' => 'Home (URL or /images/...)', 'wide' => true],
-            'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true],
-            'hero_image.about' => ['type' => 'shared', 'label' => 'About', 'wide' => true],
-            'hero_image.contact' => ['type' => 'shared', 'label' => 'Contact', 'wide' => true],
+        'Hero / background images' => [
+            'hero_image.login' => ['type' => 'shared', 'label' => 'Login / auth background', 'wide' => true, 'upload' => true],
+            'hero_image.home' => ['type' => 'shared', 'label' => 'Home', 'wide' => true, 'upload' => true],
+            'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true, 'upload' => true],
+            'hero_image.about' => ['type' => 'shared', 'label' => 'About', 'wide' => true, 'upload' => true],
+            'hero_image.contact' => ['type' => 'shared', 'label' => 'Contact', 'wide' => true, 'upload' => true],
         ],
     ];
 
@@ -112,11 +115,34 @@ class SiteSettingsController extends Controller
 
     public function update(Request $request)
     {
+        // Images only: no SVG (script vector), capped at 5 MB.
+        $request->validate([
+            'upload.*' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
+        ]);
+
         $input = $request->input('s', []);
 
         foreach ($input as $key => $val) {
             Setting::updateOrCreate(['key' => $key], ['value' => (string) ($val ?? '')]);
         }
+
+        // Uploaded files override the matching text value with a stored path.
+        $uploaded = [];
+        foreach ($request->file('upload', []) as $key => $file) {
+            if (! $file) {
+                continue;
+            }
+            $ext = $file->extension() ?: $file->getClientOriginalExtension();
+            $name = str_replace('.', '_', $key).'-'.Str::random(8).'.'.$ext;
+            $file->move(public_path('images/backgrounds'), $name);
+            Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
+            $uploaded[] = $key;
+        }
+
+        AuditLog::record('site_settings.update', null, 'Site settings', [
+            'keys' => array_keys($input),
+            'uploaded' => $uploaded,
+        ]);
 
         return redirect()->route('admin.site-settings.edit')
             ->with('status', __('app.cms.saved'));
