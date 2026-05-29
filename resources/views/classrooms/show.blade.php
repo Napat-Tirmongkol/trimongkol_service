@@ -20,10 +20,17 @@
                     <p class="mt-1.5 text-sm text-slate-600">{{ $classroom->description }}</p>
                 @endif
             </div>
-            <a href="{{ route('classrooms.edit', $classroom) }}"
-               class="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                {{ __('app.common.edit') }}
-            </a>
+            <div class="flex shrink-0 items-center gap-2">
+                <button type="button" id="tour-start"
+                        class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    {{ __('app.tour.help') }}
+                </button>
+                <a href="{{ route('classrooms.edit', $classroom) }}"
+                   class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    {{ __('app.common.edit') }}
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -70,7 +77,7 @@
                         </div>
                     </div>
                 </div>
-                <a href="{{ route('classrooms.gradebook', $classroom) }}"
+                <a href="{{ route('classrooms.gradebook', $classroom) }}" data-tour="gradebook"
                    class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300 hover:shadow-md">
                     <div>
                         <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.gradebook.nav') }}</div>
@@ -82,7 +89,7 @@
                         </svg>
                     </span>
                 </a>
-                <a href="{{ route('classrooms.assignments.create', $classroom) }}"
+                <a href="{{ route('classrooms.assignments.create', $classroom) }}" data-tour="assignment"
                    class="group flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20 transition hover:from-brand-700 hover:to-brand-900">
                     <div>
                         <div class="text-xs uppercase tracking-wider text-brand-200">{{ __('app.assignments.add') }}</div>
@@ -155,7 +162,7 @@
                     </h3>
                     <div class="flex flex-wrap items-center gap-2">
                         @if ($classroom->students->isNotEmpty())
-                            <a href="{{ route('classrooms.students.print', $classroom) }}"
+                            <a href="{{ route('classrooms.students.print', $classroom) }}" data-tour="print"
                                target="_blank"
                                class="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -171,7 +178,7 @@
                             </svg>
                             {{ __('app.students.bulk_button') }}
                         </a>
-                        <a href="{{ route('classrooms.students.create', $classroom) }}"
+                        <a href="{{ route('classrooms.students.create', $classroom) }}" data-tour="add-student"
                            class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
                             + {{ __('app.students.add') }}
                         </a>
@@ -189,7 +196,7 @@
                                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                                 {{ __('app.students.bulk_button') }}
                             </a>
-                            <a href="{{ route('classrooms.students.create', $classroom) }}"
+                            <a href="{{ route('classrooms.students.create', $classroom) }}" data-tour="add-student"
                                class="rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
                                 + {{ __('app.students.add') }}
                             </a>
@@ -235,4 +242,16 @@
             </div>
         </div>
     </div>
+    <script>
+        (() => {
+            const steps = [
+                { el: '[data-tour=add-student]', title: @json(__('app.tour.room_students_title')), text: @json(__('app.tour.room_students_text')), side: 'bottom' },
+                { el: '[data-tour=print]', title: @json(__('app.tour.room_print_title')), text: @json(__('app.tour.room_print_text')), side: 'bottom' },
+                { el: '[data-tour=assignment]', title: @json(__('app.tour.room_assign_title')), text: @json(__('app.tour.room_assign_text')), side: 'top' },
+                { el: '[data-tour=gradebook]', title: @json(__('app.tour.room_grades_title')), text: @json(__('app.tour.room_grades_text')), side: 'top' },
+            ];
+            document.getElementById('tour-start')?.addEventListener('click', () => window.startTour(steps));
+            window.addEventListener('load', () => window.maybeAutoTour('classroom', steps));
+        })();
+    </script>
 </x-app-layout>

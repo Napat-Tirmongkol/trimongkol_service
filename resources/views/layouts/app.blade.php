@@ -14,6 +14,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    @include('partials.product-tour')
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <x-impersonation-banner />

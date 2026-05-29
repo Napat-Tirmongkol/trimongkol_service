@@ -274,7 +274,7 @@ new class extends Component {
                     </div>
                 </template>
 
-                <button type="button" @click="startCamera()" :disabled="starting"
+                <button type="button" data-tour="scan-start" @click="startCamera()" :disabled="starting"
                         class="rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-brand-700 disabled:opacity-60">
                     <span x-show="!starting">{{ __('app.scan.start_camera') }}</span>
                     <span x-show="starting" x-cloak>{{ __('app.scan.starting') }}…</span>
