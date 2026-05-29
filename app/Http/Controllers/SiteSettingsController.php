@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class SiteSettingsController extends Controller
@@ -115,20 +116,15 @@ class SiteSettingsController extends Controller
 
     public function update(Request $request)
     {
-        // Images only: no SVG (script vector), capped at 5 MB.
-        $request->validate([
-            'upload.*' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120',
-        ]);
-
         $input = $request->input('s', []);
 
         foreach ($input as $key => $val) {
             Setting::updateOrCreate(['key' => $key], ['value' => (string) ($val ?? '')]);
         }
 
-        // File inputs are named with underscores (no dots, so wildcard validation
-        // works); map them back to their real dotted setting keys, whitelisted
-        // from the schema so only known image settings can be written.
+        // --- Image uploads (fully traced — see /admin/logs + storage/logs) ---
+        // File inputs are named with underscores (no dots); map them back to the
+        // real dotted setting keys, whitelisted from the schema.
         $uploadable = [];
         foreach (self::SCHEMA as $fields) {
             foreach ($fields as $k => $cfg) {
@@ -138,33 +134,80 @@ class SiteSettingsController extends Controller
             }
         }
 
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        $maxBytes = 5 * 1024 * 1024;
+        $dir = public_path('images/backgrounds');
+        $writableProbe = is_dir($dir) ? $dir : (is_dir(public_path('images')) ? public_path('images') : public_path());
+
+        $files = $request->file('upload', []);
+        $trace = [
+            'fields' => array_keys($files),
+            'dir' => $dir,
+            'dir_exists' => is_dir($dir),
+            'dir_writable' => is_writable($writableProbe),
+            'post_max_size' => ini_get('post_max_size'),
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'files' => [],
+        ];
+
         $uploaded = [];
         $errors = [];
-        $dir = public_path('images/backgrounds');
 
-        foreach ($request->file('upload', []) as $field => $file) {
-            if (! $file || ! isset($uploadable[$field])) {
+        foreach ($files as $field => $file) {
+            if (! $file) {
                 continue;
             }
-            $key = $uploadable[$field];
-            try {
-                if (! is_dir($dir)) {
-                    mkdir($dir, 0755, true);
+            $key = $uploadable[$field] ?? $field;
+            $info = [
+                'field' => $field,
+                'key' => $key,
+                'orig' => $file->getClientOriginalName(),
+                'client_mime' => $file->getClientMimeType(),
+                'kb' => (int) round(($file->getSize() ?: 0) / 1024),
+                'php_error' => $file->getError(),
+                'valid' => $file->isValid(),
+            ];
+
+            if (! isset($uploadable[$field])) {
+                $info['result'] = 'skipped (unknown field)';
+            } elseif (! $file->isValid()) {
+                $info['result'] = 'invalid: '.$file->getErrorMessage();
+                $errors[] = $key.' — '.$file->getErrorMessage();
+            } elseif (! in_array($mime = (string) $file->getMimeType(), $allowedMimes, true)) {
+                $info['result'] = 'rejected mime: '.$mime;
+                $errors[] = $key.' — '.($mime ?: 'unknown').' not allowed';
+            } elseif (($file->getSize() ?: 0) > $maxBytes) {
+                $info['result'] = 'too large';
+                $errors[] = $key.' — too large ('.$info['kb'].'KB)';
+            } else {
+                try {
+                    if (! is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $ext = $file->extension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
+                    $name = $field.'-'.Str::random(8).'.'.$ext;
+                    $file->move($dir, $name);
+                    Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
+                    $uploaded[] = $key;
+                    $info['result'] = 'stored /images/backgrounds/'.$name;
+                } catch (\Throwable $e) {
+                    $info['result'] = 'move failed: '.$e->getMessage();
+                    $errors[] = $key.' — '.$e->getMessage();
                 }
-                $ext = $file->extension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
-                $name = $field.'-'.Str::random(8).'.'.$ext;
-                $file->move($dir, $name);
-                Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
-                $uploaded[] = $key;
-            } catch (\Throwable $e) {
-                $errors[] = $key.' — '.$e->getMessage();
             }
+
+            $trace['files'][] = $info;
         }
 
-        AuditLog::record('site_settings.update', null, 'Site settings', [
-            'keys' => array_keys($input),
-            'uploaded' => $uploaded,
-        ]);
+        $meta = ['keys' => array_keys($input)];
+        if ($trace['fields'] || $uploaded || $errors) {
+            $meta['uploaded'] = $uploaded;
+            $meta['errors'] = $errors;
+            $meta['upload_trace'] = $trace;
+            Log::info('site-settings image upload', ['admin' => auth()->id()] + $meta);
+        }
+
+        AuditLog::record('site_settings.update', null, 'Site settings', $meta);
 
         $redirect = redirect()->route('admin.site-settings.edit');
 
