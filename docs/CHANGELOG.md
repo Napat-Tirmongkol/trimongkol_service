@@ -4,6 +4,17 @@
 
 ---
 
+## 🧭 แยก dashboard: /admin = ภาพรวม platform, สถิติสินค้าไปอยู่กับ product hub
+
+`/admin` เดิมโชว์สถิติของ Homework Scanner (ห้องเรียน / การส่ง / ส่งงานวันนี้ / ครูที่มีห้องเยอะสุด) ซึ่ง **ซ้ำกับหน้า product hub** `/admin/products/scanner` ที่มีอยู่แล้ว และผิดหลัก Platform vs Products ใน `docs/ADMIN.md`
+
+- เอา 4 การ์ดเฉพาะ Scanner ออกจาก `/admin` — เหลือเฉพาะ **platform overview** (ผู้ใช้ / แอดมิน / workspaces / สมัครใหม่ / active / ระงับ / leads / กราฟสมัครใหม่ / ผู้ใช้ใหม่ล่าสุด)
+- เพิ่มแถบ **"Products"** เป็นการ์ดลิงก์ไป hub ของแต่ละสินค้า (อ่านจาก `config/admin-products.php` → สินค้าใหม่โผล่อัตโนมัติ) แทนที่พาเนล "ครูที่มีห้องเยอะสุด"
+- สถิติสินค้ายังดูครบที่ product hub เหมือนเดิม (ไม่ได้ลบข้อมูล แค่ย้ายที่แสดง) + ลด query บนหน้า platform
+- เพิ่ม key `app.admin.products_empty` (TH + EN)
+
+---
+
 ## 🔐 ระบบ Role & สิทธิ์ (RBAC) ที่ /admin
 
 ยกระดับสิทธิ์แอดมินจาก `is_admin` (จริง/เท็จ) เป็น **RBAC เต็ม** — role ถือ permission รายฟีเจอร์ และสร้าง role เองได้

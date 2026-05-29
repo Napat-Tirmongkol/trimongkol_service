@@ -105,6 +105,7 @@ return [
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
         'nav_more' => 'เพิ่มเติม',
+        'products_empty' => 'ยังไม่มีสินค้าในระบบ',
 
         'workspaces' => [
             'heading' => 'Workspaces ทั้งหมดในระบบ',

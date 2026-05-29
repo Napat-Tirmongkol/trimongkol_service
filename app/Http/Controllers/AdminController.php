@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAction;
-use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\Lead;
 use App\Models\LoginAttempt;
 use App\Models\Role;
-use App\Models\Submission;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\AuditLog;
@@ -26,12 +24,8 @@ class AdminController extends Controller
             'users' => User::count(),
             'admins' => User::where('is_admin', true)->count(),
             'suspended' => User::where('is_active', false)->count(),
-            'classrooms' => Classroom::count(),
-            'assignments' => Assignment::count(),
-            'submissions' => Submission::count(),
             'new_users_week' => User::where('created_at', '>=', $now->copy()->subDays(7))->count(),
             'new_users_month' => User::where('created_at', '>=', $now->copy()->subDays(30))->count(),
-            'submissions_today' => Submission::whereDate('created_at', $now->toDateString())->count(),
             'active_30d' => User::where('last_login_at', '>=', $now->copy()->subDays(30))->count(),
             'leads_new' => Lead::where('status', 'new')->count(),
             'leads_week' => Lead::where('created_at', '>=', $now->copy()->subDays(7))->count(),
@@ -40,11 +34,9 @@ class AdminController extends Controller
 
         $recentUsers = User::latest()->limit(5)->get();
 
-        $topUsers = User::query()
-            ->withCount('classrooms')
-            ->orderByDesc('classrooms_count')
-            ->limit(5)
-            ->get();
+        // Products are surfaced as launcher links; each product keeps its own
+        // dashboard + metrics under /admin/products/* (see docs/ADMIN.md).
+        $products = config('admin-products', []);
 
         // 30-day daily signup series for the trend sparkline.
         $signupSeries = User::query()
@@ -59,7 +51,7 @@ class AdminController extends Controller
             $signupTrend[] = ['date' => $date, 'count' => (int) ($signupSeries[$date] ?? 0)];
         }
 
-        return view('admin.dashboard', compact('stats', 'recentUsers', 'topUsers', 'signupTrend'));
+        return view('admin.dashboard', compact('stats', 'recentUsers', 'signupTrend', 'products'));
     }
 
     public function users(Request $request)

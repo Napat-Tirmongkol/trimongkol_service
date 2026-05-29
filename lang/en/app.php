@@ -105,6 +105,7 @@ return [
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
         'nav_more' => 'More',
+        'products_empty' => 'No products yet.',
 
         'workspaces' => [
             'heading' => 'All workspaces in the system',
