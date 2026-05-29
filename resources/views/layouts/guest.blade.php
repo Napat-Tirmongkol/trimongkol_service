@@ -20,7 +20,7 @@
 
             {{-- Brand panel (desktop only) — mirrors the marketing hero: photo + slate overlay --}}
             <aside class="relative hidden overflow-hidden lg:flex lg:w-1/2 lg:flex-col lg:justify-between lg:p-12 xl:p-16">
-                <img src="{{ config('site.hero_images.home') }}" alt="" class="absolute inset-0 h-full w-full object-cover" loading="eager">
+                <img src="{{ config('site.hero_images.login') ?? config('site.hero_images.home') }}" alt="" class="absolute inset-0 h-full w-full object-cover" loading="eager">
                 <div class="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/55 to-slate-900/85"></div>
 
                 {{-- logo --}}
