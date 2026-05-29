@@ -4,6 +4,15 @@
 
 ---
 
+## 🛡️ Security hardening (จาก security review)
+
+- **กัน privilege escalation ผ่าน impersonation**: สวมสิทธิ์ได้เฉพาะผู้ใช้ทั่วไป (กัน Admin สวมเป็น Super Admin แล้วได้สิทธิ์เต็ม) + `session()->regenerate()` ตอนเริ่ม/หยุดสวมสิทธิ์ (กัน session fixation)
+- **rate limit หน้า 2FA challenge** (`throttle:6,1`) — กัน brute-force รหัส TOTP / recovery code
+- **rate limit `/auth/identify`** (`throttle:20,1`) — ลดการ enumerate ว่าอีเมลไหนสมัครแล้ว
+- เพิ่ม key `app.admin.cannot_impersonate_staff` (TH/EN)
+
+---
+
 ## 🎓 เพิ่มพาทัวร์สอนใช้ (guided tour)
 
 ทัวร์ไฮไลต์ทีละจุดบน UI จริง (Driver.js ผ่าน CDN — ไม่เพิ่ม npm) สอนครูใหม่ตาม flow

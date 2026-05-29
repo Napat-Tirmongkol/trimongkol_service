@@ -193,12 +193,16 @@ class AdminController extends Controller
     public function impersonate(Request $request, User $user)
     {
         abort_if($user->id === $request->user()->id, 422, __('app.admin.cannotChangeSelf'));
+        // Never impersonate other back-office staff — that would let a lower
+        // role inherit a higher one's access (e.g. Admin -> Super Admin).
+        abort_if($user->is_admin, 403, __('app.admin.cannot_impersonate_staff'));
         abort_if(! $user->is_active, 422, __('app.admin.account_suspended'));
 
         $adminId = $request->user()->id;
         AuditLog::record('user.impersonate_start', $user, $user->email);
 
         Auth::guard('web')->login($user);
+        $request->session()->regenerate();
         $request->session()->put('impersonator_id', $adminId);
 
         return redirect()->route('dashboard');
@@ -213,6 +217,7 @@ class AdminController extends Controller
         $original = User::findOrFail($originalId);
 
         Auth::guard('web')->login($original);
+        $request->session()->regenerate();
 
         // Manually log here — the impersonated user is who acted, but the admin is back in control.
         AdminAction::create([

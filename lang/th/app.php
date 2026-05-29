@@ -71,6 +71,7 @@ return [
         'confirmDemote' => 'ถอดสิทธิ์แอดมินของ :name?',
         'cannotChangeSelf' => 'แก้สิทธิ์ตัวเองไม่ได้',
         'account_suspended' => 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+        'cannot_impersonate_staff' => 'สวมสิทธิ์ผู้ดูแล/ทีมงานคนอื่นไม่ได้',
 
         'col_status' => 'สถานะ',
         'col_last_login' => 'ล็อกอินล่าสุด',

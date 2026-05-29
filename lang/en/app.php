@@ -71,6 +71,7 @@ return [
         'confirmDemote' => "Remove :name's admin access?",
         'cannotChangeSelf' => "You can't change your own role.",
         'account_suspended' => 'This account has been suspended. Please contact the administrator.',
+        'cannot_impersonate_staff' => 'You cannot impersonate another staff member.',
 
         'col_status' => 'Status',
         'col_last_login' => 'Last login',
