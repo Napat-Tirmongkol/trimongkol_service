@@ -66,7 +66,7 @@
             </label>
 
             <button type="submit"
-                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.sign_in') }}
             </button>
         </form>
@@ -132,7 +132,7 @@
             </div>
 
             <button type="submit"
-                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.create_account') }}
             </button>
         </form>
@@ -176,7 +176,7 @@
             </div>
 
             <button type="submit"
-                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-full bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-600/20 transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.continue') }}
             </button>
         </form>
