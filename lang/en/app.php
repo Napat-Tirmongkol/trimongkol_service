@@ -104,6 +104,7 @@ return [
         'tab_workspaces' => 'Workspaces',
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
+        'nav_more' => 'More',
 
         'workspaces' => [
             'heading' => 'All workspaces in the system',

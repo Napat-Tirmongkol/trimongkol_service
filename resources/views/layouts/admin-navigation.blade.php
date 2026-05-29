@@ -1,14 +1,22 @@
 @php
-    $platformTabs = [
+    // Day-to-day platform tools shown inline in the top row.
+    $primaryTabs = [
         ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard'],
         ['route' => 'admin.leads.index', 'label' => __('app.admin.tab_leads'), 'pattern' => 'admin.leads.*'],
         ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*'],
         ['route' => 'admin.workspaces.index', 'label' => __('app.admin.tab_workspaces'), 'pattern' => 'admin.workspaces.*'],
+        ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],
+    ];
+
+    // Less-frequent tools tucked into a "More" overflow menu so the top row
+    // stays uncluttered and never wraps (see docs/ADMIN.md).
+    $moreTabs = [
         ['route' => 'admin.security', 'label' => __('app.admin.tab_security'), 'pattern' => 'admin.security'],
         ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs'],
-        ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],
         ['route' => 'admin.system', 'label' => __('app.admin.tab_system'), 'pattern' => 'admin.system*'],
     ];
+
+    $activeMore = collect($moreTabs)->contains(fn ($t) => request()->routeIs($t['pattern']));
 
     $products = config('admin-products', []);
 
@@ -23,7 +31,7 @@
     }
 @endphp
 
-<nav x-data="{ open: false, products: false }" class="border-b border-slate-200 bg-slate-950 text-white">
+<nav x-data="{ open: false, products: false, more: false }" class="border-b border-slate-200 bg-slate-950 text-white">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center gap-8">
@@ -32,23 +40,45 @@
                     <span class="hidden text-sm font-semibold sm:inline">{{ __('app.admin.portalTitle') }}</span>
                 </a>
 
-                <div class="hidden items-center gap-1 md:flex">
-                    @foreach ($platformTabs as $tab)
+                <div class="hidden items-center gap-1 xl:flex">
+                    @foreach ($primaryTabs as $tab)
                         <a href="{{ route($tab['route']) }}"
-                           class="rounded-full px-4 py-1.5 text-sm font-medium transition
+                           class="whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition
                                   {{ request()->routeIs($tab['pattern']) ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
                             {{ $tab['label'] }}
                         </a>
                     @endforeach
+
+                    {{-- More: less-frequent platform tools --}}
+                    <div class="relative" @click.outside="more = false">
+                        <button type="button" @click="more = !more"
+                                class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition
+                                       {{ $activeMore ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
+                            {{ __('app.admin.nav_more') }}
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div x-show="more" x-cloak x-transition.opacity
+                             class="absolute left-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-lg">
+                            @foreach ($moreTabs as $tab)
+                                <a href="{{ route($tab['route']) }}"
+                                   class="block whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100
+                                          {{ request()->routeIs($tab['pattern']) ? 'bg-slate-100 text-slate-900' : 'text-slate-700' }}">
+                                    {{ $tab['label'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="hidden items-center gap-3 md:flex">
+            <div class="hidden items-center gap-3 xl:flex">
                 {{-- Products dropdown --}}
                 @if (! empty($products))
                     <div class="relative" @click.outside="products = false">
                         <button type="button" @click="products = !products"
-                                class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition
+                                class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition
                                        {{ $activeProduct ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
@@ -59,7 +89,7 @@
                             </svg>
                         </button>
                         <div x-show="products" x-cloak x-transition.opacity
-                             class="absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-lg">
+                             class="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-lg">
                             @foreach ($products as $key => $p)
                                 <a href="{{ route($p['route']) }}"
                                    class="block rounded-lg px-3 py-2 hover:bg-slate-100
@@ -74,18 +104,18 @@
                     </div>
                 @endif
 
-                <span class="text-sm text-slate-300">{{ auth()->user()->name }}</span>
+                <span class="whitespace-nowrap text-sm text-slate-300">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit"
-                            class="rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+                            class="whitespace-nowrap rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white hover:bg-white/20">
                         {{ __('app.admin.logout') }}
                     </button>
                 </form>
             </div>
 
             <button type="button" @click="open = !open" aria-label="Toggle menu"
-                    class="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white md:hidden">
+                    class="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white xl:hidden">
                 <svg x-show="!open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
                 </svg>
@@ -95,9 +125,9 @@
             </button>
         </div>
 
-        <div x-show="open" x-cloak class="border-t border-white/10 pb-4 md:hidden">
+        <div x-show="open" x-cloak class="border-t border-white/10 pb-4 xl:hidden">
             <div class="flex flex-col gap-1 pt-3">
-                @foreach ($platformTabs as $tab)
+                @foreach (array_merge($primaryTabs, $moreTabs) as $tab)
                     <a href="{{ route($tab['route']) }}"
                        class="rounded-md px-3 py-2.5 text-sm font-medium
                               {{ request()->routeIs($tab['pattern']) ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
