@@ -4,6 +4,15 @@
 
 ---
 
+## 🔐 หน้า Login ดีไซน์ใหม่ (split-screen)
+
+- `layouts/guest.blade.php` → **split-screen**: ซ้าย = พาเนลไล่เฉดสีน้ำเงินแบรนด์ + กริด/วงกลมตกแต่ง + หัวข้อ "ยินดีต้อนรับ" และจุดเด่นของระบบ, ขวา = ฟอร์ม (มีผลกับหน้า auth ทุกหน้าที่ใช้ layout นี้)
+- `auth/login.blade.php` → หัวข้อชิดซ้าย + ช่องกรอกมีไอคอนนำหน้า (อีเมล/ชื่อ/รหัสผ่าน) — **คงโฟลว์ email-first 3 สเต็ปเดิมครบ** (identify → signin/signup) ไม่ได้เพิ่ม social login / username ปลอมตามรูปต้นแบบ
+- เพิ่ม key `app.auth.brand_*` (TH + EN) สำหรับข้อความพาเนลซ้าย
+- rebuild Vite assets (มี Tailwind class ใหม่) → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
 ## 🔙 ลิงก์กลับหน้าแรกเว็บไซต์จากในแอป
 
 - เพิ่มลิงก์ **"หน้าแรกเว็บไซต์"** ในเมนูนำทางของแอป (`layouts/navigation.blade.php`) — มีทั้งในเมนูบัญชีผู้ใช้ (desktop) และเมนูมือถือ

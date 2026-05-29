@@ -574,6 +574,14 @@ return [
     ],
 
     'auth' => [
+        'brand_eyebrow' => 'Homework Scanner',
+        'brand_welcome' => 'Welcome',
+        'brand_tagline' => 'Check homework 10× faster',
+        'brand_copy' => 'Scan a barcode with your phone to mark submissions and score work in seconds.',
+        'brand_point_1' => 'Manage classrooms & student rosters',
+        'brand_point_2' => 'Scan to check work with your camera',
+        'brand_point_3' => 'Automatic gradebook & scoring',
+
         'unified_heading' => 'Log in or create account',
         'unified_subtitle' => 'Enter your email to get started — we’ll sign you in if you have an account, otherwise we’ll set one up.',
         'continue' => 'Continue',

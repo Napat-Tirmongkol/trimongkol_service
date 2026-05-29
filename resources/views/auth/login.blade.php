@@ -7,18 +7,16 @@
     @if ($step === 'signin')
 
         {{-- Step 2a: existing account → ask for password --}}
-        <h2 class="text-balance text-center text-xl font-semibold text-slate-900">
-            {{ __('app.auth.welcome_back') }}
-        </h2>
-        <p class="mt-1 text-center text-sm text-slate-500">
+        <h2 class="text-2xl font-bold tracking-tight text-slate-900">{{ __('app.auth.welcome_back') }}</h2>
+        <p class="mt-1.5 text-sm text-slate-500">
             {{ __('app.auth.signin_with_email', ['email' => $email]) }}
-            <a href="{{ route('login') }}" class="ml-1 text-brand-700 underline underline-offset-2 hover:text-brand-900">
+            <a href="{{ route('login') }}" class="text-brand-700 underline underline-offset-2 hover:text-brand-900">
                 {{ __('app.auth.change_email') }}
             </a>
         </p>
 
         @if (session('status'))
-            <div class="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-700 ring-1 ring-inset ring-emerald-200">
+            <div class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-inset ring-emerald-200">
                 {{ session('status') }}
             </div>
         @endif
@@ -31,15 +29,18 @@
                 <div class="flex items-center justify-between">
                     <label for="password" class="block text-sm font-medium text-slate-900">{{ __('app.auth.password') }}</label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-900">
+                        <a href="{{ route('password.request') }}" class="text-xs font-medium text-brand-700 underline-offset-2 hover:underline">
                             {{ __('app.auth.forgot_short') }}
                         </a>
                     @endif
                 </div>
                 <div class="relative mt-2">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </span>
                     <input id="password" type="password" name="password" required autofocus autocomplete="current-password"
                            placeholder="••••••••••"
-                           class="block w-full rounded-md border-slate-300 px-3 py-2 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-600 focus:ring-brand-600">
+                           class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                     <button type="button" onclick="togglePassword('password', this)"
                             class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600">
                         <svg class="eye-off h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -60,12 +61,12 @@
             </div>
 
             <label class="flex items-center gap-2 text-sm text-slate-600">
-                <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-600 focus:ring-brand-600">
+                <input type="checkbox" name="remember" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                 {{ __('app.auth.remember_me') }}
             </label>
 
             <button type="submit"
-                    class="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.sign_in') }}
             </button>
         </form>
@@ -73,12 +74,10 @@
     @elseif ($step === 'signup')
 
         {{-- Step 2b: new account → ask for name + password --}}
-        <h2 class="text-balance text-center text-xl font-semibold text-slate-900">
-            {{ __('app.auth.create_account_heading') }}
-        </h2>
-        <p class="mt-1 text-center text-sm text-slate-500">
+        <h2 class="text-2xl font-bold tracking-tight text-slate-900">{{ __('app.auth.create_account_heading') }}</h2>
+        <p class="mt-1.5 text-sm text-slate-500">
             {{ __('app.auth.signup_with_email', ['email' => $email]) }}
-            <a href="{{ route('login') }}" class="ml-1 text-brand-700 underline underline-offset-2 hover:text-brand-900">
+            <a href="{{ route('login') }}" class="text-brand-700 underline underline-offset-2 hover:text-brand-900">
                 {{ __('app.auth.change_email') }}
             </a>
         </p>
@@ -89,10 +88,15 @@
 
             <div>
                 <label for="name" class="block text-sm font-medium text-slate-900">{{ __('app.auth.name') }}</label>
-                <input id="name" type="text" name="name" required autofocus autocomplete="name"
-                       value="{{ old('name') }}"
-                       placeholder="{{ __('app.auth.name_placeholder') }}"
-                       class="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-600 focus:ring-brand-600">
+                <div class="relative mt-2">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    <input id="name" type="text" name="name" required autofocus autocomplete="name"
+                           value="{{ old('name') }}"
+                           placeholder="{{ __('app.auth.name_placeholder') }}"
+                           class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                </div>
                 @error('name')
                     <p role="alert" class="mt-1 text-xs text-rose-600">{{ $message }}</p>
                 @enderror
@@ -101,9 +105,12 @@
             <div>
                 <label for="password" class="block text-sm font-medium text-slate-900">{{ __('app.auth.password') }}</label>
                 <div class="relative mt-2">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </span>
                     <input id="password" type="password" name="password" required autocomplete="new-password"
                            placeholder="••••••••••"
-                           class="block w-full rounded-md border-slate-300 px-3 py-2 pr-10 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-600 focus:ring-brand-600">
+                           class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
                     <button type="button" onclick="togglePassword('password', this)"
                             class="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600">
                         <svg class="eye-off h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -125,12 +132,12 @@
             </div>
 
             <button type="submit"
-                    class="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.create_account') }}
             </button>
         </form>
 
-        <p class="mt-6 text-pretty text-center text-xs text-slate-500">
+        <p class="mt-6 text-pretty text-xs text-slate-500">
             {{ __('app.auth.terms_prefix') }}
             <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
             {{ __('app.auth.terms_and') }}
@@ -140,19 +147,11 @@
     @else
 
         {{-- Step 1: identify email --}}
-        <div class="mb-6 flex justify-center">
-            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-bold text-white shadow-lg shadow-brand-500/30">T</span>
-        </div>
-
-        <h2 class="text-balance text-center text-xl font-semibold text-slate-900">
-            {{ __('app.auth.unified_heading') }}
-        </h2>
-        <p class="mt-1 text-center text-sm text-slate-500">
-            {{ __('app.auth.unified_subtitle') }}
-        </p>
+        <h2 class="text-2xl font-bold tracking-tight text-slate-900">{{ __('app.auth.unified_heading') }}</h2>
+        <p class="mt-1.5 text-sm text-slate-500">{{ __('app.auth.unified_subtitle') }}</p>
 
         @if (session('status'))
-            <div class="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-700 ring-1 ring-inset ring-emerald-200">
+            <div class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-inset ring-emerald-200">
                 {{ session('status') }}
             </div>
         @endif
@@ -162,22 +161,27 @@
 
             <div>
                 <label for="email" class="block text-sm font-medium text-slate-900">{{ __('app.auth.email') }}</label>
-                <input id="email" type="email" name="email" required autofocus autocomplete="email"
-                       value="{{ old('email') }}"
-                       placeholder="you@example.com"
-                       class="mt-2 block w-full rounded-md border-slate-300 px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus:border-brand-600 focus:ring-brand-600">
+                <div class="relative mt-2">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    </span>
+                    <input id="email" type="email" name="email" required autofocus autocomplete="email"
+                           value="{{ old('email') }}"
+                           placeholder="you@example.com"
+                           class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                </div>
                 @error('email')
                     <p role="alert" class="mt-1 text-xs text-rose-600">{{ $message }}</p>
                 @enderror
             </div>
 
             <button type="submit"
-                    class="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60">
                 {{ __('app.auth.continue') }}
             </button>
         </form>
 
-        <p class="mt-6 text-pretty text-center text-xs text-slate-500">
+        <p class="mt-6 text-pretty text-xs text-slate-500">
             {{ __('app.auth.terms_prefix') }}
             <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
             {{ __('app.auth.terms_and') }}
