@@ -126,17 +126,39 @@ class SiteSettingsController extends Controller
             Setting::updateOrCreate(['key' => $key], ['value' => (string) ($val ?? '')]);
         }
 
-        // Uploaded files override the matching text value with a stored path.
+        // File inputs are named with underscores (no dots, so wildcard validation
+        // works); map them back to their real dotted setting keys, whitelisted
+        // from the schema so only known image settings can be written.
+        $uploadable = [];
+        foreach (self::SCHEMA as $fields) {
+            foreach ($fields as $k => $cfg) {
+                if (! empty($cfg['upload'])) {
+                    $uploadable[str_replace('.', '_', $k)] = $k;
+                }
+            }
+        }
+
         $uploaded = [];
-        foreach ($request->file('upload', []) as $key => $file) {
-            if (! $file) {
+        $errors = [];
+        $dir = public_path('images/backgrounds');
+
+        foreach ($request->file('upload', []) as $field => $file) {
+            if (! $file || ! isset($uploadable[$field])) {
                 continue;
             }
-            $ext = $file->extension() ?: $file->getClientOriginalExtension();
-            $name = str_replace('.', '_', $key).'-'.Str::random(8).'.'.$ext;
-            $file->move(public_path('images/backgrounds'), $name);
-            Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
-            $uploaded[] = $key;
+            $key = $uploadable[$field];
+            try {
+                if (! is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                $ext = $file->extension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
+                $name = $field.'-'.Str::random(8).'.'.$ext;
+                $file->move($dir, $name);
+                Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
+                $uploaded[] = $key;
+            } catch (\Throwable $e) {
+                $errors[] = $key.' — '.$e->getMessage();
+            }
         }
 
         AuditLog::record('site_settings.update', null, 'Site settings', [
@@ -144,7 +166,12 @@ class SiteSettingsController extends Controller
             'uploaded' => $uploaded,
         ]);
 
-        return redirect()->route('admin.site-settings.edit')
-            ->with('status', __('app.cms.saved'));
+        $redirect = redirect()->route('admin.site-settings.edit');
+
+        if ($errors) {
+            return $redirect->with('error', __('app.cms.upload_failed').' '.implode(' | ', $errors));
+        }
+
+        return $redirect->with('status', __('app.cms.saved'));
     }
 }

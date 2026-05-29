@@ -264,6 +264,7 @@ return [
         'placeholderHint' => 'ปล่อยว่าง = ใช้ค่าเริ่มต้น (placeholder)',
         'upload_label' => 'หรืออัปโหลดรูป',
         'upload_hint' => 'เลือกไฟล์รูปเพื่อแทน URL ด้านบน — JPG / PNG / WebP ไม่เกิน 5MB',
+        'upload_failed' => 'อัปโหลดรูปไม่สำเร็จ:',
         'nav' => 'แก้ไขเว็บ',
     ],
 

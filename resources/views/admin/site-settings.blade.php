@@ -50,7 +50,7 @@
                                                 @endif
                                                 <div class="flex-1">
                                                     <label class="block text-xs font-medium text-slate-500">{{ __('app.cms.upload_label') }}</label>
-                                                    <input type="file" name="upload[{{ $key }}]" accept="image/png,image/jpeg,image/webp"
+                                                    <input type="file" name="upload[{{ str_replace('.', '_', $key) }}]" accept="image/png,image/jpeg,image/webp"
                                                            class="mt-1 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100">
                                                     <p class="mt-1 text-xs text-slate-400">{{ __('app.cms.upload_hint') }}</p>
                                                 </div>

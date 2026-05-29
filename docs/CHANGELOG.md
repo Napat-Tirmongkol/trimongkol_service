@@ -4,6 +4,13 @@
 
 ---
 
+## ⚙️ Pull เคลียร์ cache อัตโนมัติ + เสริมความแกร่งการอัปโหลดรูป
+
+- ปุ่ม **Pull** ใน `/admin/system` รัน `optimize:clear` ให้อัตโนมัติหลัง pull สำเร็จ — โค้ด/วิว/lang ใหม่ live ทันทีไม่ต้องกดเคลียร์ cache แยก
+- การอัปโหลดรูป (`/admin/site`): ตั้งชื่อ field แบบไม่มีจุด (validation `upload.*` ทำงานจริง), whitelist key จาก schema, และ **โชว์ error เป็น toast** ถ้าเขียนไฟล์ไม่ได้ (เช่นสิทธิ์โฟลเดอร์) แทนที่จะเงียบ/500
+
+---
+
 ## 🖼️ อัปโหลดรูปพื้นหลัง (login + hero) จาก /admin/site
 
 - เพิ่ม **อัปโหลดไฟล์รูป** ในส่วน "Hero / background images" ของ `/admin/site` (เดิมวาง URL ได้อย่างเดียว) — รองรับ JPG/PNG/WebP ไม่เกิน 5MB (ไม่รับ SVG), เก็บไฟล์ที่ `public/images/backgrounds/`
