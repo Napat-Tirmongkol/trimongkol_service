@@ -1,24 +1,30 @@
 @php
-    // Day-to-day platform tools shown inline in the top row.
-    $primaryTabs = [
-        ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard'],
-        ['route' => 'admin.leads.index', 'label' => __('app.admin.tab_leads'), 'pattern' => 'admin.leads.*'],
-        ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*'],
-        ['route' => 'admin.workspaces.index', 'label' => __('app.admin.tab_workspaces'), 'pattern' => 'admin.workspaces.*'],
-        ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*'],
-    ];
+    $u = auth()->user();
+    $can = fn ($perm) => $perm === null || (bool) $u?->can($perm);
+
+    // Day-to-day platform tools shown inline in the top row — filtered by the
+    // viewer's permissions (see config/permissions.php).
+    $primaryTabs = array_values(array_filter([
+        ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard', 'perm' => null],
+        ['route' => 'admin.leads.index', 'label' => __('app.admin.tab_leads'), 'pattern' => 'admin.leads.*', 'perm' => 'leads.view'],
+        ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*', 'perm' => 'users.view'],
+        ['route' => 'admin.workspaces.index', 'label' => __('app.admin.tab_workspaces'), 'pattern' => 'admin.workspaces.*', 'perm' => 'workspaces.view'],
+        ['route' => 'admin.site-settings.edit', 'label' => __('app.cms.nav'), 'pattern' => 'admin.site-settings.*', 'perm' => 'cms.manage'],
+    ], fn ($t) => $can($t['perm'])));
 
     // Less-frequent tools tucked into a "More" overflow menu so the top row
     // stays uncluttered and never wraps (see docs/ADMIN.md).
-    $moreTabs = [
-        ['route' => 'admin.security', 'label' => __('app.admin.tab_security'), 'pattern' => 'admin.security'],
-        ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs'],
-        ['route' => 'admin.system', 'label' => __('app.admin.tab_system'), 'pattern' => 'admin.system*'],
-    ];
+    $moreTabs = array_values(array_filter([
+        ['route' => 'admin.roles.index', 'label' => __('app.roles.nav'), 'pattern' => 'admin.roles.*', 'perm' => 'roles.manage'],
+        ['route' => 'admin.security', 'label' => __('app.admin.tab_security'), 'pattern' => 'admin.security', 'perm' => 'security.view'],
+        ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs', 'perm' => 'audit.view'],
+        ['route' => 'admin.system', 'label' => __('app.admin.tab_system'), 'pattern' => 'admin.system*', 'perm' => 'system.manage'],
+    ], fn ($t) => $can($t['perm'])));
 
     $activeMore = collect($moreTabs)->contains(fn ($t) => request()->routeIs($t['pattern']));
 
-    $products = config('admin-products', []);
+    // Products dropdown only for users who can moderate products.
+    $products = $can('products.moderate') ? config('admin-products', []) : [];
 
     // Identify which product (if any) the current route belongs to so we can
     // show its second-row sub-nav.
@@ -49,27 +55,29 @@
                         </a>
                     @endforeach
 
-                    {{-- More: less-frequent platform tools --}}
-                    <div class="relative" @click.outside="more = false">
-                        <button type="button" @click="more = !more"
-                                class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition
-                                       {{ $activeMore ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
-                            {{ __('app.admin.nav_more') }}
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <div x-show="more" x-cloak x-transition.opacity
-                             class="absolute left-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-lg">
-                            @foreach ($moreTabs as $tab)
-                                <a href="{{ route($tab['route']) }}"
-                                   class="block whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100
-                                          {{ request()->routeIs($tab['pattern']) ? 'bg-slate-100 text-slate-900' : 'text-slate-700' }}">
-                                    {{ $tab['label'] }}
-                                </a>
-                            @endforeach
+                    @if (! empty($moreTabs))
+                        {{-- More: less-frequent platform tools --}}
+                        <div class="relative" @click.outside="more = false">
+                            <button type="button" @click="more = !more"
+                                    class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition
+                                           {{ $activeMore ? 'bg-white text-slate-900' : 'text-slate-300 hover:bg-white/10' }}">
+                                {{ __('app.admin.nav_more') }}
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div x-show="more" x-cloak x-transition.opacity
+                                 class="absolute left-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 text-slate-900 shadow-lg">
+                                @foreach ($moreTabs as $tab)
+                                    <a href="{{ route($tab['route']) }}"
+                                       class="block whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100
+                                              {{ request()->routeIs($tab['pattern']) ? 'bg-slate-100 text-slate-900' : 'text-slate-700' }}">
+                                        {{ $tab['label'] }}
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
 

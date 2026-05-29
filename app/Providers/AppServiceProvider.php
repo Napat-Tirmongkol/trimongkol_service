@@ -14,6 +14,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -55,6 +56,10 @@ class AppServiceProvider extends ServiceProvider
 
             if (in_array(strtolower((string) $user->email), $allowed, true)) {
                 $user->is_admin = true;
+                $superId = \App\Models\Role::where('key', \App\Models\Role::SUPER)->value('id');
+                if ($superId) {
+                    $user->role_id = $superId;
+                }
                 $user->save();
             }
         });
@@ -132,5 +137,11 @@ class AppServiceProvider extends ServiceProvider
                 ]);
             }
         });
+
+        // RBAC: one gate per back-office permission. Super Admin holds the
+        // '*' wildcard via Role::grants(), so it passes every permission check.
+        foreach (\App\Support\Permissions::keys() as $permission) {
+            Gate::define($permission, fn (User $user) => $user->hasPermission($permission));
+        }
     }
 }

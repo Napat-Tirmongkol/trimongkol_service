@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -58,6 +59,28 @@ class User extends Authenticatable
     public function ownedWorkspaces(): BelongsToMany
     {
         return $this->workspaces()->wherePivot('role', 'owner');
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->role) {
+            return $this->role->grants($permission);
+        }
+
+        // Backward-compat: a bare is_admin flag with no role (legacy rows or
+        // test fixtures) keeps the old "full admin" meaning. Production never
+        // reaches this — every path that sets is_admin also sets a role.
+        return (bool) $this->is_admin;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->role?->isSuper();
     }
 
     public function hasTwoFactorEnabled(): bool

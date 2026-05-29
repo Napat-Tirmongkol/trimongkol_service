@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
@@ -108,50 +109,81 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.assignments.submissions.destroy');
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
-        // Platform-wide tools (cut across all products)
+        // Platform-wide tools (cut across all products). Every admin role can
+        // see the dashboard; everything else is gated by a granular permission
+        // (see config/permissions.php). Super Admin holds '*' and passes all.
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-        Route::get('/logs', [AdminController::class, 'logs'])->name('logs');
-        Route::get('/security', [AdminController::class, 'security'])->name('security');
+        Route::get('/logs', [AdminController::class, 'logs'])->name('logs')->middleware('can:audit.view');
+        Route::get('/security', [AdminController::class, 'security'])->name('security')->middleware('can:security.view');
 
-        Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
-        Route::get('/workspaces/{workspace}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
-        Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
-        Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
+        Route::middleware('can:workspaces.view')->group(function () {
+            Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
+            Route::get('/workspaces/{workspace}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
+        });
+        Route::middleware('can:workspaces.manage')->group(function () {
+            Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
+            Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
+        });
 
-        Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
-        Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');
-        Route::patch('/leads/{lead}', [AdminLeadController::class, 'update'])->name('leads.update');
-        Route::delete('/leads/{lead}', [AdminLeadController::class, 'destroy'])->name('leads.destroy');
+        Route::middleware('can:leads.view')->group(function () {
+            Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
+            Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');
+        });
+        Route::middleware('can:leads.manage')->group(function () {
+            Route::patch('/leads/{lead}', [AdminLeadController::class, 'update'])->name('leads.update');
+            Route::delete('/leads/{lead}', [AdminLeadController::class, 'destroy'])->name('leads.destroy');
+        });
 
-        Route::get('/users', [AdminController::class, 'users'])->name('users');
-        Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
-        Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
-        Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('users.toggle-admin');
-        Route::post('/users/{user}/toggle-active', [AdminController::class, 'toggleActive'])->name('users.toggle-active');
-        Route::post('/users/{user}/password-reset', [AdminController::class, 'sendPasswordReset'])->name('users.password-reset');
-        Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
-        Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
-        Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
-        Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+        Route::middleware('can:users.view')->group(function () {
+            Route::get('/users', [AdminController::class, 'users'])->name('users');
+            Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('users.export');
+            Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
+        });
+        Route::post('/users/{user}/role', [AdminController::class, 'assignRole'])->name('users.assign-role')->middleware('can:users.assign_roles');
+        Route::middleware('can:users.manage')->group(function () {
+            Route::post('/users/{user}/toggle-active', [AdminController::class, 'toggleActive'])->name('users.toggle-active');
+            Route::post('/users/{user}/password-reset', [AdminController::class, 'sendPasswordReset'])->name('users.password-reset');
+            Route::post('/users/{user}/impersonate', [AdminController::class, 'impersonate'])->name('users.impersonate');
+        });
+        Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy')->middleware('can:users.delete');
 
-        Route::get('/system', [AdminSystemController::class, 'index'])->name('system');
-        Route::post('/system/pull', [AdminSystemController::class, 'pull'])->name('system.pull');
-        Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
-        Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
-        Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
+        // Roles & permissions (full RBAC)
+        Route::middleware('can:roles.manage')->group(function () {
+            Route::get('/roles', [AdminRoleController::class, 'index'])->name('roles.index');
+            Route::get('/roles/create', [AdminRoleController::class, 'create'])->name('roles.create');
+            Route::post('/roles', [AdminRoleController::class, 'store'])->name('roles.store');
+            Route::get('/roles/{role}/edit', [AdminRoleController::class, 'edit'])->name('roles.edit');
+            Route::patch('/roles/{role}', [AdminRoleController::class, 'update'])->name('roles.update');
+            Route::delete('/roles/{role}', [AdminRoleController::class, 'destroy'])->name('roles.destroy');
+        });
+
+        Route::middleware('can:cms.manage')->group(function () {
+            Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
+            Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+        });
+
+        Route::middleware('can:system.manage')->group(function () {
+            Route::get('/system', [AdminSystemController::class, 'index'])->name('system');
+            Route::post('/system/pull', [AdminSystemController::class, 'pull'])->name('system.pull');
+            Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
+            Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
+            Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
+        });
 
         // Product-specific moderation. New products get a sibling group here +
         // an entry in config/admin-products.php and the nav picks them up.
-        Route::prefix('products/scanner')->name('scanner.')->group(function () {
-            Route::get('/', [AdminScannerController::class, 'dashboard'])->name('dashboard');
-            Route::get('/classrooms', [AdminScannerController::class, 'classrooms'])->name('classrooms');
-            Route::get('/classrooms/{classroom}', [AdminScannerController::class, 'showClassroom'])->name('classrooms.show');
-            Route::delete('/classrooms/{classroom}', [AdminScannerController::class, 'destroyClassroom'])->name('classrooms.destroy');
-        });
+        Route::middleware('can:products.moderate')->group(function () {
+            Route::prefix('products/scanner')->name('scanner.')->group(function () {
+                Route::get('/', [AdminScannerController::class, 'dashboard'])->name('dashboard');
+                Route::get('/classrooms', [AdminScannerController::class, 'classrooms'])->name('classrooms');
+                Route::get('/classrooms/{classroom}', [AdminScannerController::class, 'showClassroom'])->name('classrooms.show');
+                Route::delete('/classrooms/{classroom}', [AdminScannerController::class, 'destroyClassroom'])->name('classrooms.destroy');
+            });
 
-        // Back-compat redirects for the old flat URLs.
-        Route::get('/classrooms', fn () => redirect()->route('admin.scanner.classrooms', request()->query()));
-        Route::get('/classrooms/{classroom}', fn (Classroom $classroom) => redirect()->route('admin.scanner.classrooms.show', $classroom));
+            // Back-compat redirects for the old flat URLs.
+            Route::get('/classrooms', fn () => redirect()->route('admin.scanner.classrooms', request()->query()));
+            Route::get('/classrooms/{classroom}', fn (Classroom $classroom) => redirect()->route('admin.scanner.classrooms.show', $classroom));
+        });
     });
 });
 

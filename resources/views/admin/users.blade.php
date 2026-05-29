@@ -31,7 +31,10 @@
                     <label class="block text-xs font-medium text-slate-600">{{ __('app.admin.filter_role') }}</label>
                     <select name="role" class="mt-1 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">{{ __('app.admin.filter_all') }}</option>
-                        <option value="admin" @selected($role === 'admin')>{{ __('app.admin.role_admin') }}</option>
+                        <option value="staff" @selected($role === 'staff')>{{ __('app.roles.filter_staff') }}</option>
+                        @foreach ($roles as $r)
+                            <option value="{{ $r->key }}" @selected($role === $r->key)>{{ $r->name }}</option>
+                        @endforeach
                         <option value="teacher" @selected($role === 'teacher')>{{ __('app.admin.role_teacher') }}</option>
                     </select>
                 </div>
@@ -86,13 +89,13 @@
                                     <td class="px-6 py-3 text-slate-600">{{ $user->email }}</td>
                                     <td class="px-6 py-3 text-center text-slate-600">{{ $user->classrooms_count }}</td>
                                     <td class="px-6 py-3">
-                                        @if ($user->is_admin)
+                                        @if ($user->role)
                                             <span class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 6 7 1-5 4 1 7-6-3-6 3 1-7-5-4 7-1z"/></svg>
-                                                admin
+                                                {{ $user->role->name }}
                                             </span>
                                         @else
-                                            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">teacher</span>
+                                            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ __('app.roles.user_badge') }}</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-3">

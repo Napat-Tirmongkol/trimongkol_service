@@ -4,6 +4,23 @@
 
 ---
 
+## 🔐 ระบบ Role & สิทธิ์ (RBAC) ที่ /admin
+
+ยกระดับสิทธิ์แอดมินจาก `is_admin` (จริง/เท็จ) เป็น **RBAC เต็ม** — role ถือ permission รายฟีเจอร์ และสร้าง role เองได้
+
+- **Permission catalog** `config/permissions.php` (14 สิทธิ์ จัดกลุ่ม users / roles / leads / workspaces / content / platform) + helper `App\Support\Permissions`
+- **Role** (ตาราง `roles` แก้ได้ใน DB): seed 3 ตัว — **Super Admin** (ทุกสิทธิ์ `'*'`, ลบ/แก้สิทธิ์ไม่ได้), **Admin**, **Support** (เน้นอ่าน)
+- ผู้ใช้มีคอลัมน์ `role_id` (null = ผู้ใช้ทั่วไป). **`is_admin` ยังอยู่** = "มี role หลังบ้าน" ของเดิมจึงไม่พัง; migration ย้ายแอดมินเดิมทั้งหมด → Super Admin
+- **บังคับสิทธิ์จริง**: gate ต่อ permission (`AppServiceProvider`) + `can:` middleware ทุกกลุ่ม route + ซ่อนเมนู/ปุ่มตามสิทธิ์ของผู้ใช้
+- **`/admin/users`**: เปลี่ยนปุ่ม "ตั้ง/ถอดแอดมิน" เป็น **เลือก role**, filter ตาม role, badge ชื่อ role
+- **`/admin/roles`** (ใหม่): สร้าง / แก้ / ลบ role + ติ๊ก permission รายกลุ่ม
+- กันล็อกเอาต์: เปลี่ยน role ตัวเองไม่ได้, ถอด Super Admin คนสุดท้ายไม่ได้, ลบ role ระบบไม่ได้, Super Admin สิทธิ์ครบเสมอ
+- `ADMIN_EMAILS` และ `php artisan app:make-admin` กำหนด Super Admin ให้อัตโนมัติ
+- เพิ่ม key `app.roles.*` (TH + EN) + `config/permissions.php`
+- **ต้องรัน migrate**: 3 migrations (roles / role_id / seed+migrate) ผ่านปุ่มใน `/admin/system` แล้ว pull + clear cache
+
+---
+
 ## 🆓 โหมดเปิดตัวฟรี (free launch mode) — ฟรีทุกคน + เพดานกันสแปม
 
 เปิดให้ใช้งานฟรีช่วงแรกด้วยสวิตช์เดียว ปิด-เปิดได้จาก `/admin/site` โดยไม่ต้องรื้อระบบแพ็คเกจ/จ่ายเงินที่ทำไว้ (Phase 4)
