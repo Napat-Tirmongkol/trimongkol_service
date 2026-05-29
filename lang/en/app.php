@@ -479,6 +479,16 @@ return [
         'limit_classrooms' => 'The ":plan" plan is limited to :limit classrooms — upgrade to add more.',
         'limit_members' => 'The ":plan" plan is limited to :limit members — upgrade to grow the team.',
         'limit_students' => 'The ":plan" plan is limited to :limit students per classroom — upgrade to add more.',
+        'launch_limit_classrooms' => 'During launch, free accounts are capped at :limit classrooms — contact us to raise it.',
+        'launch_limit_members' => 'During launch, free accounts are capped at :limit team members — contact us to raise it.',
+        'launch_limit_students' => 'During launch, free accounts are capped at :limit students per classroom — contact us to raise it.',
+        'free_launch_title' => '🎉 Launch period — everything is free',
+        'free_launch_desc' => "It's free to use right now, with no billing. A light per-account cap keeps abuse in check.",
+        'free_launch_caps' => ':classrooms classrooms · :members members · :students students/class',
+        'free_launch_note' => '✓ Free during launch',
+        'free_launch_badge' => 'Free (launch)',
+        'free_launch_price_note' => 'Price when billing starts later',
+        'unlimited' => 'Unlimited',
     ],
 
     'workspaces' => [

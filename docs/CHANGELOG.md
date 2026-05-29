@@ -4,6 +4,20 @@
 
 ---
 
+## 🆓 โหมดเปิดตัวฟรี (free launch mode) — ฟรีทุกคน + เพดานกันสแปม
+
+เปิดให้ใช้งานฟรีช่วงแรกด้วยสวิตช์เดียว ปิด-เปิดได้จาก `/admin/site` โดยไม่ต้องรื้อระบบแพ็คเกจ/จ่ายเงินที่ทำไว้ (Phase 4)
+
+- เพิ่ม `App\Services\Billing` + `config/billing.php` — flag `billing.free_mode` (ค่าเริ่มต้น = เปิด) และเพดานช่วงเปิดตัว (config + override ได้จาก `/admin/site`)
+- **โหมดฟรี**: `PlanGate` ใช้ "เพดานช่วงเปิดตัว" ร่วมกันทุก workspace แทนลิมิตของแพ็คเกจ — ค่าเริ่มต้น **15 ห้อง / 5 สมาชิก / 80 นักเรียนต่อห้อง** (ปรับได้ที่ `/admin/site`)
+- ซ่อนแถบ trial นับถอยหลัง + ปุ่มอัปเกรดที่ยังกดไม่ได้, หน้า `/plans` เปลี่ยนเป็น "ฟรีช่วงเปิดตัว" (โชว์เพดาน ซ่อน CTA จ่ายเงิน), หน้า workspace settings โชว์ badge "ฟรีช่วงเปิดตัว"
+- ผู้ใช้ใหม่ช่วงโหมดฟรี: subscription เป็น Free/active (ไม่มี trial countdown)
+- พอจะเริ่มเก็บเงิน: ตั้ง `billing.free_mode = 0` ที่ `/admin/site` → ลิมิต/แพ็คเกจ/trial กลับมาทำงานทันที (reversible)
+- เพิ่ม key `app.plans.launch_limit_* / free_launch_* / unlimited` (TH + EN)
+- มี Tailwind class ใหม่ + config ใหม่ → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
 ## 🎨 เปลี่ยน hero หน้า /scanner เป็นโทนสว่าง
 
 - หน้า `/scanner` (dashboard) เดิม hero เป็นพื้นดำไล่เฉดน้ำเงิน (`slate-900 → brand-900`) — เป็นพื้นที่ "มืด" จุดเดียวในแอปที่เหลือเป็นโทนสว่างทั้งหมด

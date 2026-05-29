@@ -11,7 +11,26 @@
     <div class="py-10">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
-            @if ($subscription?->isOnTrial())
+            @if ($freeMode)
+                <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                    <div class="flex items-start gap-3">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="mt-0.5 shrink-0 text-emerald-600">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-semibold text-emerald-900">{{ __('app.plans.free_launch_title') }}</p>
+                            <p class="mt-1 text-sm text-emerald-800">{{ __('app.plans.free_launch_desc') }}</p>
+                            <p class="mt-2 text-xs font-medium text-emerald-700">
+                                {{ __('app.plans.free_launch_caps', [
+                                    'classrooms' => $launchLimits['max_classrooms'] ?? __('app.plans.unlimited'),
+                                    'members' => $launchLimits['max_members'] ?? __('app.plans.unlimited'),
+                                    'students' => $launchLimits['max_students_per_classroom'] ?? __('app.plans.unlimited'),
+                                ]) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @elseif ($subscription?->isOnTrial())
                 <div class="mb-6 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-inset ring-amber-200">
                     {{ __('app.plans.trial_status', [
                         'plan' => \App\Models\Plan::find($subscription->plan_key)->name,
@@ -54,6 +73,10 @@
                             @endif
                         </div>
 
+                        @if ($freeMode)
+                            <p class="mt-1 text-xs text-slate-400">{{ __('app.plans.free_launch_price_note') }}</p>
+                        @endif
+
                         <ul class="mt-5 space-y-2 text-sm text-slate-700">
                             @foreach ($plan->features as $feature)
                                 <li class="flex gap-2">
@@ -66,7 +89,11 @@
                         </ul>
 
                         <div class="mt-6">
-                            @if ($isCurrent)
+                            @if ($freeMode)
+                                <div class="w-full rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-center text-sm font-medium text-emerald-700">
+                                    {{ __('app.plans.free_launch_note') }}
+                                </div>
+                            @elseif ($isCurrent)
                                 <button type="button" disabled class="w-full rounded-md border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-500">
                                     {{ __('app.plans.current_plan') }}
                                 </button>
@@ -83,7 +110,9 @@
                 @endforeach
             </div>
 
-            <p class="mt-8 text-center text-xs text-slate-500">{{ __('app.plans.contact_note') }}</p>
+            @if (! $freeMode)
+                <p class="mt-8 text-center text-xs text-slate-500">{{ __('app.plans.contact_note') }}</p>
+            @endif
         </div>
     </div>
 </x-app-layout>

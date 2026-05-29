@@ -116,12 +116,21 @@ class AppServiceProvider extends ServiceProvider
                 'joined_at' => now(),
             ]);
 
-            Subscription::create([
-                'workspace_id' => $workspace->id,
-                'plan_key' => 'basic',
-                'status' => Subscription::STATUS_TRIAL,
-                'trial_ends_at' => now()->addDays(14),
-            ]);
+            if (\App\Services\Billing::freeMode()) {
+                // Free launch: skip the trial countdown — everyone shares the launch caps.
+                Subscription::create([
+                    'workspace_id' => $workspace->id,
+                    'plan_key' => 'free',
+                    'status' => Subscription::STATUS_ACTIVE,
+                ]);
+            } else {
+                Subscription::create([
+                    'workspace_id' => $workspace->id,
+                    'plan_key' => 'basic',
+                    'status' => Subscription::STATUS_TRIAL,
+                    'trial_ends_at' => now()->addDays(14),
+                ]);
+            }
         });
     }
 }
