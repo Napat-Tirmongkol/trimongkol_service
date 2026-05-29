@@ -267,6 +267,9 @@ return [
         'upload_hint' => 'เลือกไฟล์รูปเพื่อแทน URL ด้านบน — JPG / PNG / WebP ไม่เกิน 10MB',
         'upload_failed' => 'อัปโหลดรูปไม่สำเร็จ:',
         'nav' => 'แก้ไขเว็บ',
+        'searchPlaceholder' => 'ค้นหาหัวข้อหรือฟิลด์…',
+        'sections' => 'หัวข้อ',
+        'noResults' => 'ไม่พบฟิลด์ที่ตรงกับคำค้น',
     ],
 
     'common' => [

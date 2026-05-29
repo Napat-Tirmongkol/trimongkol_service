@@ -267,6 +267,9 @@ return [
         'upload_hint' => 'Pick an image file to replace the URL above — JPG / PNG / WebP, max 10MB.',
         'upload_failed' => 'Image upload failed:',
         'nav' => 'Edit Site',
+        'searchPlaceholder' => 'Search settings…',
+        'sections' => 'Sections',
+        'noResults' => 'No settings match your search',
     ],
 
     'common' => [
