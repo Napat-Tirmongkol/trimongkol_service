@@ -135,7 +135,7 @@ class SiteSettingsController extends Controller
         }
 
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-        $maxBytes = 5 * 1024 * 1024;
+        $maxBytes = 10 * 1024 * 1024;
         $dir = public_path('images/backgrounds');
         $writableProbe = is_dir($dir) ? $dir : (is_dir(public_path('images')) ? public_path('images') : public_path());
 

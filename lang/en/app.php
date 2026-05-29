@@ -263,7 +263,7 @@ return [
         'previewSite' => 'View site',
         'placeholderHint' => 'Leave empty to use the default (placeholder text shown).',
         'upload_label' => 'Or upload an image',
-        'upload_hint' => 'Pick an image file to replace the URL above — JPG / PNG / WebP, max 5MB.',
+        'upload_hint' => 'Pick an image file to replace the URL above — JPG / PNG / WebP, max 10MB.',
         'upload_failed' => 'Image upload failed:',
         'nav' => 'Edit Site',
     ],
