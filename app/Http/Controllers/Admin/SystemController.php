@@ -77,6 +77,18 @@ class SystemController extends Controller
             'exit_code' => $exitCode,
         ]);
 
+        // Auto-clear caches after a successful pull so updated views / config /
+        // routes take effect without a separate manual step.
+        if ($exitCode === 0) {
+            try {
+                $clear = new BufferedOutput();
+                Artisan::call('optimize:clear', [], $clear);
+                $output .= "\n\n--- caches cleared (optimize:clear) ---\n".$clear->fetch();
+            } catch (\Throwable $e) {
+                $output .= "\n\n--- cache clear failed: ".$e->getMessage()." ---";
+            }
+        }
+
         return redirect()->route('admin.system')
             ->with('system_result', [
                 'command' => 'pull (Plesk git webhook)',

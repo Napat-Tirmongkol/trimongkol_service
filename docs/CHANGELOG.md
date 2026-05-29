@@ -4,6 +4,39 @@
 
 ---
 
+## ⚙️ Pull เคลียร์ cache อัตโนมัติ + เสริมความแกร่งการอัปโหลดรูป
+
+- ปุ่ม **Pull** ใน `/admin/system` รัน `optimize:clear` ให้อัตโนมัติหลัง pull สำเร็จ — โค้ด/วิว/lang ใหม่ live ทันทีไม่ต้องกดเคลียร์ cache แยก
+- การอัปโหลดรูป (`/admin/site`): ตั้งชื่อ field แบบไม่มีจุด (validation `upload.*` ทำงานจริง), whitelist key จาก schema, และ **โชว์ error เป็น toast** ถ้าเขียนไฟล์ไม่ได้ (เช่นสิทธิ์โฟลเดอร์) แทนที่จะเงียบ/500
+
+---
+
+## 🖼️ อัปโหลดรูปพื้นหลัง (login + hero) จาก /admin/site
+
+- เพิ่ม **อัปโหลดไฟล์รูป** ในส่วน "Hero / background images" ของ `/admin/site` (เดิมวาง URL ได้อย่างเดียว) — รองรับ JPG/PNG/WebP ไม่เกิน 5MB (ไม่รับ SVG), เก็บไฟล์ที่ `public/images/backgrounds/`
+- เพิ่มช่อง **`hero_image.login`** สำหรับรูปพื้นหลังหน้า login โดยเฉพาะ — `guest.blade.php` อ่านจาก `setting('hero_image.login', config(...))` (DB override → config)
+- มี preview รูปปัจจุบันข้างช่องอัปโหลด, log การแก้ผ่าน `AuditLog` (`site_settings.update`)
+- `public/images/backgrounds/` ใส่ `.gitignore` (เป็นไฟล์ที่ผู้ใช้อัปโหลด ไม่ commit)
+
+---
+
+## 🔐 หน้า Login ดีไซน์ใหม่ (split-screen)
+
+- `layouts/guest.blade.php` → **split-screen**: ซ้าย = พาเนลไล่เฉดสีน้ำเงินแบรนด์ + กริด/วงกลมตกแต่ง + หัวข้อ "ยินดีต้อนรับ" และจุดเด่นของระบบ, ขวา = ฟอร์ม (มีผลกับหน้า auth ทุกหน้าที่ใช้ layout นี้)
+- `auth/login.blade.php` → หัวข้อชิดซ้าย + ช่องกรอกมีไอคอนนำหน้า (อีเมล/ชื่อ/รหัสผ่าน) — **คงโฟลว์ email-first 3 สเต็ปเดิมครบ** (identify → signin/signup) ไม่ได้เพิ่ม social login / username ปลอมตามรูปต้นแบบ
+- เพิ่ม key `app.auth.brand_*` (TH + EN) สำหรับข้อความพาเนลซ้าย
+- rebuild Vite assets (มี Tailwind class ใหม่) → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🔙 ลิงก์กลับหน้าแรกเว็บไซต์จากในแอป
+
+- เพิ่มลิงก์ **"หน้าแรกเว็บไซต์"** ในเมนูนำทางของแอป (`layouts/navigation.blade.php`) — มีทั้งในเมนูบัญชีผู้ใช้ (desktop) และเมนูมือถือ
+- แก้ปัญหาหน้า `/scanner` (และหน้าอื่น ๆ ในแอป) ไม่มีทางกลับไปหน้าแรกของเว็บไซต์ (`/`)
+- เพิ่ม key `app.nav.website_home` ใน `lang/th/app.php` + `lang/en/app.php`
+
+---
+
 ## 💳 Subscription & Plan Foundation (Phase 4)
 
 **Phase 4 ของ business model C** — โครงสร้าง subscription แบบ per-workspace

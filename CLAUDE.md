@@ -38,6 +38,26 @@
 
 ---
 
+## Design skills — ใช้ตัวไหนเมื่อไหร่
+
+มี skill ด้านดีไซน์หลายตัวใน `.claude/skills/` — หยิบตามนี้ อย่าสับสน:
+
+- **`tirmongkol-design`** — **default / source of truth ของแบรนด์** ใช้กับงาน UI/asset จริงของ Tirmongkol (สี, ฟอนต์, ปุ่ม, UI kit) → เริ่มตัวนี้เสมอ
+- **`ui-ux-pro-max`** — ที่ปรึกษา UI/UX (ไอเดีย, palette, UX rules, คำแนะนำตาม stack รวม **laravel**, สร้าง design system) รันค้นได้จริง:
+  ```bash
+  python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --stack laravel
+  ```
+  (ต้องอนุญาตรันสคริปต์ก่อน — เป็นโค้ด third-party)
+- **`design-system`** *(reference-only)* — เอกสาร design tokens: primitive→semantic→component, `tailwind-integration`
+- **`ui-styling`** *(reference-only)* — เอกสาร Tailwind utilities/responsive + accessibility ตอนเขียน Blade
+
+**กฎ:**
+- สี/แบรนด์จริง ยึด **`tirmongkol-design`** เป็นหลักเสมอ — ตัวอื่นเป็นแค่ที่ปรึกษา/อ้างอิง **ห้าม override สีแบรนด์**
+- `design-system` + `ui-styling` ลงแบบ reference-only (ไม่มี scripts/fonts) — ใช้เป็นเอกสาร ไม่ต้องตามหา CLI ของมัน
+- ที่มา 3 ตัวหลัง (ui-ux-pro-max / design-system / ui-styling): `github.com/nextlevelbuilder/ui-ux-pro-max-skill` (MIT)
+
+---
+
 ## Translations
 
 - **TH + EN เป็นคู่กันเสมอ** — ทุก key ใน `lang/th/app.php` ต้องมีใน `lang/en/app.php` ด้วย

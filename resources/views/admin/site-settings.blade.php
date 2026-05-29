@@ -19,7 +19,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.site-settings.update') }}" class="space-y-8">
+            <form method="POST" action="{{ route('admin.site-settings.update') }}" enctype="multipart/form-data" class="space-y-8">
                 @csrf
                 @method('PATCH')
 
@@ -40,6 +40,21 @@
                                             <input type="text" name="s[{{ $key }}]"
                                                    value="{{ $values[$key] ?? null ?? '' }}"
                                                    class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        @endif
+
+                                        @if (! empty($cfg['upload']))
+                                            @php $cur = ($values[$key] ?? '') ?: config('site.hero_images.' . \Illuminate\Support\Str::after($key, 'hero_image.')); @endphp
+                                            <div class="mt-2 flex items-center gap-3">
+                                                @if ($cur)
+                                                    <img src="{{ $cur }}" alt="" class="h-14 w-24 shrink-0 rounded-md object-cover ring-1 ring-slate-200">
+                                                @endif
+                                                <div class="flex-1">
+                                                    <label class="block text-xs font-medium text-slate-500">{{ __('app.cms.upload_label') }}</label>
+                                                    <input type="file" name="upload[{{ str_replace('.', '_', $key) }}]" accept="image/png,image/jpeg,image/webp"
+                                                           class="mt-1 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100">
+                                                    <p class="mt-1 text-xs text-slate-400">{{ __('app.cms.upload_hint') }}</p>
+                                                </div>
+                                            </div>
                                         @endif
                                     @else
                                         <div class="mt-1.5 grid gap-3 sm:grid-cols-2">

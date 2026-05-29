@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Services\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SiteSettingsController extends Controller
 {
@@ -94,11 +97,12 @@ class SiteSettingsController extends Controller
         'Deployment' => [
             'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
         ],
-        'Hero images' => [
-            'hero_image.home' => ['type' => 'shared', 'label' => 'Home (URL or /images/...)', 'wide' => true],
-            'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true],
-            'hero_image.about' => ['type' => 'shared', 'label' => 'About', 'wide' => true],
-            'hero_image.contact' => ['type' => 'shared', 'label' => 'Contact', 'wide' => true],
+        'Hero / background images' => [
+            'hero_image.login' => ['type' => 'shared', 'label' => 'Login / auth background', 'wide' => true, 'upload' => true],
+            'hero_image.home' => ['type' => 'shared', 'label' => 'Home', 'wide' => true, 'upload' => true],
+            'hero_image.services' => ['type' => 'shared', 'label' => 'Services', 'wide' => true, 'upload' => true],
+            'hero_image.about' => ['type' => 'shared', 'label' => 'About', 'wide' => true, 'upload' => true],
+            'hero_image.contact' => ['type' => 'shared', 'label' => 'Contact', 'wide' => true, 'upload' => true],
         ],
     ];
 
@@ -118,7 +122,99 @@ class SiteSettingsController extends Controller
             Setting::updateOrCreate(['key' => $key], ['value' => (string) ($val ?? '')]);
         }
 
-        return redirect()->route('admin.site-settings.edit')
-            ->with('status', __('app.cms.saved'));
+        // --- Image uploads (fully traced — see /admin/logs + storage/logs) ---
+        // File inputs are named with underscores (no dots); map them back to the
+        // real dotted setting keys, whitelisted from the schema.
+        $uploadable = [];
+        foreach (self::SCHEMA as $fields) {
+            foreach ($fields as $k => $cfg) {
+                if (! empty($cfg['upload'])) {
+                    $uploadable[str_replace('.', '_', $k)] = $k;
+                }
+            }
+        }
+
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        $maxBytes = 10 * 1024 * 1024;
+        $dir = public_path('images/backgrounds');
+        $writableProbe = is_dir($dir) ? $dir : (is_dir(public_path('images')) ? public_path('images') : public_path());
+
+        $files = $request->file('upload', []);
+        $trace = [
+            'fields' => array_keys($files),
+            'dir' => $dir,
+            'dir_exists' => is_dir($dir),
+            'dir_writable' => is_writable($writableProbe),
+            'post_max_size' => ini_get('post_max_size'),
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'files' => [],
+        ];
+
+        $uploaded = [];
+        $errors = [];
+
+        foreach ($files as $field => $file) {
+            if (! $file) {
+                continue;
+            }
+            $key = $uploadable[$field] ?? $field;
+            $info = [
+                'field' => $field,
+                'key' => $key,
+                'orig' => $file->getClientOriginalName(),
+                'client_mime' => $file->getClientMimeType(),
+                'kb' => (int) round(($file->getSize() ?: 0) / 1024),
+                'php_error' => $file->getError(),
+                'valid' => $file->isValid(),
+            ];
+
+            if (! isset($uploadable[$field])) {
+                $info['result'] = 'skipped (unknown field)';
+            } elseif (! $file->isValid()) {
+                $info['result'] = 'invalid: '.$file->getErrorMessage();
+                $errors[] = $key.' — '.$file->getErrorMessage();
+            } elseif (! in_array($mime = (string) $file->getMimeType(), $allowedMimes, true)) {
+                $info['result'] = 'rejected mime: '.$mime;
+                $errors[] = $key.' — '.($mime ?: 'unknown').' not allowed';
+            } elseif (($file->getSize() ?: 0) > $maxBytes) {
+                $info['result'] = 'too large';
+                $errors[] = $key.' — too large ('.$info['kb'].'KB)';
+            } else {
+                try {
+                    if (! is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $ext = $file->extension() ?: ($file->getClientOriginalExtension() ?: 'jpg');
+                    $name = $field.'-'.Str::random(8).'.'.$ext;
+                    $file->move($dir, $name);
+                    Setting::updateOrCreate(['key' => $key], ['value' => '/images/backgrounds/'.$name]);
+                    $uploaded[] = $key;
+                    $info['result'] = 'stored /images/backgrounds/'.$name;
+                } catch (\Throwable $e) {
+                    $info['result'] = 'move failed: '.$e->getMessage();
+                    $errors[] = $key.' — '.$e->getMessage();
+                }
+            }
+
+            $trace['files'][] = $info;
+        }
+
+        $meta = ['keys' => array_keys($input)];
+        if ($trace['fields'] || $uploaded || $errors) {
+            $meta['uploaded'] = $uploaded;
+            $meta['errors'] = $errors;
+            $meta['upload_trace'] = $trace;
+            Log::info('site-settings image upload', ['admin' => auth()->id()] + $meta);
+        }
+
+        AuditLog::record('site_settings.update', null, 'Site settings', $meta);
+
+        $redirect = redirect()->route('admin.site-settings.edit');
+
+        if ($errors) {
+            return $redirect->with('error', __('app.cms.upload_failed').' '.implode(' | ', $errors));
+        }
+
+        return $redirect->with('status', __('app.cms.saved'));
     }
 }
