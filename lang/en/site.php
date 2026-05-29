@@ -174,6 +174,16 @@ return [
         'infoHoursTitle' => 'Office Hours',
         'infoHours' => 'Monday - Friday, 9:00 AM - 6:00 PM',
     ],
+    'donate' => [
+        'nav' => 'Support us',
+        'heading' => 'Support us',
+        'subtitle' => 'If this tool helps you, consider buying the developer a coffee 🙏',
+        'note' => 'Scan the QR above to send your support — every little bit means a lot. Thank you!',
+        'scan' => 'Scan QR to transfer',
+        'name_label' => 'Account name',
+        'account_label' => 'Account / PromptPay',
+        'disabled' => 'Donations are not open right now.',
+    ],
     'footer' => [
         'tagline' => 'Building software that moves your business forward',
         'navHeading' => 'Menu',

@@ -94,8 +94,22 @@ class SiteSettingsController extends Controller
             'maintenance.enabled' => ['type' => 'shared', 'label' => 'Enable maintenance mode (1 = on, blank = off)'],
             'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
         ],
+        'Free launch / Billing' => [
+            'billing.free_mode' => ['type' => 'shared', 'label' => 'โหมดเปิดตัวฟรี — 1 = เปิด (ฟรีทุกคน ลิมิตช่วงเปิดตัว), 0 = ปิด (เริ่มเก็บเงิน ใช้แพ็คเกจจริง). ค่าเริ่มต้น = เปิด', 'wide' => true],
+            'billing.launch_max_classrooms' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: ห้องเรียนต่อบัญชี (เว้นว่าง = ค่าเริ่มต้น 15)'],
+            'billing.launch_max_members' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: สมาชิกต่อทีม (เว้นว่าง = 5)'],
+            'billing.launch_max_students_per_classroom' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: นักเรียนต่อห้อง (เว้นว่าง = 80)'],
+        ],
         'Deployment' => [
             'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
+        ],
+        'Donation / บริจาค' => [
+            'donate.enabled' => ['type' => 'shared', 'label' => 'เปิดช่องทางบริจาค (1 = เปิด, 0 = ปิด)', 'wide' => true],
+            'donate.heading' => ['type' => 'i18n', 'label' => 'หัวข้อหน้าบริจาค'],
+            'donate.note' => ['type' => 'i18n', 'label' => 'ข้อความ / คำขอบคุณ', 'textarea' => true],
+            'donate.name' => ['type' => 'shared', 'label' => 'ชื่อบัญชี'],
+            'donate.account' => ['type' => 'shared', 'label' => 'เลขบัญชี / พร้อมเพย์'],
+            'donate.qr' => ['type' => 'shared', 'label' => 'รูป QR (PromptPay / ธนาคาร)', 'wide' => true, 'upload' => true],
         ],
         'Hero / background images' => [
             'hero_image.login' => ['type' => 'shared', 'label' => 'Login / auth background', 'wide' => true, 'upload' => true],

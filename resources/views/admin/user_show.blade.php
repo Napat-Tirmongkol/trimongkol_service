@@ -7,10 +7,10 @@
                 <p class="text-sm text-slate-500">{{ $user->email }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                @if ($user->is_admin)
-                    <span class="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">admin</span>
+                @if ($user->role)
+                    <span class="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{{ $user->role->name }}</span>
                 @else
-                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">teacher</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ __('app.roles.user_badge') }}</span>
                 @endif
                 @if ($user->is_active)
                     <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">{{ __('app.admin.status_active') }}</span>
@@ -57,19 +57,28 @@
             </div>
 
             {{-- Admin actions --}}
-            @if ($user->id !== auth()->id())
+            @if ($user->id !== auth()->id() && auth()->user()->canany(['users.assign_roles', 'users.manage', 'users.delete']))
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.actions_heading') }}</h3>
                     <div class="mt-3 flex flex-wrap gap-2">
-                        <form method="POST" action="{{ route('admin.users.toggle-admin', $user) }}"
-                              data-confirm="{{ $user->is_admin ? __('app.admin.confirmDemote', ['name' => $user->name]) : __('app.admin.confirmPromote', ['name' => $user->name]) }}"
-                              @if ($user->is_admin) data-confirm-danger="1" @endif>
-                            @csrf
-                            <button type="submit"
-                                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium {{ $user->is_admin ? 'text-rose-700 hover:bg-rose-50' : 'text-brand-700 hover:bg-brand-50' }}">
-                                {{ $user->is_admin ? __('app.admin.demote') : __('app.admin.promote') }}
-                            </button>
-                        </form>
+                        @can('users.assign_roles')
+                            <form method="POST" action="{{ route('admin.users.assign-role', $user) }}" class="flex items-end gap-2">
+                                @csrf
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600">{{ __('app.roles.assign') }}</label>
+                                    <select name="role_id" class="mt-1 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <option value="">{{ __('app.roles.none') }}</option>
+                                        @foreach ($roles as $r)
+                                            <option value="{{ $r->id }}" @selected($user->role_id === $r->id)>{{ $r->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <button type="submit" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50">
+                                    {{ __('app.roles.save') }}
+                                </button>
+                            </form>
+                        @endcan
+                        @can('users.manage')
                         <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}"
                               data-confirm="{{ $user->is_active ? __('app.admin.confirm_suspend', ['name' => $user->name]) : __('app.admin.confirm_activate', ['name' => $user->name]) }}"
                               @if ($user->is_active) data-confirm-danger="1" @endif>
@@ -97,6 +106,8 @@
                                 </button>
                             </form>
                         @endif
+                        @endcan
+                        @can('users.delete')
                         <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
                               data-confirm="{{ __('app.admin.confirm_delete_user', ['name' => $user->name]) }}"
                               data-confirm-danger="1">
@@ -106,6 +117,7 @@
                                 {{ __('app.admin.delete_user') }}
                             </button>
                         </form>
+                        @endcan
                     </div>
                     <p class="mt-3 text-xs text-slate-500">{{ __('app.admin.actions_hint') }}</p>
                 </div>

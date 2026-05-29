@@ -236,19 +236,22 @@ class ScannerTest extends TestCase
         $this->artisan('app:make-admin', ['email' => 'nobody@nowhere.com'])->assertExitCode(1);
     }
 
-    public function test_toggle_admin_actually_persists(): void
+    public function test_assign_role_actually_persists(): void
     {
         $admin = User::factory()->create();
         $admin->is_admin = true;
         $admin->save();
 
         $target = User::factory()->create();
+        $roleId = \App\Models\Role::where('key', 'admin')->value('id');
 
         $this->actingAs($admin)
-            ->post(route('admin.users.toggle-admin', $target))
+            ->post(route('admin.users.assign-role', $target), ['role_id' => $roleId])
             ->assertRedirect();
 
-        $this->assertTrue((bool) $target->fresh()->is_admin, 'toggleAdmin must persist past Fillable attribute');
+        $fresh = $target->fresh();
+        $this->assertSame($roleId, $fresh->role_id, 'assignRole must persist role_id past the Fillable attribute');
+        $this->assertTrue((bool) $fresh->is_admin, 'assigning a role flips is_admin on');
     }
 
     public function test_admin_emails_env_auto_promotes_on_authentication(): void

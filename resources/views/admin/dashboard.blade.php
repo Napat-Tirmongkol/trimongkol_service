@@ -15,14 +15,12 @@
             @endif
 
             {{-- Primary totals --}}
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div class="grid gap-4 sm:grid-cols-3">
                 @php
                     $cards = [
                         ['k' => __('app.admin.stat_users'), 'v' => $stats['users'], 'tone' => 'slate'],
                         ['k' => __('app.admin.stat_admins'), 'v' => $stats['admins'], 'tone' => 'brand'],
                         ['k' => __('app.admin.stat_workspaces'), 'v' => $stats['workspaces'], 'tone' => 'slate'],
-                        ['k' => __('app.admin.stat_classrooms'), 'v' => $stats['classrooms'], 'tone' => 'slate'],
-                        ['k' => __('app.admin.stat_submissions'), 'v' => $stats['submissions'], 'tone' => 'slate'],
                     ];
                 @endphp
                 @foreach ($cards as $c)
@@ -34,7 +32,7 @@
             </div>
 
             {{-- Activity tiles --}}
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5">
                     <div class="text-xs font-medium uppercase tracking-wider text-emerald-700">{{ __('app.admin.stat_new_week') }}</div>
                     <div class="mt-2 text-2xl font-bold text-emerald-800">+{{ $stats['new_users_week'] }}</div>
@@ -44,10 +42,6 @@
                     <div class="text-xs font-medium uppercase tracking-wider text-sky-700">{{ __('app.admin.stat_active_30d') }}</div>
                     <div class="mt-2 text-2xl font-bold text-sky-800">{{ $stats['active_30d'] }}</div>
                     <div class="mt-0.5 text-xs text-sky-700/80">{{ __('app.admin.stat_active_hint') }}</div>
-                </div>
-                <div class="rounded-xl border border-amber-200 bg-amber-50/50 p-5">
-                    <div class="text-xs font-medium uppercase tracking-wider text-amber-700">{{ __('app.admin.stat_submissions_today') }}</div>
-                    <div class="mt-2 text-2xl font-bold text-amber-800">{{ $stats['submissions_today'] }}</div>
                 </div>
                 <div class="rounded-xl border border-rose-200 bg-rose-50/50 p-5">
                     <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.admin.stat_suspended') }}</div>
@@ -124,22 +118,26 @@
                     </ul>
                 </div>
 
-                {{-- Top users by classrooms --}}
+                {{-- Products: jump to each product's own dashboard --}}
                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-1">
-                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
-                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.top_users') }}</h3>
+                    <div class="border-b border-slate-200 px-6 py-3">
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.nav_products') }}</h3>
                     </div>
                     <ul class="divide-y divide-slate-100">
-                        @forelse ($topUsers as $user)
-                            <li class="flex items-center justify-between px-6 py-3">
-                                <div class="min-w-0">
-                                    <a href="{{ route('admin.users.show', $user) }}" class="text-sm font-medium text-slate-900 hover:text-brand-700">{{ $user->name }}</a>
-                                    <div class="truncate text-xs text-slate-500">{{ $user->email }}</div>
-                                </div>
-                                <div class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{{ $user->classrooms_count }} {{ __('app.admin.stat_classrooms') }}</div>
+                        @forelse ($products as $key => $p)
+                            <li>
+                                <a href="{{ route($p['route']) }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-medium text-slate-900">{{ __($p['label_key']) }}</div>
+                                        @if (! empty($p['desc_key']))
+                                            <div class="truncate text-xs text-slate-500">{{ __($p['desc_key']) }}</div>
+                                        @endif
+                                    </div>
+                                    <span class="shrink-0 text-slate-400">→</span>
+                                </a>
                             </li>
                         @empty
-                            <li class="px-6 py-4 text-sm text-slate-500">{{ __('app.admin.noUsers') }}</li>
+                            <li class="px-6 py-4 text-sm text-slate-500">{{ __('app.admin.products_empty') }}</li>
                         @endforelse
                     </ul>
                 </div>

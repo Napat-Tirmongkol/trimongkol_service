@@ -4,6 +4,154 @@
 
 ---
 
+## 🛡️ Security hardening (จาก security review)
+
+- **กัน privilege escalation ผ่าน impersonation**: สวมสิทธิ์ได้เฉพาะผู้ใช้ทั่วไป (กัน Admin สวมเป็น Super Admin แล้วได้สิทธิ์เต็ม) + `session()->regenerate()` ตอนเริ่ม/หยุดสวมสิทธิ์ (กัน session fixation)
+- **rate limit หน้า 2FA challenge** (`throttle:6,1`) — กัน brute-force รหัส TOTP / recovery code
+- **rate limit `/auth/identify`** (`throttle:20,1`) — ลดการ enumerate ว่าอีเมลไหนสมัครแล้ว
+- เพิ่ม key `app.admin.cannot_impersonate_staff` (TH/EN)
+
+---
+
+## 🎓 เพิ่มพาทัวร์สอนใช้ (guided tour)
+
+ทัวร์ไฮไลต์ทีละจุดบน UI จริง (Driver.js ผ่าน CDN — ไม่เพิ่ม npm) สอนครูใหม่ตาม flow
+
+- **3 หน้า**: dashboard (สร้างห้อง) → ห้องเรียน (เพิ่มนักเรียน → พิมพ์บาร์โค้ด → สร้างการบ้าน → สมุดคะแนน) → หน้าสแกน (เปิดกล้อง)
+- **เด้งอัตโนมัติครั้งแรก** (จำผ่าน localStorage ต่อเครื่อง) + ปุ่ม **"วิธีใช้"** กดซ้ำได้ทุกหน้า
+- ขั้นที่ element ไม่มีในหน้าจะถูกข้ามอัตโนมัติ (ทัวร์ปรับตามสถานะหน้า เช่น ห้องว่าง/ห้องมีนักเรียน)
+- partial `partials/product-tour.blade.php` (`window.startTour` / `maybeAutoTour`) + key `app.tour.*` (TH/EN)
+- มี Tailwind class ใหม่เล็กน้อย → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🔒 เพิ่มช่อง "ยืนยันรหัสผ่าน" ตอนสมัคร
+
+- ฟอร์มสมัคร (email-first ใน `auth/login.blade.php`) เพิ่มช่อง **ยืนยันรหัสผ่าน** + ปุ่มดู/ซ่อน
+- เพิ่ม validate `confirmed` ใน `RegisteredUserController` (เดิมจงใจตัดออก ใช้รหัสเดียว)
+- ปรับ hint เป็น "ขั้นต่ำ 8 ตัวอักษร" + เพิ่ม key `app.auth.confirm_password` (TH/EN)
+- กระทบเฉพาะฟอร์มสมัคร — ฟอร์ม sign in ไม่เปลี่ยน
+
+---
+
+## 🙏 เพิ่มช่องทางบริจาค (PromptPay QR)
+
+- หน้า **`/donate`** (marketing layout) โชว์ QR + ชื่อบัญชี/พร้อมเพย์ + ข้อความขอบคุณ
+- **จัดการผ่าน `/admin/site`** → section "Donation / บริจาค": อัปโหลดรูป QR + ชื่อ/เลขบัญชี + ข้อความ (TH/EN) + สวิตช์เปิด/ปิด
+- ลิงก์ **"สนับสนุนเรา"** โผล่ที่ footer เว็บ marketing + เมนูในแอป (โชว์เฉพาะเมื่อ `donate.enabled = 1`)
+- เพิ่ม key `site.donate.*` (TH/EN) + `app.nav.support`
+- ⚠️ หลัง deploy: ไปที่ `/admin/site` → อัปโหลดรูป QR + ตั้ง `donate.enabled = 1`
+
+---
+
+## 🐛 แก้ปุ่ม Delete Account — modal ยืนยันไม่เด้งกลางจอ
+
+modal ยืนยันลบบัญชี (Breeze Alpine `<x-modal>`) render ผิดที่ — เกาะด้านบน ทับฟอร์ม ไม่ลอยอยู่บนสุดอย่างที่ควร
+
+- เปลี่ยนเป็น **SweetAlert2** (เด้งกลางจอ z-index สูง ตรงกับ confirm อื่น ๆ ทั้งแอป) + ช่องกรอกรหัสผ่านในตัว → ส่งผ่าน hidden field ไป `profile.destroy`
+- กรอกรหัสผิด → เด้ง dialog ใหม่พร้อมข้อความ error อัตโนมัติ
+- localize เป็น TH/EN (เดิมเป็นอังกฤษล้วน) — เพิ่ม key `app.profile.delete_*`
+- ไม่ได้แตะ backend (`ProfileController::destroy`) — ลบได้อยู่แล้ว (FK cascade/null ครบ); ปัญหาคือฝั่ง modal ล้วน ๆ
+
+---
+
+## ✉️ เปิดใช้การยืนยันอีเมล (email verification)
+
+SMTP พร้อมแล้ว เลยเปิด email verification — `User implements MustVerifyEmail` (โครง Breeze + หน้า `verify-email` แบบ branded มีอยู่แล้ว แค่เปิดสวิตช์)
+
+- สมัครใหม่ → ส่งลิงก์ยืนยันอัตโนมัติ → ผู้ที่ยังไม่ยืนยันถูกพาไปหน้า "ยืนยันอีเมล" (กดส่งใหม่ได้)
+- **ยกเว้น `/admin` จาก middleware `verified`** — แอดมินไม่ถูกกั้น และตอน deploy ยังเข้า `/admin/system` ไป migrate ได้ ไม่ล็อกตัวเอง
+- Backfill `email_verified_at = now()` ให้ user เดิมทั้งหมด — ครู/ผู้ใช้เดิมไม่โดนล็อก
+- เปลี่ยนอีเมลในโปรไฟล์ → ต้องยืนยันใหม่ (พฤติกรรมมาตรฐาน Breeze ที่เพิ่งมีผล)
+- **ต้องรัน migrate** (backfill) ผ่าน `/admin/system`: **Pull → Migrate → Clear cache** (รีบ migrate หลัง pull เพื่อปลดล็อกผู้ใช้เดิม)
+
+---
+
+## 🧭 แยก dashboard: /admin = ภาพรวม platform, สถิติสินค้าไปอยู่กับ product hub
+
+`/admin` เดิมโชว์สถิติของ Homework Scanner (ห้องเรียน / การส่ง / ส่งงานวันนี้ / ครูที่มีห้องเยอะสุด) ซึ่ง **ซ้ำกับหน้า product hub** `/admin/products/scanner` ที่มีอยู่แล้ว และผิดหลัก Platform vs Products ใน `docs/ADMIN.md`
+
+- เอา 4 การ์ดเฉพาะ Scanner ออกจาก `/admin` — เหลือเฉพาะ **platform overview** (ผู้ใช้ / แอดมิน / workspaces / สมัครใหม่ / active / ระงับ / leads / กราฟสมัครใหม่ / ผู้ใช้ใหม่ล่าสุด)
+- เพิ่มแถบ **"Products"** เป็นการ์ดลิงก์ไป hub ของแต่ละสินค้า (อ่านจาก `config/admin-products.php` → สินค้าใหม่โผล่อัตโนมัติ) แทนที่พาเนล "ครูที่มีห้องเยอะสุด"
+- สถิติสินค้ายังดูครบที่ product hub เหมือนเดิม (ไม่ได้ลบข้อมูล แค่ย้ายที่แสดง) + ลด query บนหน้า platform
+- เพิ่ม key `app.admin.products_empty` (TH + EN)
+
+---
+
+## 🔐 ระบบ Role & สิทธิ์ (RBAC) ที่ /admin
+
+ยกระดับสิทธิ์แอดมินจาก `is_admin` (จริง/เท็จ) เป็น **RBAC เต็ม** — role ถือ permission รายฟีเจอร์ และสร้าง role เองได้
+
+- **Permission catalog** `config/permissions.php` (14 สิทธิ์ จัดกลุ่ม users / roles / leads / workspaces / content / platform) + helper `App\Support\Permissions`
+- **Role** (ตาราง `roles` แก้ได้ใน DB): seed 3 ตัว — **Super Admin** (ทุกสิทธิ์ `'*'`, ลบ/แก้สิทธิ์ไม่ได้), **Admin**, **Support** (เน้นอ่าน)
+- ผู้ใช้มีคอลัมน์ `role_id` (null = ผู้ใช้ทั่วไป). **`is_admin` ยังอยู่** = "มี role หลังบ้าน" ของเดิมจึงไม่พัง; migration ย้ายแอดมินเดิมทั้งหมด → Super Admin
+- **บังคับสิทธิ์จริง**: gate ต่อ permission (`AppServiceProvider`) + `can:` middleware ทุกกลุ่ม route + ซ่อนเมนู/ปุ่มตามสิทธิ์ของผู้ใช้
+- **`/admin/users`**: เปลี่ยนปุ่ม "ตั้ง/ถอดแอดมิน" เป็น **เลือก role**, filter ตาม role, badge ชื่อ role
+- **`/admin/roles`** (ใหม่): สร้าง / แก้ / ลบ role + ติ๊ก permission รายกลุ่ม
+- กันล็อกเอาต์: เปลี่ยน role ตัวเองไม่ได้, ถอด Super Admin คนสุดท้ายไม่ได้, ลบ role ระบบไม่ได้, Super Admin สิทธิ์ครบเสมอ
+- `ADMIN_EMAILS` และ `php artisan app:make-admin` กำหนด Super Admin ให้อัตโนมัติ
+- เพิ่ม key `app.roles.*` (TH + EN) + `config/permissions.php`
+- **ต้องรัน migrate**: 3 migrations (roles / role_id / seed+migrate) ผ่านปุ่มใน `/admin/system` แล้ว pull + clear cache
+
+---
+
+## 🆓 โหมดเปิดตัวฟรี (free launch mode) — ฟรีทุกคน + เพดานกันสแปม
+
+เปิดให้ใช้งานฟรีช่วงแรกด้วยสวิตช์เดียว ปิด-เปิดได้จาก `/admin/site` โดยไม่ต้องรื้อระบบแพ็คเกจ/จ่ายเงินที่ทำไว้ (Phase 4)
+
+- เพิ่ม `App\Services\Billing` + `config/billing.php` — flag `billing.free_mode` (ค่าเริ่มต้น = เปิด) และเพดานช่วงเปิดตัว (config + override ได้จาก `/admin/site`)
+- **โหมดฟรี**: `PlanGate` ใช้ "เพดานช่วงเปิดตัว" ร่วมกันทุก workspace แทนลิมิตของแพ็คเกจ — ค่าเริ่มต้น **15 ห้อง / 5 สมาชิก / 80 นักเรียนต่อห้อง** (ปรับได้ที่ `/admin/site`)
+- ซ่อนแถบ trial นับถอยหลัง + ปุ่มอัปเกรดที่ยังกดไม่ได้, หน้า `/plans` เปลี่ยนเป็น "ฟรีช่วงเปิดตัว" (โชว์เพดาน ซ่อน CTA จ่ายเงิน), หน้า workspace settings โชว์ badge "ฟรีช่วงเปิดตัว"
+- ผู้ใช้ใหม่ช่วงโหมดฟรี: subscription เป็น Free/active (ไม่มี trial countdown)
+- พอจะเริ่มเก็บเงิน: ตั้ง `billing.free_mode = 0` ที่ `/admin/site` → ลิมิต/แพ็คเกจ/trial กลับมาทำงานทันที (reversible)
+- เพิ่ม key `app.plans.launch_limit_* / free_launch_* / unlimited` (TH + EN)
+- มี Tailwind class ใหม่ + config ใหม่ → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🎨 เปลี่ยน hero หน้า /scanner เป็นโทนสว่าง
+
+- หน้า `/scanner` (dashboard) เดิม hero เป็นพื้นดำไล่เฉดน้ำเงิน (`slate-900 → brand-900`) — เป็นพื้นที่ "มืด" จุดเดียวในแอปที่เหลือเป็นโทนสว่างทั้งหมด
+- เปลี่ยนเป็น **hero โทนสว่าง**: พื้นไล่เฉด `brand-50 → white` + เส้นกริดบาง ๆ (`bg-grid`) + วงกลมเบลอสีแบรนด์นุ่ม ๆ, eyebrow/ปุ่มใช้น้ำเงินแบรนด์, หัวข้อเป็น `slate-900`
+- การ์ดสถิติใน hero เปลี่ยนจากกระจกใส (`bg-white/10` บนพื้นดำ) เป็นการ์ดขาวมีขอบ+เงา ให้อ่านได้บนพื้นสว่าง
+- การ์ดห้องเรียนด้านล่างเป็นโทนสว่าง/สีแบรนด์อยู่แล้ว เลยคงไว้ — ตอนนี้ทั้งหน้ากลมกลืนเป็นโทนสว่างชุดเดียว
+- ไม่แตะ logic/translation — เป็นการปรับ CSS ล้วน ๆ; มี Tailwind class ใหม่ → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🏠 เพิ่มลิงก์กลับหน้าแรกเว็บไซต์ในเมนูแอดมิน
+
+- หน้า `/admin` เดิมไม่มีทางกลับไปหน้าเว็บไซต์หลัก (`/`) — โลโก้ลิงก์ไป dashboard อย่างเดียว
+- เพิ่มลิงก์ **"หน้าแรกเว็บไซต์"** ใน admin nav: เดสก์ท็อปเป็นปุ่มไอคอนบ้าน (มี tooltip + sr-only) ข้าง ๆ ชื่อผู้ใช้, มือถือเป็นลิงก์มีข้อความเต็มด้านบนสุดของเมนู — เปิดในแท็บเดิม (`route('home')`)
+- ใช้ key เดิม `app.nav.website_home` (มีอยู่แล้วทั้ง TH + EN) ไม่ต้องเพิ่ม key ใหม่
+- ทำไอคอนบ้านชุดเดียวกับ app nav (`layouts/navigation.blade.php`) เพื่อความสม่ำเสมอ
+- มี Tailwind class ใหม่เล็กน้อย → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🔎 ปรับหน้าแก้ไขเนื้อหาเว็บ (/admin/site) ให้หาฟิลด์ง่ายขึ้น
+
+หน้า CMS เดิมเป็นฟอร์มยาวสกรอลล์เดียว ~12 หัวข้อ 80+ ฟิลด์ — หาอะไรทีต้องเลื่อนยาว
+
+- เพิ่ม **เมนูหัวข้อแบบ sticky** ด้านซ้าย (เดสก์ท็อป) / ชิปเลื่อนแนวนอน (มือถือ) กดกระโดดไปแต่ละหัวข้อได้ พร้อม scrollspy ไฮไลต์หัวข้อที่กำลังดู
+- เพิ่ม **ช่องค้นหาสด** — พิมพ์แล้วกรองทั้งฟิลด์และหัวข้อทันที (ค้นจาก label หรือ key เช่น `brand.phone`) มีข้อความ "ไม่พบ" เมื่อไม่ตรง
+- ฟิลด์ที่ถูกกรองซ่อนด้วย `x-show` (display:none) — **ยังส่งค่าครบตอนกดบันทึก** ไม่หาย
+- ขยาย layout เป็น 2 คอลัมน์ (max-w-6xl) คงแถบบันทึก sticky + flash เดิมไว้
+- เพิ่ม key `app.cms.searchPlaceholder` / `sections` / `noResults` (TH + EN)
+- มี Tailwind class ใหม่ → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
+## 🧭 จัดระเบียบเมนูแอดมินด้านบน (ลดความแออัด)
+
+- เมนูบนของ `/admin` เดิมยัด 8 แท็บไว้แถวเดียว ทำให้ตัวอักษรไทยตัดบรรทัดกลางคำ (เช่น "ภาพ/รวม", "ออกจาก/ระบบ")
+- แยกเป็น **แท็บหลัก 5 อัน** (ภาพรวม · ข้อความติดต่อ · ผู้ใช้ · Workspaces · แก้ไขเว็บ) + เมนู **"เพิ่มเติม"** สำหรับเครื่องมือที่ใช้ไม่บ่อย (ความปลอดภัย · Audit Log · System) — ปุ่ม "เพิ่มเติม" ไฮไลต์เมื่ออยู่ในหน้าที่ซ่อนอยู่
+- ใส่ `whitespace-nowrap` ทุก pill/ชื่อ/ปุ่ม กันตัดคำกลางคำ และเลื่อน breakpoint ของแถบเต็มเป็น `xl` (จอแคบกว่านั้นใช้เมนู hamburger เดิมที่โชว์ครบทุกแท็บ)
+- เพิ่ม key `app.admin.nav_more` (TH "เพิ่มเติม" / EN "More")
+- มี Tailwind class ใหม่ → ตอน deploy ต้อง **pull + clear cache**
+
+---
+
 ## ⚙️ Pull เคลียร์ cache อัตโนมัติ + เสริมความแกร่งการอัปโหลดรูป
 
 - ปุ่ม **Pull** ใน `/admin/system` รัน `optimize:clear` ให้อัตโนมัติหลัง pull สำเร็จ — โค้ด/วิว/lang ใหม่ live ทันทีไม่ต้องกดเคลียร์ cache แยก

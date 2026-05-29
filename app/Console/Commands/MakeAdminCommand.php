@@ -24,6 +24,9 @@ class MakeAdminCommand extends Command
         }
 
         $user->is_admin = ! $demote;
+        $user->role_id = $demote
+            ? null
+            : \App\Models\Role::where('key', \App\Models\Role::SUPER)->value('id');
         $user->save();
 
         $this->info(

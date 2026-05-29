@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAction;
-use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\Lead;
 use App\Models\LoginAttempt;
-use App\Models\Submission;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\AuditLog;
@@ -25,12 +24,8 @@ class AdminController extends Controller
             'users' => User::count(),
             'admins' => User::where('is_admin', true)->count(),
             'suspended' => User::where('is_active', false)->count(),
-            'classrooms' => Classroom::count(),
-            'assignments' => Assignment::count(),
-            'submissions' => Submission::count(),
             'new_users_week' => User::where('created_at', '>=', $now->copy()->subDays(7))->count(),
             'new_users_month' => User::where('created_at', '>=', $now->copy()->subDays(30))->count(),
-            'submissions_today' => Submission::whereDate('created_at', $now->toDateString())->count(),
             'active_30d' => User::where('last_login_at', '>=', $now->copy()->subDays(30))->count(),
             'leads_new' => Lead::where('status', 'new')->count(),
             'leads_week' => Lead::where('created_at', '>=', $now->copy()->subDays(7))->count(),
@@ -39,11 +34,9 @@ class AdminController extends Controller
 
         $recentUsers = User::latest()->limit(5)->get();
 
-        $topUsers = User::query()
-            ->withCount('classrooms')
-            ->orderByDesc('classrooms_count')
-            ->limit(5)
-            ->get();
+        // Products are surfaced as launcher links; each product keeps its own
+        // dashboard + metrics under /admin/products/* (see docs/ADMIN.md).
+        $products = config('admin-products', []);
 
         // 30-day daily signup series for the trend sparkline.
         $signupSeries = User::query()
@@ -58,7 +51,7 @@ class AdminController extends Controller
             $signupTrend[] = ['date' => $date, 'count' => (int) ($signupSeries[$date] ?? 0)];
         }
 
-        return view('admin.dashboard', compact('stats', 'recentUsers', 'topUsers', 'signupTrend'));
+        return view('admin.dashboard', compact('stats', 'recentUsers', 'signupTrend', 'products'));
     }
 
     public function users(Request $request)
@@ -69,13 +62,16 @@ class AdminController extends Controller
         $sort = $request->query('sort', 'recent');
 
         $users = User::query()
+            ->with('role')
             ->withCount('classrooms')
             ->when($q !== '', fn ($qb) => $qb->where(fn ($w) =>
                 $w->where('name', 'like', "%{$q}%")
                   ->orWhere('email', 'like', "%{$q}%")
             ))
-            ->when($role === 'admin', fn ($qb) => $qb->where('is_admin', true))
-            ->when($role === 'teacher', fn ($qb) => $qb->where('is_admin', false))
+            ->when($role === 'staff', fn ($qb) => $qb->whereNotNull('role_id'))
+            ->when($role === 'teacher', fn ($qb) => $qb->whereNull('role_id'))
+            ->when($role && ! in_array($role, ['staff', 'teacher'], true),
+                fn ($qb) => $qb->whereHas('role', fn ($r) => $r->where('key', $role)))
             ->when($status === 'active', fn ($qb) => $qb->where('is_active', true))
             ->when($status === 'suspended', fn ($qb) => $qb->where('is_active', false))
             ->when($sort === 'classrooms', fn ($qb) => $qb->orderByDesc('classrooms_count'))
@@ -86,7 +82,9 @@ class AdminController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.users', compact('users', 'q', 'role', 'status', 'sort'));
+        $roles = Role::orderByDesc('is_system')->orderBy('name')->get();
+
+        return view('admin.users', compact('users', 'q', 'role', 'status', 'sort', 'roles'));
     }
 
     public function showUser(User $user)
@@ -103,25 +101,48 @@ class AdminController extends Controller
 
         $workspaces = $user->workspaces()->orderBy('name')->get();
 
-        return view('admin.user_show', compact('user', 'classrooms', 'assignmentCount', 'studentCount', 'workspaces'));
+        $user->load('role');
+        $roles = Role::orderByDesc('is_system')->orderBy('name')->get();
+
+        return view('admin.user_show', compact('user', 'classrooms', 'assignmentCount', 'studentCount', 'workspaces', 'roles'));
     }
 
-    public function toggleAdmin(Request $request, User $user)
+    public function assignRole(Request $request, User $user)
     {
         abort_if($user->id === $request->user()->id, 422, __('app.admin.cannotChangeSelf'));
 
-        $user->is_admin = ! $user->is_admin;
+        $data = $request->validate([
+            'role_id' => 'nullable|exists:roles,id',
+        ]);
+
+        $newRoleId = ! empty($data['role_id']) ? (int) $data['role_id'] : null;
+
+        if ($this->wouldRemoveLastSuperAdmin($user, $newRoleId)) {
+            return back()->with('error', __('app.roles.last_super_admin'));
+        }
+
+        $user->role_id = $newRoleId;
+        $user->is_admin = $newRoleId !== null;
         $user->save();
 
-        AuditLog::record(
-            $user->is_admin ? 'user.promote' : 'user.demote',
-            $user,
-            $user->email,
-        );
+        $roleName = $user->role()->first()?->name ?? __('app.roles.none');
 
-        return back()->with('status', $user->is_admin
-            ? __('app.admin.promoted', ['name' => $user->name])
-            : __('app.admin.demoted', ['name' => $user->name]));
+        AuditLog::record('user.assign_role', $user, $user->email, ['role' => $roleName]);
+
+        return back()->with('status', __('app.roles.assigned', ['name' => $user->name, 'role' => $roleName]));
+    }
+
+    /** Block stripping Super Admin from the only remaining super admin. */
+    private function wouldRemoveLastSuperAdmin(User $user, ?int $newRoleId): bool
+    {
+        if (! $user->role()->first()?->isSuper()) {
+            return false;
+        }
+        if ($newRoleId && Role::find($newRoleId)?->isSuper()) {
+            return false;
+        }
+
+        return User::whereHas('role', fn ($r) => $r->where('key', Role::SUPER))->count() <= 1;
     }
 
     public function toggleActive(Request $request, User $user)
@@ -172,12 +193,16 @@ class AdminController extends Controller
     public function impersonate(Request $request, User $user)
     {
         abort_if($user->id === $request->user()->id, 422, __('app.admin.cannotChangeSelf'));
+        // Never impersonate other back-office staff — that would let a lower
+        // role inherit a higher one's access (e.g. Admin -> Super Admin).
+        abort_if($user->is_admin, 403, __('app.admin.cannot_impersonate_staff'));
         abort_if(! $user->is_active, 422, __('app.admin.account_suspended'));
 
         $adminId = $request->user()->id;
         AuditLog::record('user.impersonate_start', $user, $user->email);
 
         Auth::guard('web')->login($user);
+        $request->session()->regenerate();
         $request->session()->put('impersonator_id', $adminId);
 
         return redirect()->route('dashboard');
@@ -192,6 +217,7 @@ class AdminController extends Controller
         $original = User::findOrFail($originalId);
 
         Auth::guard('web')->login($original);
+        $request->session()->regenerate();
 
         // Manually log here — the impersonated user is who acted, but the admin is back in control.
         AdminAction::create([
@@ -268,6 +294,7 @@ class AdminController extends Controller
             fputcsv($out, ['id', 'name', 'email', 'role', 'status', 'classrooms', 'last_login_at', 'created_at']);
 
             User::query()
+                ->with('role')
                 ->withCount('classrooms')
                 ->orderBy('id')
                 ->chunk(500, function ($chunk) use ($out) {
@@ -276,7 +303,7 @@ class AdminController extends Controller
                             $u->id,
                             $u->name,
                             $u->email,
-                            $u->is_admin ? 'admin' : 'teacher',
+                            $u->role?->name ?? 'teacher',
                             $u->is_active ? 'active' : 'suspended',
                             $u->classrooms_count,
                             optional($u->last_login_at)->format('Y-m-d H:i:s'),

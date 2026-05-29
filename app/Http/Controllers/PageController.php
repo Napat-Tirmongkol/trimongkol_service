@@ -23,4 +23,9 @@ class PageController extends Controller
     {
         return view('pages.contact');
     }
+
+    public function donate()
+    {
+        return view('pages.donate');
+    }
 }

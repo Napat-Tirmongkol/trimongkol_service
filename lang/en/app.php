@@ -3,6 +3,31 @@
 return [
     'nav' => [
         'website_home' => 'Website home',
+        'support' => 'Support us',
+    ],
+
+    'tour' => [
+        'help' => 'How to use',
+        'next' => 'Next',
+        'prev' => 'Back',
+        'done' => 'Get started',
+        'progress' => '{{current}} / {{total}}',
+        'dash_welcome_title' => 'Welcome 👋',
+        'dash_welcome_text' => 'The scanner works in 5 steps: create a classroom, add students, print barcodes, create an assignment, then scan. Here is a quick walkthrough.',
+        'dash_create_title' => '1. Create a classroom',
+        'dash_create_text' => 'Start by tapping here to create your first classroom.',
+        'room_students_title' => '2. Add students',
+        'room_students_text' => 'Add them one by one, or tap Import to paste many at once.',
+        'room_print_title' => '3. Print barcodes',
+        'room_print_text' => 'Print each student barcode/QR and stick it on their book to scan later.',
+        'room_assign_title' => '4. Create an assignment',
+        'room_assign_text' => 'Create an assignment and pick a mode (check / fixed score / custom score).',
+        'room_grades_title' => 'Gradebook',
+        'room_grades_text' => 'See combined scores across assignments and export to Excel.',
+        'scan_intro_title' => 'Scan page',
+        'scan_intro_text' => 'Open on a phone and scan the barcode on each book — submissions are recorded automatically.',
+        'scan_start_title' => '5. Start the camera and scan',
+        'scan_start_text' => 'Tap to start the camera and aim at a barcode — it records instantly and prevents duplicates.',
     ],
 
     'admin' => [
@@ -46,6 +71,7 @@ return [
         'confirmDemote' => "Remove :name's admin access?",
         'cannotChangeSelf' => "You can't change your own role.",
         'account_suspended' => 'This account has been suspended. Please contact the administrator.',
+        'cannot_impersonate_staff' => 'You cannot impersonate another staff member.',
 
         'col_status' => 'Status',
         'col_last_login' => 'Last login',
@@ -104,6 +130,8 @@ return [
         'tab_workspaces' => 'Workspaces',
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
+        'nav_more' => 'More',
+        'products_empty' => 'No products yet.',
 
         'workspaces' => [
             'heading' => 'All workspaces in the system',
@@ -266,6 +294,9 @@ return [
         'upload_hint' => 'Pick an image file to replace the URL above — JPG / PNG / WebP, max 10MB.',
         'upload_failed' => 'Image upload failed:',
         'nav' => 'Edit Site',
+        'searchPlaceholder' => 'Search settings…',
+        'sections' => 'Sections',
+        'noResults' => 'No settings match your search',
     ],
 
     'common' => [
@@ -475,6 +506,53 @@ return [
         'limit_classrooms' => 'The ":plan" plan is limited to :limit classrooms — upgrade to add more.',
         'limit_members' => 'The ":plan" plan is limited to :limit members — upgrade to grow the team.',
         'limit_students' => 'The ":plan" plan is limited to :limit students per classroom — upgrade to add more.',
+        'launch_limit_classrooms' => 'During launch, free accounts are capped at :limit classrooms — contact us to raise it.',
+        'launch_limit_members' => 'During launch, free accounts are capped at :limit team members — contact us to raise it.',
+        'launch_limit_students' => 'During launch, free accounts are capped at :limit students per classroom — contact us to raise it.',
+        'free_launch_title' => '🎉 Launch period — everything is free',
+        'free_launch_desc' => "It's free to use right now, with no billing. A light per-account cap keeps abuse in check.",
+        'free_launch_caps' => ':classrooms classrooms · :members members · :students students/class',
+        'free_launch_note' => '✓ Free during launch',
+        'free_launch_badge' => 'Free (launch)',
+        'free_launch_price_note' => 'Price when billing starts later',
+        'unlimited' => 'Unlimited',
+    ],
+
+    'profile' => [
+        'delete_heading' => 'Delete account',
+        'delete_desc' => 'Once your account is deleted, all of its resources and data are permanently removed. Please download anything you want to keep first.',
+        'delete_button' => 'Delete account',
+        'delete_confirm_title' => 'Delete your account?',
+        'delete_confirm_text' => 'This permanently deletes all your data and cannot be undone. Enter your password to confirm.',
+        'delete_password_placeholder' => 'Password',
+        'delete_password_required' => 'Please enter your password.',
+    ],
+
+    'roles' => [
+        'nav' => 'Roles',
+        'heading' => 'Roles & permissions',
+        'create' => 'New role',
+        'edit' => 'Edit role',
+        'name' => 'Role name',
+        'description' => 'Description',
+        'permissions' => 'Permissions',
+        'members' => 'Users',
+        'system' => 'system',
+        'all_permissions' => 'All permissions',
+        'save' => 'Save role',
+        'assign' => 'Assign role',
+        'none' => 'None (regular user)',
+        'user_badge' => 'user',
+        'filter_staff' => 'Staff (has a role)',
+        'assigned' => 'Assigned :name the :role role.',
+        'created' => 'Role :name created.',
+        'updated' => 'Role :name updated.',
+        'deleted' => 'Role :name deleted.',
+        'confirm_delete' => 'Delete role ":name"? Its members become regular users.',
+        'cannot_delete_system' => 'System roles cannot be deleted.',
+        'super_locked' => 'Super Admin always has every permission (locked).',
+        'last_super_admin' => 'At least one Super Admin is required — this role cannot be changed.',
+        'index_hint' => 'System roles (Super Admin / Admin / Support) cannot be deleted; their permissions stay editable (except Super Admin).',
     ],
 
     'workspaces' => [
@@ -593,7 +671,8 @@ return [
         'signin_with_email' => 'Signing in as :email',
         'signup_with_email' => 'Creating an account for :email',
         'change_email' => 'change',
-        'password_hint' => 'At least 8 characters. You can reset it later if you forget.',
+        'password_hint' => 'At least 8 characters.',
+        'confirm_password' => 'Confirm password',
 
         'login_heading' => 'Log in to your account',
         'register_heading' => 'Create your account',

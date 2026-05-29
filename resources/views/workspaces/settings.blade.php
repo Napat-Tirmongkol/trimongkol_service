@@ -26,7 +26,11 @@
                         <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.plans.current_plan_label') }}</div>
                         <div class="mt-1 flex items-baseline gap-2">
                             <span class="text-lg font-semibold text-slate-900">{{ $plan->name }}</span>
-                            @if ($sub?->isOnTrial())
+                            @if (\App\Services\Billing::freeMode())
+                                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                    {{ __('app.plans.free_launch_badge') }}
+                                </span>
+                            @elseif ($sub?->isOnTrial())
                                 <span class="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
                                     {{ __('app.plans.trial_remaining', ['days' => $sub->trialDaysLeft()]) }}
                                 </span>

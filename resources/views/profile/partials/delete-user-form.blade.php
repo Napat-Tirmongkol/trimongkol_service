@@ -1,55 +1,65 @@
 <section class="space-y-6">
     <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Delete Account') }}
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
-        </p>
+        <h2 class="text-lg font-medium text-slate-900">{{ __('app.profile.delete_heading') }}</h2>
+        <p class="mt-1 text-sm text-slate-600">{{ __('app.profile.delete_desc') }}</p>
     </header>
 
-    <x-danger-button
-        x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    {{-- Confirmation is handled by SweetAlert2 (centred, always on top) to match
+         the rest of the app — the old Breeze Alpine <x-modal> rendered in the
+         wrong place. The password is collected in the dialog and posted via a
+         hidden field. --}}
+    <form id="delete-account-form" method="post" action="{{ route('profile.destroy') }}">
+        @csrf
+        @method('delete')
+        <input type="hidden" name="password" id="delete-account-password">
+        <button type="button" id="delete-account-btn"
+                class="inline-flex items-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+            {{ __('app.profile.delete_button') }}
+        </button>
+        @error('password', 'userDeletion')
+            <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+        @enderror
+    </form>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
-            @csrf
-            @method('delete')
+    <script>
+        (function () {
+            const form = document.getElementById('delete-account-form');
+            const btn = document.getElementById('delete-account-btn');
+            const pwField = document.getElementById('delete-account-password');
+            if (! form || ! btn) return;
 
-            <h2 class="text-lg font-medium text-gray-900">
-                {{ __('Are you sure you want to delete your account?') }}
-            </h2>
+            const waitForSwal = (cb) => window.Swal ? cb() : setTimeout(() => waitForSwal(cb), 30);
 
-            <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-            </p>
+            function promptDelete(errorText) {
+                waitForSwal(async () => {
+                    const result = await Swal.fire({
+                        title: @json(__('app.profile.delete_confirm_title')),
+                        html: @json(__('app.profile.delete_confirm_text'))
+                            + (errorText ? '<div style="color:#e11d48;margin-top:.5rem;font-size:.875rem">' + errorText + '</div>' : ''),
+                        icon: 'warning',
+                        input: 'password',
+                        inputPlaceholder: @json(__('app.profile.delete_password_placeholder')),
+                        inputAttributes: { autocomplete: 'current-password' },
+                        showCancelButton: true,
+                        confirmButtonText: @json(__('app.profile.delete_button')),
+                        cancelButtonText: @json(__('app.common.cancel')),
+                        confirmButtonColor: '#e11d48',
+                        cancelButtonColor: '#94a3b8',
+                        reverseButtons: true,
+                        inputValidator: (v) => (! v ? @json(__('app.profile.delete_password_required')) : undefined),
+                    });
+                    if (result.isConfirmed) {
+                        pwField.value = result.value;
+                        form.submit();
+                    }
+                });
+            }
 
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
+            btn.addEventListener('click', () => promptDelete(null));
 
-                <x-text-input
-                    id="password"
-                    name="password"
-                    type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
-                />
-
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
-            </div>
-
-            <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
-                </x-secondary-button>
-
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
-                </x-danger-button>
-            </div>
-        </form>
-    </x-modal>
+            @if ($errors->userDeletion->isNotEmpty())
+                document.addEventListener('DOMContentLoaded', () => promptDelete(@json($errors->userDeletion->first('password'))));
+            @endif
+        })();
+    </script>
 </section>

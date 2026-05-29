@@ -3,7 +3,7 @@
     $sub = $workspace?->subscription;
 @endphp
 
-@if ($sub && $sub->isOnTrial())
+@if ($sub && $sub->isOnTrial() && ! \App\Services\Billing::freeMode())
     <div class="bg-amber-500 text-amber-950">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2 text-sm">
             <div class="flex items-center gap-2 font-medium">

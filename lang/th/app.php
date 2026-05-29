@@ -3,6 +3,31 @@
 return [
     'nav' => [
         'website_home' => 'หน้าแรกเว็บไซต์',
+        'support' => 'สนับสนุนเรา',
+    ],
+
+    'tour' => [
+        'help' => 'วิธีใช้',
+        'next' => 'ถัดไป',
+        'prev' => 'ย้อนกลับ',
+        'done' => 'เริ่มใช้งาน',
+        'progress' => '{{current}} / {{total}}',
+        'dash_welcome_title' => 'ยินดีต้อนรับ 👋',
+        'dash_welcome_text' => 'ระบบตรวจการบ้านใช้ 5 ขั้น: สร้างห้องเรียน → เพิ่มนักเรียน → พิมพ์บาร์โค้ด → สร้างการบ้าน → ยิงสแกน มาดูทีละขั้นกันครับ',
+        'dash_create_title' => '1. สร้างห้องเรียน',
+        'dash_create_text' => 'เริ่มจากกดปุ่มนี้เพื่อสร้างห้องเรียนแรกของคุณ',
+        'room_students_title' => '2. เพิ่มนักเรียน',
+        'room_students_text' => 'เพิ่มทีละคน หรือกด "นำเข้า" วางรายชื่อทีเดียวหลายคน',
+        'room_print_title' => '3. พิมพ์บาร์โค้ด',
+        'room_print_text' => 'พิมพ์บาร์โค้ด/QR ของนักเรียนไปแปะที่สมุด ไว้ใช้ยิงสแกน',
+        'room_assign_title' => '4. สร้างการบ้าน',
+        'room_assign_text' => 'สร้างการบ้าน เลือกโหมด (เช็กส่ง / คะแนนคงที่ / กรอกคะแนน)',
+        'room_grades_title' => 'สมุดคะแนน',
+        'room_grades_text' => 'ดูสรุปคะแนนรวมทุกการบ้าน และ export เป็น Excel ได้',
+        'scan_intro_title' => 'หน้ายิงสแกน',
+        'scan_intro_text' => 'เปิดในมือถือ ยิงบาร์โค้ดที่สมุดเด็ก ระบบบันทึกส่ง/คะแนนให้อัตโนมัติ',
+        'scan_start_title' => '5. เปิดกล้องแล้วยิง',
+        'scan_start_text' => 'กดเปิดกล้อง เล็งไปที่บาร์โค้ด — ยิงปุ๊บบันทึกปั๊บ กันยิงซ้ำให้ด้วย',
     ],
 
     'admin' => [
@@ -46,6 +71,7 @@ return [
         'confirmDemote' => 'ถอดสิทธิ์แอดมินของ :name?',
         'cannotChangeSelf' => 'แก้สิทธิ์ตัวเองไม่ได้',
         'account_suspended' => 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+        'cannot_impersonate_staff' => 'สวมสิทธิ์ผู้ดูแล/ทีมงานคนอื่นไม่ได้',
 
         'col_status' => 'สถานะ',
         'col_last_login' => 'ล็อกอินล่าสุด',
@@ -104,6 +130,8 @@ return [
         'tab_workspaces' => 'Workspaces',
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
+        'nav_more' => 'เพิ่มเติม',
+        'products_empty' => 'ยังไม่มีสินค้าในระบบ',
 
         'workspaces' => [
             'heading' => 'Workspaces ทั้งหมดในระบบ',
@@ -266,6 +294,9 @@ return [
         'upload_hint' => 'เลือกไฟล์รูปเพื่อแทน URL ด้านบน — JPG / PNG / WebP ไม่เกิน 10MB',
         'upload_failed' => 'อัปโหลดรูปไม่สำเร็จ:',
         'nav' => 'แก้ไขเว็บ',
+        'searchPlaceholder' => 'ค้นหาหัวข้อหรือฟิลด์…',
+        'sections' => 'หัวข้อ',
+        'noResults' => 'ไม่พบฟิลด์ที่ตรงกับคำค้น',
     ],
 
     'common' => [
@@ -475,6 +506,53 @@ return [
         'limit_classrooms' => 'แพ็คเกจ ":plan" จำกัดที่ :limit ห้องเรียน — อัปเกรดเพื่อสร้างเพิ่ม',
         'limit_members' => 'แพ็คเกจ ":plan" จำกัดที่ :limit สมาชิก — อัปเกรดเพื่อเพิ่มทีม',
         'limit_students' => 'แพ็คเกจ ":plan" จำกัดที่ :limit นักเรียนต่อห้อง — อัปเกรดเพื่อเพิ่ม',
+        'launch_limit_classrooms' => 'ช่วงเปิดตัวจำกัดที่ :limit ห้องเรียนต่อบัญชี — ติดต่อทีมงานถ้าต้องการเพิ่ม',
+        'launch_limit_members' => 'ช่วงเปิดตัวจำกัดที่ :limit สมาชิกต่อทีม — ติดต่อทีมงานถ้าต้องการเพิ่ม',
+        'launch_limit_students' => 'ช่วงเปิดตัวจำกัดที่ :limit นักเรียนต่อห้อง — ติดต่อทีมงานถ้าต้องการเพิ่ม',
+        'free_launch_title' => '🎉 ช่วงเปิดตัว — ใช้งานฟรีทุกฟีเจอร์',
+        'free_launch_desc' => 'ตอนนี้เปิดให้ใช้ฟรี ยังไม่มีการเก็บเงิน มีเพดานการใช้ต่อบัญชีเล็กน้อยเพื่อกันสแปม',
+        'free_launch_caps' => 'ห้องเรียน :classrooms · สมาชิก :members · นักเรียน/ห้อง :students',
+        'free_launch_note' => '✓ ใช้ได้ฟรีช่วงเปิดตัว',
+        'free_launch_badge' => 'ฟรีช่วงเปิดตัว',
+        'free_launch_price_note' => 'ราคาเมื่อเริ่มเก็บเงินภายหลัง',
+        'unlimited' => 'ไม่จำกัด',
+    ],
+
+    'profile' => [
+        'delete_heading' => 'ลบบัญชี',
+        'delete_desc' => 'เมื่อลบบัญชีแล้ว ข้อมูลและทรัพยากรทั้งหมดจะถูกลบถาวร โปรดดาวน์โหลดข้อมูลที่ต้องการเก็บไว้ก่อนลบ',
+        'delete_button' => 'ลบบัญชี',
+        'delete_confirm_title' => 'ลบบัญชีนี้?',
+        'delete_confirm_text' => 'ข้อมูลทั้งหมดจะถูกลบถาวรและกู้คืนไม่ได้ กรอกรหัสผ่านเพื่อยืนยัน',
+        'delete_password_placeholder' => 'รหัสผ่าน',
+        'delete_password_required' => 'กรุณากรอกรหัสผ่าน',
+    ],
+
+    'roles' => [
+        'nav' => 'Roles & สิทธิ์',
+        'heading' => 'จัดการ Role & สิทธิ์',
+        'create' => 'สร้าง role',
+        'edit' => 'แก้ไข role',
+        'name' => 'ชื่อ role',
+        'description' => 'คำอธิบาย',
+        'permissions' => 'สิทธิ์',
+        'members' => 'ผู้ใช้',
+        'system' => 'ระบบ',
+        'all_permissions' => 'ทุกสิทธิ์',
+        'save' => 'บันทึก role',
+        'assign' => 'กำหนด role',
+        'none' => 'ไม่มี (ผู้ใช้ทั่วไป)',
+        'user_badge' => 'ผู้ใช้',
+        'filter_staff' => 'ทีมงาน (มี role)',
+        'assigned' => 'กำหนด role ให้ :name เป็น :role แล้ว',
+        'created' => 'สร้าง role :name แล้ว',
+        'updated' => 'อัปเดต role :name แล้ว',
+        'deleted' => 'ลบ role :name แล้ว',
+        'confirm_delete' => 'ลบ role ":name"? ผู้ใช้ที่ถืออยู่จะกลายเป็นผู้ใช้ทั่วไป',
+        'cannot_delete_system' => 'ลบ role ของระบบไม่ได้',
+        'super_locked' => 'Super Admin มีสิทธิ์ทุกอย่างเสมอ (แก้สิทธิ์ไม่ได้)',
+        'last_super_admin' => 'ต้องมี Super Admin อย่างน้อย 1 คน — เปลี่ยน role นี้ไม่ได้',
+        'index_hint' => 'role ของระบบ (Super Admin / Admin / Support) ลบไม่ได้ แต่แก้สิทธิ์ได้ (ยกเว้น Super Admin)',
     ],
 
     'workspaces' => [
@@ -593,7 +671,8 @@ return [
         'signin_with_email' => 'เข้าสู่ระบบในนาม :email',
         'signup_with_email' => 'สร้างบัญชีใหม่ในนาม :email',
         'change_email' => 'เปลี่ยน',
-        'password_hint' => 'ขั้นต่ำ 8 ตัวอักษร — กรอกได้รหัสเดียว ถ้าพิมพ์ผิดสามารถ reset ได้ภายหลัง',
+        'password_hint' => 'ขั้นต่ำ 8 ตัวอักษร',
+        'confirm_password' => 'ยืนยันรหัสผ่าน',
 
         'login_heading' => 'เข้าสู่ระบบ',
         'register_heading' => 'สร้างบัญชีใหม่',

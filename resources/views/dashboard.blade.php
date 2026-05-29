@@ -5,19 +5,29 @@
         $firstName = trim(explode(' ', (string) auth()->user()->name)[0] ?? '');
     @endphp
 
-    <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-brand-900 text-white">
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div class="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-brand-50 to-white">
+        {{-- soft brand accents on the light hero --}}
+        <div class="pointer-events-none absolute inset-0 bg-grid opacity-50"></div>
+        <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl"></div>
+        <div class="pointer-events-none absolute -left-16 top-8 h-40 w-40 rounded-full bg-brand-100/50 blur-3xl"></div>
+
+        <div class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
             <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest text-brand-200">{{ __('app.dashboard.greeting_label') }}</p>
-                    <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-brand-600">{{ __('app.dashboard.greeting_label') }}</p>
+                    <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                         {{ __('app.dashboard.greeting', ['name' => $firstName]) }}
                     </h1>
-                    <p class="mt-2 max-w-xl text-sm text-slate-300">{{ __('app.dashboard.subtitle') }}</p>
+                    <p class="mt-2 max-w-xl text-sm text-slate-500">{{ __('app.dashboard.subtitle') }}</p>
+                    <button type="button" id="tour-start"
+                            class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        {{ __('app.tour.help') }}
+                    </button>
                 </div>
                 @if ($classrooms->isNotEmpty())
-                    <a href="{{ route('classrooms.create') }}"
-                       class="inline-flex items-center gap-2 self-start rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 hover:bg-slate-100 sm:self-auto">
+                    <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
+                       class="inline-flex items-center gap-2 self-start rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 sm:self-auto">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                         </svg>
@@ -28,17 +38,17 @@
 
             @if ($classrooms->isNotEmpty())
                 <div class="mt-7 grid grid-cols-3 gap-3 sm:max-w-xl">
-                    <div class="rounded-xl bg-white/10 px-4 py-3 ring-1 ring-white/10 backdrop-blur">
-                        <div class="text-xs uppercase tracking-wider text-slate-300">{{ __('app.dashboard.stat_classrooms') }}</div>
-                        <div class="mt-1 text-2xl font-bold tabular-nums">{{ $classrooms->count() }}</div>
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_classrooms') }}</div>
+                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $classrooms->count() }}</div>
                     </div>
-                    <div class="rounded-xl bg-white/10 px-4 py-3 ring-1 ring-white/10 backdrop-blur">
-                        <div class="text-xs uppercase tracking-wider text-slate-300">{{ __('app.dashboard.stat_students') }}</div>
-                        <div class="mt-1 text-2xl font-bold tabular-nums">{{ $totalStudents }}</div>
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
+                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $totalStudents }}</div>
                     </div>
-                    <div class="rounded-xl bg-white/10 px-4 py-3 ring-1 ring-white/10 backdrop-blur">
-                        <div class="text-xs uppercase tracking-wider text-slate-300">{{ __('app.dashboard.stat_assignments') }}</div>
-                        <div class="mt-1 text-2xl font-bold tabular-nums">{{ $totalAssignments }}</div>
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
+                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $totalAssignments }}</div>
                     </div>
                 </div>
             @endif
@@ -70,7 +80,7 @@
                         <h2 class="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">{{ __('app.classrooms.emptyTitle') }}</h2>
                         <p class="mt-2 max-w-md text-sm text-slate-600">{{ __('app.classrooms.emptyDesc') }}</p>
 
-                        <a href="{{ route('classrooms.create') }}"
+                        <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
                            class="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -172,4 +182,15 @@
             </div>
         @endif
     </div>
+
+    <script>
+        (() => {
+            const steps = [
+                { title: @json(__('app.tour.dash_welcome_title')), text: @json(__('app.tour.dash_welcome_text')) },
+                { el: '[data-tour=add-classroom]', title: @json(__('app.tour.dash_create_title')), text: @json(__('app.tour.dash_create_text')), side: 'bottom' },
+            ];
+            document.getElementById('tour-start')?.addEventListener('click', () => window.startTour(steps));
+            window.addEventListener('load', () => window.maybeAutoTour('scanner-dashboard', steps));
+        })();
+    </script>
 </x-app-layout>

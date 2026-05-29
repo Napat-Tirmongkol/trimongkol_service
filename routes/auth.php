@@ -17,7 +17,7 @@ Route::middleware('guest')->group(function () {
     // first, then branches based on whether the account exists.
     Route::get('login', [UnifiedAuthController::class, 'show'])->name('login');
     Route::get('register', [UnifiedAuthController::class, 'show'])->name('register');
-    Route::post('auth/identify', [UnifiedAuthController::class, 'identify'])->name('auth.identify');
+    Route::post('auth/identify', [UnifiedAuthController::class, 'identify'])->middleware('throttle:20,1')->name('auth.identify');
 
     // Submission endpoints (POST) for the two final-step forms.
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
