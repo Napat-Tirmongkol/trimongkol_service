@@ -493,6 +493,17 @@ return [
         'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
     ],
 
+    'demo' => [
+        'classroom_name' => 'Demo classroom 🌱',
+        'classroom_grade' => 'Grade 4',
+        'classroom_description' => 'Auto-created demo room — try scanning a QR, then delete it whenever you are ready.',
+        'student_names' => ['Anna', 'Ben', 'Cara', 'Dan', 'Eve'],
+        'attendance_name' => 'Attendance — morning',
+        'attendance_description' => 'Sample attendance: scan QR = mark "present".',
+        'homework_name' => 'Math homework — Chapter 1',
+        'homework_description' => 'Sample homework graded 0–10 — class average shows up in the Gradebook.',
+    ],
+
     'insights' => [
         'heading' => 'Class insights',
         'see_gradebook' => 'View gradebook',

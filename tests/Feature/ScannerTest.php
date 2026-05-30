@@ -513,6 +513,46 @@ class ScannerTest extends TestCase
             ->assertSee(__('app.insights.heading'));
     }
 
+    public function test_demo_workspace_seeder_creates_populated_classroom(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'demo-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $classroom = (new \App\Services\DemoWorkspaceSeeder($workspace, $user))->seed();
+
+        $this->assertNotNull($classroom);
+        $this->assertSame($workspace->id, $classroom->workspace_id);
+        $this->assertGreaterThanOrEqual(5, $classroom->students()->count());
+        $this->assertSame(2, $classroom->assignments()->count());
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+        $this->assertTrue($insights['has_data'], 'demo data should populate the insights card');
+        $this->assertGreaterThan(0, $insights['total_submissions']);
+        $this->assertNotNull($insights['attendance_rate_percent']);
+    }
+
+    public function test_new_signup_gets_demo_classroom_via_registered_event(): void
+    {
+        $this->post('/register', [
+            'name' => 'Teacher',
+            'email' => 'teacher@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect();
+
+        $user = User::where('email', 'teacher@example.com')->firstOrFail();
+        $workspace = $user->ownedWorkspaces()->firstOrFail();
+
+        $this->assertSame(1, $workspace->classrooms()->count(), 'registration should seed a demo classroom');
+        $this->assertGreaterThan(0, \App\Models\Submission::count(), 'demo classroom should have sample submissions');
+    }
+
     public function test_dashboard_shows_quota_meter_with_plan_badge(): void
     {
         $user = User::factory()->create();
