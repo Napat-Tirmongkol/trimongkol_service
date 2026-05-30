@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
 use App\Models\Classroom;
 use App\Http\Controllers\ContactController;
@@ -93,6 +94,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.gradebook');
     Route::get('classrooms/{classroom}/gradebook/export', [GradebookController::class, 'export'])
         ->name('classrooms.gradebook.export');
+
+    // Attendance — daily roll call, separate from assignment-style scoring.
+    Route::get('classrooms/{classroom}/attendance', [AttendanceController::class, 'index'])
+        ->name('classrooms.attendance.index');
+    Route::post('classrooms/{classroom}/attendance/today', [AttendanceController::class, 'today'])
+        ->name('classrooms.attendance.today');
+    Route::get('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'show'])
+        ->name('classrooms.attendance.show');
+    Route::patch('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'update'])
+        ->name('classrooms.attendance.update');
+    Route::delete('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'destroy'])
+        ->name('classrooms.attendance.destroy');
+    Route::get('classrooms/{classroom}/students/{student}/attendance', [AttendanceController::class, 'studentHistory'])
+        ->name('classrooms.students.attendance');
 
     Route::resource('classrooms.assignments', AssignmentController::class)
         ->only(['create', 'store', 'show', 'edit', 'update', 'destroy']);

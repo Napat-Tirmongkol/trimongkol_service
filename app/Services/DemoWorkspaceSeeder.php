@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSession;
 use App\Models\Classroom;
 use App\Models\Submission;
 use App\Models\User;
@@ -93,6 +95,42 @@ class DemoWorkspaceSeeder
             ]);
         }
 
+        $this->seedAttendance($classroom, $students);
+
         return $classroom;
+    }
+
+    /**
+     * Two demo attendance days so the calendar lights up and the per-student
+     * profile already has an absence story to read.
+     *
+     * @param array<int, \App\Models\Student> $students
+     */
+    private function seedAttendance(Classroom $classroom, array $students): void
+    {
+        $days = [
+            ['offset' => 1, 'absents' => [0]],   // yesterday: one student absent
+            ['offset' => 2, 'absents' => [1]],   // day before: a different student absent
+        ];
+
+        foreach ($days as $day) {
+            $session = AttendanceSession::create([
+                'classroom_id' => $classroom->id,
+                'date' => now()->subDays($day['offset'])->toDateString(),
+                'created_by' => $this->owner->id,
+            ]);
+
+            foreach ($students as $i => $student) {
+                $status = in_array($i, $day['absents'], true)
+                    ? AttendanceRecord::STATUS_ABSENT
+                    : AttendanceRecord::STATUS_PRESENT;
+                AttendanceRecord::create([
+                    'attendance_session_id' => $session->id,
+                    'student_id' => $student->id,
+                    'status' => $status,
+                    'marked_at' => now()->subDays($day['offset']),
+                ]);
+            }
+        }
     }
 }

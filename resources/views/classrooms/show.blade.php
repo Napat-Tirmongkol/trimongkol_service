@@ -50,7 +50,7 @@
             @endif
 
             {{-- Quick stats --}}
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex items-center gap-3">
                         <span class="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -86,6 +86,18 @@
                     <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </span>
+                </a>
+                <a href="{{ route('classrooms.attendance.index', $classroom) }}"
+                   class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.attendance.nav') }}</div>
+                        <div class="mt-1 text-base font-bold text-slate-900 group-hover:text-brand-700">{{ __('app.attendance.heading') }} →</div>
+                    </div>
+                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-sky-600">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
                     </span>
                 </a>
