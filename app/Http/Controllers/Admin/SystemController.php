@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Process\Process;
 
 class SystemController extends Controller
 {
@@ -174,5 +175,80 @@ class SystemController extends Controller
                 'output' => $output->fetch(),
                 'exit_code' => $exitCode,
             ]);
+    }
+
+    /**
+     * Rebuild the front-end asset bundle (Tailwind CSS + JS). New utility
+     * classes only land in production once `vite build` runs, so this
+     * exposes the npm script through the admin UI for Plesk hosts that
+     * don't have SSH.
+     */
+    public function buildAssets(Request $request)
+    {
+        $base = base_path();
+        $npm = $this->findNpmBinary();
+
+        if (! $npm) {
+            return redirect()->route('admin.system')
+                ->with('system_result', [
+                    'command' => 'npm run build',
+                    'output' => "Could not locate the `npm` executable on this server.\n\n"
+                              . "Tried: PATH, /usr/bin, /usr/local/bin, /opt/plesk/node/*/bin.\n"
+                              . "Ask the host to install Node.js or run `npm run build` over SSH.",
+                    'exit_code' => 127,
+                ]);
+        }
+
+        $process = new Process([$npm, 'run', 'build'], $base);
+        $process->setTimeout(180);
+
+        try {
+            $process->run();
+            $exitCode = $process->getExitCode() ?? 1;
+            $output = trim($process->getOutput() . "\n" . $process->getErrorOutput());
+            if ($output === '') {
+                $output = '(no output)';
+            }
+        } catch (\Throwable $e) {
+            $exitCode = 1;
+            $output = 'Error: ' . $e->getMessage();
+        }
+
+        AuditLog::record('system.build_assets', null, 'npm run build', [
+            'exit_code' => $exitCode,
+        ]);
+
+        return redirect()->route('admin.system')
+            ->with('system_result', [
+                'command' => 'npm run build',
+                'output' => $output,
+                'exit_code' => $exitCode,
+            ]);
+    }
+
+    private function findNpmBinary(): ?string
+    {
+        $candidates = ['npm'];
+        foreach (['/usr/local/bin/npm', '/usr/bin/npm'] as $abs) {
+            $candidates[] = $abs;
+        }
+        foreach (glob('/opt/plesk/node/*/bin/npm') ?: [] as $plesk) {
+            $candidates[] = $plesk;
+        }
+
+        foreach ($candidates as $candidate) {
+            // Bare name → use `which`; absolute path → check executability.
+            if (str_starts_with($candidate, '/')) {
+                if (is_executable($candidate)) {
+                    return $candidate;
+                }
+                continue;
+            }
+            $which = trim((string) shell_exec("command -v {$candidate} 2>/dev/null"));
+            if ($which !== '' && is_executable($which)) {
+                return $which;
+            }
+        }
+        return null;
     }
 }

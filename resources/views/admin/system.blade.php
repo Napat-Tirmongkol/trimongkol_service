@@ -99,6 +99,24 @@
                 </div>
             </div>
 
+            {{-- Build assets (vite) --}}
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.system.build_heading') }}</h3>
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.system.build_hint') }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.system.build-assets') }}"
+                          data-confirm="{{ __('app.admin.system.build_confirm') }}">
+                        @csrf
+                        <button type="submit"
+                                class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            {{ __('app.admin.system.run_build') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
             {{-- Test email --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.system.mail_heading') }}</h3>
