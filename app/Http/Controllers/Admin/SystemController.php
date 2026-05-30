@@ -9,10 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ExecutableFinder;
 
 class SystemController extends Controller
 {
@@ -185,37 +187,46 @@ class SystemController extends Controller
      */
     public function buildAssets(Request $request)
     {
-        $base = base_path();
-        $npm = $this->findNpmBinary();
+        try {
+            $npm = $this->findNpmBinary();
+        } catch (\Throwable $e) {
+            $npm = null;
+            Log::warning('findNpmBinary failed', ['error' => $e->getMessage()]);
+        }
 
         if (! $npm) {
             return redirect()->route('admin.system')
                 ->with('system_result', [
                     'command' => 'npm run build',
                     'output' => "Could not locate the `npm` executable on this server.\n\n"
-                              . "Tried: PATH, /usr/bin, /usr/local/bin, /opt/plesk/node/*/bin.\n"
-                              . "Ask the host to install Node.js or run `npm run build` over SSH.",
+                              . "Tried: PATH (via Symfony ExecutableFinder), /usr/local/bin, /usr/bin,\n"
+                              . "/opt/plesk/node/*/bin.\n\n"
+                              . "Either install Node.js on the host or run `npm run build` over SSH /\n"
+                              . "the Plesk Node.js panel.",
                     'exit_code' => 127,
                 ]);
         }
 
-        $process = new Process([$npm, 'run', 'build'], $base);
-        $process->setTimeout(180);
-
         try {
-            $process->run();
-            $exitCode = $process->getExitCode() ?? 1;
-            $output = trim($process->getOutput() . "\n" . $process->getErrorOutput());
+            $result = Process::path(base_path())
+                ->timeout(180)
+                ->run([$npm, 'run', 'build']);
+
+            $exitCode = $result->exitCode() ?? 1;
+            $output = trim($result->output() . "\n" . $result->errorOutput());
             if ($output === '') {
                 $output = '(no output)';
             }
         } catch (\Throwable $e) {
             $exitCode = 1;
-            $output = 'Error: ' . $e->getMessage();
+            $output = "Process failed: " . $e->getMessage()
+                . "\n\nLikely cause: `proc_open` is disabled on this host. Ask the host to\n"
+                . "allow it, or run `npm run build` over SSH instead.";
         }
 
         AuditLog::record('system.build_assets', null, 'npm run build', [
             'exit_code' => $exitCode,
+            'npm_path' => $npm,
         ]);
 
         return redirect()->route('admin.system')
@@ -228,25 +239,30 @@ class SystemController extends Controller
 
     private function findNpmBinary(): ?string
     {
-        $candidates = ['npm'];
-        foreach (['/usr/local/bin/npm', '/usr/bin/npm'] as $abs) {
-            $candidates[] = $abs;
+        $candidates = [];
+
+        // 1. Whatever's on PATH (works when the web user has a sane PATH).
+        try {
+            $found = (new ExecutableFinder())->find('npm');
+            if ($found) {
+                $candidates[] = $found;
+            }
+        } catch (\Throwable) {
+            // ExecutableFinder may internally try proc/exec — fall through.
         }
+
+        // 2. Common absolute locations.
+        $candidates[] = '/usr/local/bin/npm';
+        $candidates[] = '/usr/bin/npm';
+
+        // 3. Plesk-managed Node.js installs (one binary per major version).
         foreach (glob('/opt/plesk/node/*/bin/npm') ?: [] as $plesk) {
             $candidates[] = $plesk;
         }
 
-        foreach ($candidates as $candidate) {
-            // Bare name → use `which`; absolute path → check executability.
-            if (str_starts_with($candidate, '/')) {
-                if (is_executable($candidate)) {
-                    return $candidate;
-                }
-                continue;
-            }
-            $which = trim((string) shell_exec("command -v {$candidate} 2>/dev/null"));
-            if ($which !== '' && is_executable($which)) {
-                return $which;
+        foreach (array_unique($candidates) as $path) {
+            if (@is_file($path) && @is_executable($path)) {
+                return $path;
             }
         }
         return null;
