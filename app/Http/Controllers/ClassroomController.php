@@ -6,6 +6,7 @@ use App\Models\Classroom;
 use App\Services\Billing;
 use App\Services\ClassInsights;
 use App\Services\CurrentWorkspace;
+use App\Services\DemoWorkspaceSeeder;
 use App\Services\PlanGate;
 use Illuminate\Http\Request;
 
@@ -114,6 +115,25 @@ class ClassroomController extends Controller
 
         return redirect()->route('dashboard')
             ->with('status', __('app.classrooms.deleted'));
+    }
+
+    public function demo(Request $request)
+    {
+        $workspace = CurrentWorkspace::get();
+        abort_unless($workspace, 422, __('app.workspaces.no_workspace'));
+
+        if ($reason = PlanGate::reasonCannotAddClassroom($workspace)) {
+            return redirect()->route('plans.index')->with('error', $reason);
+        }
+
+        $classroom = (new DemoWorkspaceSeeder($workspace, $request->user()))->seed();
+
+        if (! $classroom) {
+            return redirect()->route('dashboard')->with('error', __('app.landing.demo_failed'));
+        }
+
+        return redirect()->route('classrooms.show', $classroom)
+            ->with('status', __('app.landing.demo_created'));
     }
 
     private function ensureAccess(Classroom $classroom): void

@@ -553,6 +553,80 @@ class ScannerTest extends TestCase
         $this->assertGreaterThan(0, \App\Models\Submission::count(), 'demo classroom should have sample submissions');
     }
 
+    public function test_landing_renders_when_workspace_has_no_classrooms(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'landing-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(__('app.landing.title'))
+            ->assertSee(__('app.landing.try_demo'))
+            ->assertSee(__('app.landing.free_plan_badge'));
+    }
+
+    public function test_demo_cta_creates_classroom_and_redirects_into_it(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'cta-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->post(route('classrooms.demo'));
+
+        $classroom = $workspace->classrooms()->firstOrFail();
+        $response->assertRedirect(route('classrooms.show', $classroom));
+        $this->assertGreaterThanOrEqual(5, $classroom->students()->count());
+        $this->assertSame(2, $classroom->assignments()->count());
+    }
+
+    public function test_demo_cta_blocked_when_classroom_quota_is_full(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'full-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        // Fill the room up to whichever cap applies (free-launch caps under
+        // billing.free_mode, otherwise the configured plan cap).
+        $cap = \App\Services\Billing::freeMode()
+            ? \App\Services\Billing::launchLimit('max_classrooms')
+            : $workspace->currentPlan()->limit('max_classrooms');
+        if ($cap === null) {
+            $this->markTestSkipped('Workspace has unlimited classrooms — paywall path not reachable.');
+        }
+        for ($i = 0; $i < $cap; $i++) {
+            \App\Models\Classroom::create([
+                'name' => "C$i",
+                'user_id' => $user->id,
+                'workspace_id' => $workspace->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->post(route('classrooms.demo'))
+            ->assertRedirect(route('plans.index'));
+    }
+
     public function test_dashboard_shows_quota_meter_with_plan_badge(): void
     {
         $user = User::factory()->create();

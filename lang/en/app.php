@@ -493,6 +493,28 @@ return [
         'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
     ],
 
+    'landing' => [
+        'title' => 'Take attendance and grade homework in under a minute',
+        'subtitle' => 'Print QR labels for student notebooks, scan with your phone — gradebook, attendance, and class reports come built-in.',
+        'try_demo' => 'Try a demo classroom',
+        'no_credit_card' => 'Free, no credit card required',
+        'feature_scan_title' => 'QR scan',
+        'feature_scan_desc' => 'Point at a notebook label — mark submitted or score in one second.',
+        'feature_grade_title' => 'Gradebook',
+        'feature_grade_desc' => 'Per-student totals with weights · one-click Excel export.',
+        'feature_insights_title' => 'Class insights',
+        'feature_insights_desc' => 'Class average, students who need help, attendance rate — at a glance.',
+        'feature_attendance_title' => 'Attendance',
+        'feature_attendance_desc' => 'Dedicated attendance mode: scan QR = mark "present".',
+        'how_heading' => 'Get started in 3 steps',
+        'free_plan_badge' => 'Free plan',
+        'free_plan_title' => 'Free forever, no card on file',
+        'free_plan_desc' => '5 classrooms · 40 students/room · every core feature · upgrade when ready.',
+        'see_plans' => 'View all plans',
+        'demo_created' => 'Demo classroom ready — try scanning a student QR!',
+        'demo_failed' => 'Could not create the demo classroom — please create one manually.',
+    ],
+
     'demo' => [
         'classroom_name' => 'Demo classroom 🌱',
         'classroom_grade' => 'Grade 4',

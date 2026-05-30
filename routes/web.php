@@ -71,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/workspaces/{workspace}/leave', [WorkspaceController::class, 'leave'])->name('workspaces.leave');
     Route::post('/workspaces/{workspace}/transfer', [WorkspaceController::class, 'transferOwnership'])->name('workspaces.transfer');
 
+    Route::post('classrooms/demo', [ClassroomController::class, 'demo'])->name('classrooms.demo');
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 
     // Static student routes must be registered before the {student} resource

@@ -128,46 +128,101 @@
         @endif
 
         @if ($classrooms->isEmpty())
-            <div class="overflow-hidden rounded-3xl border border-dashed border-slate-300 bg-white">
-                <div class="grid items-center gap-6 p-8 sm:grid-cols-[1fr_auto] sm:gap-10 sm:p-12">
+            @php
+                $features = [
+                    ['key' => 'scan', 'tone' => 'brand', 'svg' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"/>'],
+                    ['key' => 'grade', 'tone' => 'amber', 'svg' => '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'],
+                    ['key' => 'insights', 'tone' => 'emerald', 'svg' => '<path d="M3 17l4-4 4 3 6-7M14 6h7v7" stroke-linecap="round" stroke-linejoin="round"/>'],
+                    ['key' => 'attendance', 'tone' => 'sky', 'svg' => '<path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+                ];
+                $featureTone = [
+                    'brand' => 'bg-brand-50 text-brand-600',
+                    'amber' => 'bg-amber-50 text-amber-600',
+                    'emerald' => 'bg-emerald-50 text-emerald-600',
+                    'sky' => 'bg-sky-50 text-sky-600',
+                ];
+            @endphp
+
+            <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                {{-- Hero --}}
+                <div class="grid items-center gap-6 bg-gradient-to-br from-brand-50/40 via-white to-white p-8 sm:grid-cols-[1fr_auto] sm:gap-10 sm:p-12">
                     <div>
                         <div class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
                             <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
                             {{ __('app.dashboard.start_here') }}
                         </div>
-                        <h2 class="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">{{ __('app.classrooms.emptyTitle') }}</h2>
-                        <p class="mt-2 max-w-md text-sm text-slate-600">{{ __('app.classrooms.emptyDesc') }}</p>
+                        <h2 class="mt-3 text-2xl font-bold leading-tight text-slate-900 sm:text-4xl">{{ __('app.landing.title') }}</h2>
+                        <p class="mt-3 max-w-xl text-sm text-slate-600 sm:text-base">{{ __('app.landing.subtitle') }}</p>
 
-                        <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
-                           class="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            {{ __('app.classrooms.add') }}
-                        </a>
-
-                        <ul class="mt-6 grid gap-2 text-sm text-slate-600 sm:max-w-md">
-                            <li class="flex items-start gap-2">
-                                <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">1</span>
-                                {{ __('app.dashboard.step_1') }}
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">2</span>
-                                {{ __('app.dashboard.step_2') }}
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">3</span>
-                                {{ __('app.dashboard.step_3') }}
-                            </li>
-                        </ul>
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
+                               class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                {{ __('app.classrooms.add') }}
+                            </a>
+                            <form method="POST" action="{{ route('classrooms.demo') }}">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                    <span>🌱</span>
+                                    {{ __('app.landing.try_demo') }}
+                                </button>
+                            </form>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">{{ __('app.landing.no_credit_card') }}</p>
                     </div>
                     <div class="hidden sm:block">
-                        <div class="grid h-40 w-40 place-items-center rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-white shadow-inner">
-                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-600">
+                        <div class="relative grid h-44 w-44 place-items-center rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-white shadow-inner">
+                            <svg width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-600">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
                                 <rect x="7" y="7" width="10" height="10" rx="1"/>
                             </svg>
+                            <span class="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-emerald-500 text-white shadow-lg">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </span>
                         </div>
+                    </div>
+                </div>
+
+                {{-- Feature grid --}}
+                <div class="grid border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+                    @foreach ($features as $i => $f)
+                        <div class="border-slate-200 p-6 {{ $i < 3 ? 'sm:border-r' : '' }} {{ $i < 2 ? 'sm:border-b lg:border-b-0' : '' }} {{ $i === 2 ? 'sm:border-r-0 lg:border-r' : '' }}">
+                            <span class="grid h-9 w-9 place-items-center rounded-xl {{ $featureTone[$f['tone']] }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{!! $f['svg'] !!}</svg>
+                            </span>
+                            <h3 class="mt-3 text-sm font-semibold text-slate-900">{{ __("app.landing.feature_{$f['key']}_title") }}</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-600">{{ __("app.landing.feature_{$f['key']}_desc") }}</p>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Steps + plan callout --}}
+                <div class="grid gap-6 border-t border-slate-200 p-8 sm:grid-cols-[1.6fr_1fr] sm:gap-10 sm:p-10">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.landing.how_heading') }}</h3>
+                        <ul class="mt-3 grid gap-2.5 text-sm text-slate-600">
+                            @foreach (['step_1', 'step_2', 'step_3'] as $idx => $step)
+                                <li class="flex items-start gap-2.5">
+                                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">{{ $idx + 1 }}</span>
+                                    {{ __("app.dashboard.{$step}") }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                            {{ __('app.landing.free_plan_badge') }}
+                        </span>
+                        <h4 class="mt-2 text-sm font-semibold text-slate-900">{{ __('app.landing.free_plan_title') }}</h4>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-600">{{ __('app.landing.free_plan_desc') }}</p>
+                        <a href="{{ route('plans.index') }}" class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800">
+                            {{ __('app.landing.see_plans') }} →
+                        </a>
                     </div>
                 </div>
             </div>
