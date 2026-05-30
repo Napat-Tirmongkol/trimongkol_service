@@ -50,7 +50,7 @@
             @endif
 
             {{-- Quick stats --}}
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex items-center gap-3">
                         <span class="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600">
@@ -89,6 +89,18 @@
                         </svg>
                     </span>
                 </a>
+                <a href="{{ route('classrooms.attendance.index', $classroom) }}"
+                   class="group flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-brand-300 hover:shadow-md">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.attendance.nav') }}</div>
+                        <div class="mt-1 text-base font-bold text-slate-900 group-hover:text-brand-700">{{ __('app.attendance.heading') }} →</div>
+                    </div>
+                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-sky-600">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </span>
+                </a>
                 <a href="{{ route('classrooms.assignments.create', $classroom) }}" data-tour="assignment"
                    class="group flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white shadow-lg shadow-brand-600/20 transition hover:from-brand-700 hover:to-brand-900">
                     <div>
@@ -102,6 +114,103 @@
                     </span>
                 </a>
             </div>
+
+            @if (! empty($insights) && $insights['has_data'])
+                @php
+                    $avg = $insights['class_average_percent'];
+                    $sub = $insights['submission_rate_percent'];
+                    $att = $insights['attendance_rate_percent'];
+                    $toneFor = fn ($p) => $p === null ? 'slate' : ($p >= 80 ? 'emerald' : ($p >= 60 ? 'amber' : 'rose'));
+                    $avgTone = $toneFor($avg);
+                    $subTone = $toneFor($sub);
+                    $attTone = $toneFor($att);
+                    $toneText = ['slate' => 'text-slate-900', 'emerald' => 'text-emerald-700', 'amber' => 'text-amber-700', 'rose' => 'text-rose-700'];
+                @endphp
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m-8 5h8m-8 5h8M3 17l3.5-3.5L9 16l4-4"/></svg>
+                            </span>
+                            <h3 class="text-base font-semibold text-slate-900">{{ __('app.insights.heading') }}</h3>
+                        </div>
+                        <a href="{{ route('classrooms.gradebook', $classroom) }}"
+                           class="text-xs font-medium text-brand-600 hover:text-brand-700">
+                            {{ __('app.insights.see_gradebook') }} →
+                        </a>
+                    </div>
+
+                    @php $statCols = $insights['attendance_assignments'] > 0 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'; @endphp
+                    <div class="grid grid-cols-2 gap-px bg-slate-100 {{ $statCols }}">
+                        <div class="bg-white px-5 py-4">
+                            <div class="text-[11px] uppercase tracking-wider text-slate-500">{{ __('app.insights.class_average') }}</div>
+                            <div class="mt-1 text-2xl font-bold tabular-nums {{ $toneText[$avgTone] }}">
+                                {{ $avg !== null ? $avg.'%' : '—' }}
+                            </div>
+                        </div>
+                        <div class="bg-white px-5 py-4">
+                            <div class="text-[11px] uppercase tracking-wider text-slate-500">{{ __('app.insights.submission_rate') }}</div>
+                            <div class="mt-1 text-2xl font-bold tabular-nums {{ $toneText[$subTone] }}">
+                                {{ $sub !== null ? $sub.'%' : '—' }}
+                            </div>
+                            <div class="mt-0.5 text-xs text-slate-500">{{ __('app.insights.submission_count', ['count' => $insights['total_submissions']]) }}</div>
+                        </div>
+                        @if ($insights['attendance_assignments'] > 0)
+                            <div class="bg-white px-5 py-4">
+                                <div class="text-[11px] uppercase tracking-wider text-slate-500">{{ __('app.insights.attendance_rate') }}</div>
+                                <div class="mt-1 text-2xl font-bold tabular-nums {{ $toneText[$attTone] }}">
+                                    {{ $att !== null ? $att.'%' : '—' }}
+                                </div>
+                                <div class="mt-0.5 text-xs text-slate-500">{{ __('app.insights.attendance_assignments', ['count' => $insights['attendance_assignments']]) }}</div>
+                            </div>
+                        @endif
+                        <div class="bg-white px-5 py-4">
+                            <div class="text-[11px] uppercase tracking-wider text-slate-500">{{ __('app.insights.recent_scans') }}</div>
+                            <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $insights['recent_scan_count'] }}</div>
+                            <div class="mt-0.5 text-xs text-slate-500">{{ __('app.insights.activity_window', ['days' => $insights['recent_window_days']]) }}</div>
+                        </div>
+                    </div>
+
+                    @if (! empty($insights['top_students']) || ! empty($insights['struggling_students']))
+                        <div class="grid gap-px border-t border-slate-100 bg-slate-100 sm:grid-cols-2">
+                            <div class="bg-white px-5 py-4">
+                                <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                    {{ __('app.insights.top_students') }}
+                                </div>
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @forelse ($insights['top_students'] as $row)
+                                        <a href="{{ route('classrooms.students.show', [$classroom, $row['id']]) }}"
+                                           class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-100">
+                                            {{ $row['name'] }}
+                                            <span class="tabular-nums text-emerald-600">{{ round($row['percent']) }}%</span>
+                                        </a>
+                                    @empty
+                                        <span class="text-xs text-slate-400">{{ __('app.insights.no_data') }}</span>
+                                    @endforelse
+                                </div>
+                            </div>
+                            <div class="bg-white px-5 py-4">
+                                <div class="flex items-center gap-1.5 text-xs font-semibold text-rose-700">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    {{ __('app.insights.struggling') }}
+                                </div>
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @forelse ($insights['struggling_students'] as $row)
+                                        <a href="{{ route('classrooms.students.show', [$classroom, $row['id']]) }}"
+                                           class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-100">
+                                            {{ $row['name'] }}
+                                            <span class="tabular-nums text-rose-600">{{ round($row['percent']) }}%</span>
+                                        </a>
+                                    @empty
+                                        <span class="text-xs text-slate-400">{{ __('app.insights.all_doing_well') }}</span>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             {{-- Assignments section --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">

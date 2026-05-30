@@ -41,7 +41,7 @@ class Assignment extends Model
             return (float) $this->max_score;
         }
         return match ($this->scoring_mode) {
-            'check' => 1.0,
+            'check', 'attendance' => 1.0,
             'fixed' => (float) ($this->default_score ?? 1),
             'custom' => 100.0,
             default => 100.0,
@@ -50,14 +50,14 @@ class Assignment extends Model
 
     /**
      * Score earned for a submission row (null if no submission).
-     * Check mode: a present submission counts as 1 even though score is null.
+     * Check / attendance: a present submission counts as 1 even though score is null.
      */
     public function earnedScore(?Submission $submission): ?float
     {
         if (! $submission) {
             return null;
         }
-        if ($this->scoring_mode === 'check') {
+        if ($this->scoring_mode === 'check' || $this->scoring_mode === 'attendance') {
             return 1.0;
         }
         return $submission->score !== null ? (float) $submission->score : null;

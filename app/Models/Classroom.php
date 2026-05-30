@@ -30,6 +30,11 @@ class Classroom extends Model
         return $this->hasMany(Assignment::class)->latest();
     }
 
+    public function attendanceSessions(): HasMany
+    {
+        return $this->hasMany(AttendanceSession::class)->latest('date');
+    }
+
     /**
      * True when $user belongs to the workspace that owns this classroom.
      * Authorization gate that should be used instead of comparing user_id —

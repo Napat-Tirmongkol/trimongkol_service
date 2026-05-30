@@ -8,9 +8,11 @@ use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
 use App\Models\Classroom;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
@@ -71,6 +73,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/workspaces/{workspace}/leave', [WorkspaceController::class, 'leave'])->name('workspaces.leave');
     Route::post('/workspaces/{workspace}/transfer', [WorkspaceController::class, 'transferOwnership'])->name('workspaces.transfer');
 
+    Route::post('classrooms/demo', [ClassroomController::class, 'demo'])->name('classrooms.demo');
     Route::resource('classrooms', ClassroomController::class)->except(['index']);
 
     // Static student routes must be registered before the {student} resource
@@ -92,6 +95,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.gradebook');
     Route::get('classrooms/{classroom}/gradebook/export', [GradebookController::class, 'export'])
         ->name('classrooms.gradebook.export');
+
+    // Attendance — daily roll call, separate from assignment-style scoring.
+    Route::get('classrooms/{classroom}/attendance', [AttendanceController::class, 'index'])
+        ->name('classrooms.attendance.index');
+    Route::post('classrooms/{classroom}/attendance/today', [AttendanceController::class, 'today'])
+        ->name('classrooms.attendance.today');
+    Route::get('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'show'])
+        ->name('classrooms.attendance.show');
+    Route::patch('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'update'])
+        ->name('classrooms.attendance.update');
+    Route::delete('classrooms/{classroom}/attendance/{session}', [AttendanceController::class, 'destroy'])
+        ->name('classrooms.attendance.destroy');
+    Route::get('classrooms/{classroom}/students/{student}/attendance', [AttendanceController::class, 'studentHistory'])
+        ->name('classrooms.students.attendance');
 
     Route::resource('classrooms.assignments', AssignmentController::class)
         ->only(['create', 'store', 'show', 'edit', 'update', 'destroy']);
@@ -132,6 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:leads.view')->group(function () {
             Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');
+            Route::get('/leads/{lead}/attachment', [AdminLeadController::class, 'attachment'])->name('leads.attachment');
         });
         Route::middleware('can:leads.manage')->group(function () {
             Route::patch('/leads/{lead}', [AdminLeadController::class, 'update'])->name('leads.update');
@@ -171,6 +189,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/system/pull', [AdminSystemController::class, 'pull'])->name('system.pull');
             Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
+            Route::post('/system/build-assets', [AdminSystemController::class, 'buildAssets'])->name('system.build-assets');
             Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
         });
 
@@ -192,6 +211,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('/feedback', [FeedbackController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('feedback.store');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

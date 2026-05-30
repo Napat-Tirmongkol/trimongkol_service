@@ -7,6 +7,7 @@ use App\Models\Lead;
 use App\Models\User;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class LeadController extends Controller
 {
@@ -77,10 +78,35 @@ class LeadController extends Controller
     public function destroy(Lead $lead)
     {
         $label = $lead->email;
+        // Drop the attachment when the lead goes too, so we don't leave
+        // orphaned screenshots in storage/app/feedback.
+        $path = data_get($lead->context, 'attachment_path');
+        if ($path) {
+            Storage::disk('local')->delete($path);
+        }
         $lead->delete();
         AuditLog::record('lead.delete', null, $label);
 
         return redirect()->route('admin.leads.index')
             ->with('status', __('app.admin.leads.deleted'));
+    }
+
+    /**
+     * Stream the attachment for a feedback lead. Lives behind leads.view
+     * so screenshots that may contain student data never get a public URL.
+     */
+    public function attachment(Lead $lead)
+    {
+        $path = data_get($lead->context, 'attachment_path');
+        abort_if(! $path || ! Storage::disk('local')->exists($path), 404);
+
+        $mime = data_get($lead->context, 'attachment_mime', 'application/octet-stream');
+        $original = data_get($lead->context, 'attachment_original', basename($path));
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($original) . '"',
+            'Cache-Control' => 'private, max-age=0, no-store',
+        ]);
     }
 }
