@@ -11,6 +11,8 @@ use App\Services\CurrentWorkspace;
 use App\Services\DemoWorkspaceSeeder;
 use App\Services\PlanGate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ClassroomController extends Controller
 {
@@ -46,7 +48,20 @@ class ClassroomController extends Controller
                 'student_limit_per_room' => $studentLimit,
             ];
 
-            [$today, $recentActivity, $todayAttendanceByClassroom] = $this->buildTodayOverview($classrooms);
+            try {
+                [$today, $recentActivity, $todayAttendanceByClassroom] = $this->buildTodayOverview($classrooms);
+            } catch (\Throwable $e) {
+                Log::warning('Dashboard today overview failed', [
+                    'error' => $e->getMessage(),
+                    'workspace_id' => $workspace->id,
+                ]);
+                // Fall through with empty overview rather than 500ing the whole
+                // dashboard — most commonly happens when attendance migrations
+                // haven't been run yet on this environment.
+                $today = null;
+                $recentActivity = collect();
+                $todayAttendanceByClassroom = [];
+            }
         }
 
         return view('dashboard', compact(
@@ -72,10 +87,13 @@ class ClassroomController extends Controller
         $classroomIds = $classrooms->pluck('id');
         $todayStr = now()->toDateString();
 
-        $todaySessions = AttendanceSession::whereIn('classroom_id', $classroomIds)
-            ->whereDate('date', $todayStr)
-            ->get()
-            ->keyBy('classroom_id');
+        // attendance_sessions only exists after the 2026_05_30 migrations run.
+        $todaySessions = Schema::hasTable('attendance_sessions')
+            ? AttendanceSession::whereIn('classroom_id', $classroomIds)
+                ->whereDate('date', $todayStr)
+                ->get()
+                ->keyBy('classroom_id')
+            : collect();
 
         $assignmentIds = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)->pluck('id');
 
