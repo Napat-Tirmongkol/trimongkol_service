@@ -37,10 +37,60 @@
             </div>
 
             @if ($classrooms->isNotEmpty())
-                <div class="mt-7 grid grid-cols-3 gap-3 sm:max-w-xl">
+                @php
+                    $classroomLimit = $quota['classroom_limit'] ?? null;
+                    $classroomUsed = $quota['classroom_used'] ?? $classrooms->count();
+                    $classroomPct = $classroomLimit ? min(100, round($classroomUsed / max(1, $classroomLimit) * 100)) : 0;
+                    $classroomNearCap = $classroomLimit && $classroomUsed >= $classroomLimit;
+                    $classroomWarn = $classroomLimit && $classroomPct >= 80;
+                @endphp
+
+                @if ($quota)
+                    <div class="mt-6 inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs text-slate-600 backdrop-blur">
+                        @if ($quota['free_mode'])
+                            <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                {{ __('app.plans.free_launch_badge') }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 font-semibold text-brand-700">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                                {{ $quota['plan_name'] }}
+                            </span>
+                        @endif
+                        <span class="text-slate-300">·</span>
+                        <span class="tabular-nums">
+                            {{ __('app.dashboard.stat_classrooms') }}
+                            <strong class="font-semibold text-slate-900">{{ $classroomUsed }}</strong>{{ $classroomLimit !== null ? '/'.$classroomLimit : '' }}
+                        </span>
+                        @if ($quota['member_limit'] !== null)
+                            <span class="text-slate-300">·</span>
+                            <span class="tabular-nums">
+                                {{ __('app.dashboard.stat_members') }}
+                                <strong class="font-semibold text-slate-900">{{ $quota['member_used'] }}</strong>/{{ $quota['member_limit'] }}
+                            </span>
+                        @endif
+                        <a href="{{ route('plans.index') }}" class="ml-1 font-medium text-brand-600 hover:text-brand-700">
+                            {{ __('app.dashboard.quota_view_plans') }} →
+                        </a>
+                    </div>
+                @endif
+
+                <div class="mt-4 grid grid-cols-3 gap-3 sm:max-w-xl">
                     <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                         <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_classrooms') }}</div>
-                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $classrooms->count() }}</div>
+                        <div class="mt-1 flex items-baseline gap-1 text-2xl font-bold tabular-nums text-slate-900">
+                            {{ $classroomUsed }}
+                            @if ($classroomLimit !== null)
+                                <span class="text-sm font-medium text-slate-400">/ {{ $classroomLimit }}</span>
+                            @endif
+                        </div>
+                        @if ($classroomLimit !== null)
+                            <div class="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
+                                <div class="h-full rounded-full transition-all {{ $classroomNearCap ? 'bg-rose-500' : ($classroomWarn ? 'bg-amber-500' : 'bg-brand-500') }}"
+                                     style="width: {{ $classroomPct }}%"></div>
+                            </div>
+                        @endif
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                         <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
@@ -51,6 +101,14 @@
                         <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $totalAssignments }}</div>
                     </div>
                 </div>
+
+                @if ($classroomNearCap)
+                    <div class="mt-3 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 sm:max-w-xl">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span class="flex-1">{{ __('app.dashboard.quota_full', ['limit' => $classroomLimit]) }}</span>
+                        <a href="{{ route('plans.index') }}" class="font-semibold underline hover:text-rose-900">{{ __('app.dashboard.quota_upgrade') }}</a>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
@@ -142,10 +200,20 @@
                             @endif
                         </div>
 
+                        @php
+                            $studentCap = $quota['student_limit_per_room'] ?? null;
+                            $studentsFull = $studentCap && $classroom->students_count >= $studentCap;
+                            $studentsWarn = $studentCap && ! $studentsFull && $classroom->students_count >= (int) ($studentCap * 0.8);
+                        @endphp
                         <div class="relative mt-5 grid grid-cols-2 gap-2">
                             <div class="rounded-lg bg-slate-50 px-3 py-2">
                                 <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
-                                <div class="mt-0.5 text-lg font-bold tabular-nums text-slate-900">{{ $classroom->students_count }}</div>
+                                <div class="mt-0.5 flex items-baseline gap-1">
+                                    <span class="text-lg font-bold tabular-nums {{ $studentsFull ? 'text-rose-700' : ($studentsWarn ? 'text-amber-700' : 'text-slate-900') }}">{{ $classroom->students_count }}</span>
+                                    @if ($studentCap !== null)
+                                        <span class="text-xs font-medium text-slate-400">/ {{ $studentCap }}</span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="rounded-lg bg-slate-50 px-3 py-2">
                                 <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>

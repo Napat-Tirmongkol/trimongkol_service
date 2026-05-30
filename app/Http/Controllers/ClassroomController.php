@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Services\Billing;
 use App\Services\CurrentWorkspace;
 use App\Services\PlanGate;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class ClassroomController extends Controller
     {
         $workspace = CurrentWorkspace::get();
         $classrooms = collect();
+        $quota = null;
 
         if ($workspace) {
             $classrooms = Classroom::where('workspace_id', $workspace->id)
@@ -20,9 +22,25 @@ class ClassroomController extends Controller
                 ->with(['assignments' => fn ($q) => $q->latest('created_at')->limit(1)])
                 ->latest()
                 ->get();
+
+            $freeMode = Billing::freeMode();
+            $plan = $workspace->currentPlan();
+            $classroomLimit = $freeMode ? Billing::launchLimit('max_classrooms') : $plan->limit('max_classrooms');
+            $memberLimit = $freeMode ? Billing::launchLimit('max_members') : $plan->limit('max_members');
+            $studentLimit = $freeMode ? Billing::launchLimit('max_students_per_classroom') : $plan->limit('max_students_per_classroom');
+
+            $quota = [
+                'free_mode' => $freeMode,
+                'plan_name' => $plan->name,
+                'classroom_used' => $classrooms->count(),
+                'classroom_limit' => $classroomLimit,
+                'member_used' => $workspace->memberships()->count(),
+                'member_limit' => $memberLimit,
+                'student_limit_per_room' => $studentLimit,
+            ];
         }
 
-        return view('dashboard', compact('classrooms', 'workspace'));
+        return view('dashboard', compact('classrooms', 'workspace', 'quota'));
     }
 
     public function create()

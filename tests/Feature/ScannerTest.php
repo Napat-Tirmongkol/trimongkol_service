@@ -338,6 +338,41 @@ class ScannerTest extends TestCase
         $this->assertEqualsWithDelta(100.0, $g['student_totals'][$s->id]['weighted_percent'], 0.01);
     }
 
+    public function test_attendance_mode_behaves_like_check_no_score_recorded(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('attendance');
+
+        $this->actingAs($user)
+            ->post(route('classrooms.assignments.submissions.store', [$classroom, $assignment]), [
+                'student_id' => $student->id,
+            ])
+            ->assertRedirect();
+
+        $sub = Submission::firstOrFail();
+        $this->assertNull($sub->score, 'attendance mode should not store a numeric score');
+
+        $g = (new \App\Services\Gradebook($classroom))->build();
+        $this->assertSame(1.0, $g['cells'][$student->id][$assignment->id]['score'], 'attendance submission counts as 1 point');
+        $this->assertSame(1.0, $g['cells'][$student->id][$assignment->id]['max_score']);
+    }
+
+    public function test_assignment_create_accepts_attendance_mode(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'C']);
+
+        $this->actingAs($user)
+            ->post(route('classrooms.assignments.store', $classroom), [
+                'name' => 'Morning roll',
+                'category' => 'other',
+                'scoring_mode' => 'attendance',
+            ])
+            ->assertRedirect();
+
+        $a = Assignment::firstOrFail();
+        $this->assertSame('attendance', $a->scoring_mode);
+    }
+
     public function test_gradebook_page_renders_with_inline_score_inputs(): void
     {
         [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('custom');
@@ -414,5 +449,29 @@ class ScannerTest extends TestCase
         $this->actingAs($user)
             ->get(route('classrooms.students.bulk', $classroom))
             ->assertOk();
+    }
+
+    public function test_dashboard_shows_quota_meter_with_plan_badge(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'ws-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+        \App\Models\Classroom::create([
+            'name' => 'C1',
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->get(route('dashboard'));
+
+        $response->assertOk()
+            ->assertSee(__('app.dashboard.quota_view_plans'));
     }
 }

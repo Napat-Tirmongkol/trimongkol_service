@@ -326,7 +326,9 @@ return [
         'field_description' => 'Description',
         'mode_label' => 'Mode',
         'mode_check_title' => 'Check only',
-        'mode_check_desc' => 'Just mark "submitted" on scan — fastest for attendance-style checking.',
+        'mode_check_desc' => 'Just mark "submitted" on scan — fastest for quick yes/no checks.',
+        'mode_attendance_title' => 'Attendance',
+        'mode_attendance_desc' => 'Scan QR = mark "present" — designed for morning roll call or class start.',
         'mode_fixed_title' => 'Quick score',
         'mode_fixed_desc' => 'Every scan gets the same score (e.g. 5 points).',
         'mode_custom_title' => 'Custom score',
@@ -423,6 +425,7 @@ return [
         'stat_classrooms' => 'Classrooms',
         'stat_students' => 'Students',
         'stat_assignments' => 'Assignments',
+        'stat_members' => 'Team members',
         'your_classrooms' => 'Your classrooms',
         'count_suffix' => 'total',
         'latest' => 'Latest',
@@ -430,6 +433,9 @@ return [
         'step_1' => 'Create a classroom — name + grade level',
         'step_2' => 'Add students one by one or paste the whole roster',
         'step_3' => 'Print QR labels, stick them on notebooks, then scan',
+        'quota_view_plans' => 'View plans',
+        'quota_full' => 'Classroom quota reached (:limit total) — upgrade to add more.',
+        'quota_upgrade' => 'Upgrade',
     ],
 
     'classrooms' => [
