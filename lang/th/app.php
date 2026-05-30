@@ -493,6 +493,23 @@ return [
         'print_qr_intro' => 'หน้านี้พร้อมพิมพ์ — กดปุ่มพิมพ์มุมขวาบน เหมาะกับกรณีรหัสหาย ต้องการปริ้นใหม่เฉพาะคน',
     ],
 
+    'insights' => [
+        'heading' => 'สรุปภาพรวมห้อง',
+        'see_gradebook' => 'ดู Gradebook',
+        'class_average' => 'คะแนนเฉลี่ยห้อง',
+        'submission_rate' => 'อัตราการส่งงาน',
+        'submission_count' => ':count รายการที่ส่งแล้ว',
+        'attendance_rate' => 'อัตราการเข้าเรียน',
+        'attendance_assignments' => 'จาก :count รายการเช็คชื่อ',
+        'recent_scans' => 'สแกนล่าสุด',
+        'activity_label' => 'การใช้งาน',
+        'activity_window' => 'ใน :days วันที่ผ่านมา',
+        'top_students' => 'เด็กเด่นในห้อง',
+        'struggling' => 'นักเรียนที่ควรช่วยเหลือ',
+        'no_data' => 'ยังไม่มีข้อมูล',
+        'all_doing_well' => 'ทุกคนทำได้ดี — ไม่ต่ำกว่าค่าเฉลี่ย 👏',
+    ],
+
     'plans' => [
         'nav' => 'แพ็คเกจ',
         'heading' => 'แพ็คเกจการใช้งาน',

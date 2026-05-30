@@ -451,6 +451,68 @@ class ScannerTest extends TestCase
             ->assertOk();
     }
 
+    public function test_class_insights_computes_average_submission_rate_and_top_students(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'Mix']);
+        $alice = $classroom->students()->create(['name' => 'Alice']);
+        $bob = $classroom->students()->create(['name' => 'Bob']);
+        $cara = $classroom->students()->create(['name' => 'Cara']);
+
+        $a1 = $classroom->assignments()->create([
+            'name' => 'HW1', 'scoring_mode' => 'custom', 'max_score' => 100, 'weight' => 1,
+        ]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $alice->id, 'submitted_at' => now(), 'score' => 90]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $bob->id, 'submitted_at' => now(), 'score' => 60]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $cara->id, 'submitted_at' => now(), 'score' => 30]);
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+
+        $this->assertTrue($insights['has_data']);
+        $this->assertEqualsWithDelta(60.0, $insights['class_average_percent'], 0.1);
+        $this->assertEqualsWithDelta(100.0, $insights['submission_rate_percent'], 0.1);
+        $this->assertSame(3, $insights['total_submissions']);
+        $this->assertSame('Alice', $insights['top_students'][0]['name']);
+        $this->assertSame('Cara', $insights['struggling_students'][0]['name']);
+    }
+
+    public function test_class_insights_attendance_rate_only_counts_attendance_assignments(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'Mix']);
+        $alice = $classroom->students()->create(['name' => 'Alice']);
+        $bob = $classroom->students()->create(['name' => 'Bob']);
+
+        $att = $classroom->assignments()->create(['name' => 'Morning', 'scoring_mode' => 'attendance']);
+        Submission::create(['assignment_id' => $att->id, 'student_id' => $alice->id, 'submitted_at' => now()]);
+        // Bob absent — no submission row
+
+        $hw = $classroom->assignments()->create(['name' => 'HW', 'scoring_mode' => 'check']);
+        Submission::create(['assignment_id' => $hw->id, 'student_id' => $alice->id, 'submitted_at' => now()]);
+        Submission::create(['assignment_id' => $hw->id, 'student_id' => $bob->id, 'submitted_at' => now()]);
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+
+        $this->assertSame(1, $insights['attendance_assignments']);
+        $this->assertEqualsWithDelta(50.0, $insights['attendance_rate_percent'], 0.1, '1 of 2 students marked present');
+    }
+
+    public function test_classroom_show_renders_insights_when_submissions_exist(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('fixed', 5);
+        Submission::create([
+            'assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'submitted_at' => now(),
+            'score' => 5,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('classrooms.show', $classroom))
+            ->assertOk()
+            ->assertSee(__('app.insights.heading'));
+    }
+
     public function test_dashboard_shows_quota_meter_with_plan_badge(): void
     {
         $user = User::factory()->create();

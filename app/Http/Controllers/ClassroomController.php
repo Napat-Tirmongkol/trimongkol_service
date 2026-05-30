@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Services\Billing;
+use App\Services\ClassInsights;
 use App\Services\CurrentWorkspace;
 use App\Services\PlanGate;
 use Illuminate\Http\Request;
@@ -78,8 +79,9 @@ class ClassroomController extends Controller
     {
         $this->ensureAccess($classroom);
         $classroom->load('students', 'assignments');
+        $insights = (new ClassInsights($classroom))->build();
 
-        return view('classrooms.show', compact('classroom'));
+        return view('classrooms.show', compact('classroom', 'insights'));
     }
 
     public function edit(Classroom $classroom)

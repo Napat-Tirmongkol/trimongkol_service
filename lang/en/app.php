@@ -493,6 +493,23 @@ return [
         'print_qr_intro' => 'Ready to print — useful for reprinting a lost or damaged QR for a single student.',
     ],
 
+    'insights' => [
+        'heading' => 'Class insights',
+        'see_gradebook' => 'View gradebook',
+        'class_average' => 'Class average',
+        'submission_rate' => 'Submission rate',
+        'submission_count' => ':count submitted',
+        'attendance_rate' => 'Attendance rate',
+        'attendance_assignments' => 'across :count attendance items',
+        'recent_scans' => 'Recent scans',
+        'activity_label' => 'Activity',
+        'activity_window' => 'in the last :days days',
+        'top_students' => 'Top of the class',
+        'struggling' => 'Needs attention',
+        'no_data' => 'No data yet',
+        'all_doing_well' => 'Everyone is at or above the class average 👏',
+    ],
+
     'plans' => [
         'nav' => 'Plans',
         'heading' => 'Subscription plans',
