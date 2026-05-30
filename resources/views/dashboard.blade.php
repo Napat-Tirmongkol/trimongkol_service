@@ -46,7 +46,7 @@
                 @endphp
 
                 @if ($quota)
-                    <div class="mt-6 inline-flex flex-wrap items-center gap-x-3 gap-y-2 rounded-full border border-slate-200 bg-white/80 px-4 py-1.5 text-xs text-slate-600 backdrop-blur">
+                    <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 backdrop-blur sm:rounded-full sm:px-4 sm:py-1.5">
                         @if ($quota['free_mode'])
                             <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
                                 <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
@@ -58,19 +58,19 @@
                                 {{ $quota['plan_name'] }}
                             </span>
                         @endif
-                        <span class="text-slate-300">·</span>
+                        <span class="hidden text-slate-300 sm:inline">·</span>
                         <span class="tabular-nums">
                             {{ __('app.dashboard.stat_classrooms') }}
                             <strong class="font-semibold text-slate-900">{{ $classroomUsed }}</strong>{{ $classroomLimit !== null ? '/'.$classroomLimit : '' }}
                         </span>
-                        @if ($quota['member_limit'] !== null)
-                            <span class="text-slate-300">·</span>
+                        @if ($quota['member_limit'] !== null && $quota['member_limit'] > 1)
+                            <span class="hidden text-slate-300 sm:inline">·</span>
                             <span class="tabular-nums">
                                 {{ __('app.dashboard.stat_members') }}
                                 <strong class="font-semibold text-slate-900">{{ $quota['member_used'] }}</strong>/{{ $quota['member_limit'] }}
                             </span>
                         @endif
-                        <a href="{{ route('plans.index') }}" class="ml-1 font-medium text-brand-600 hover:text-brand-700">
+                        <a href="{{ route('plans.index') }}" class="ml-auto font-medium text-brand-600 hover:text-brand-700 sm:ml-1">
                             {{ __('app.dashboard.quota_view_plans') }} →
                         </a>
                     </div>
@@ -154,9 +154,9 @@
                         <h2 class="mt-3 text-2xl font-bold leading-tight text-slate-900 sm:text-4xl">{{ __('app.landing.title') }}</h2>
                         <p class="mt-3 max-w-xl text-sm text-slate-600 sm:text-base">{{ __('app.landing.subtitle') }}</p>
 
-                        <div class="mt-6 flex flex-wrap gap-3">
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                             <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
-                               class="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700">
+                               class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700 sm:w-auto sm:py-2.5">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                                 </svg>
@@ -165,7 +165,7 @@
                             <form method="POST" action="{{ route('classrooms.demo') }}">
                                 @csrf
                                 <button type="submit"
-                                        class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                                        class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto sm:py-2.5">
                                     <span>🌱</span>
                                     {{ __('app.landing.try_demo') }}
                                 </button>
@@ -188,10 +188,10 @@
                     </div>
                 </div>
 
-                {{-- Feature grid --}}
-                <div class="grid border-t border-slate-200 sm:grid-cols-2 lg:grid-cols-4">
-                    @foreach ($features as $i => $f)
-                        <div class="border-slate-200 p-6 {{ $i < 3 ? 'sm:border-r' : '' }} {{ $i < 2 ? 'sm:border-b lg:border-b-0' : '' }} {{ $i === 2 ? 'sm:border-r-0 lg:border-r' : '' }}">
+                {{-- Feature grid — gap-px shows the slate background as dividers in any grid layout --}}
+                <div class="grid grid-cols-2 gap-px border-t border-slate-200 bg-slate-200 lg:grid-cols-4">
+                    @foreach ($features as $f)
+                        <div class="bg-white p-5 sm:p-6">
                             <span class="grid h-9 w-9 place-items-center rounded-xl {{ $featureTone[$f['tone']] }}">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{!! $f['svg'] !!}</svg>
                             </span>

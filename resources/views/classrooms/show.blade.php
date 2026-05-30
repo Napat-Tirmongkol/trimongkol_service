@@ -169,7 +169,7 @@
                                 <div class="mt-2 flex flex-wrap gap-1.5">
                                     @forelse ($insights['top_students'] as $row)
                                         <a href="{{ route('classrooms.students.show', [$classroom, $row['id']]) }}"
-                                           class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100">
+                                           class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-100">
                                             {{ $row['name'] }}
                                             <span class="tabular-nums text-emerald-600">{{ round($row['percent']) }}%</span>
                                         </a>
@@ -186,7 +186,7 @@
                                 <div class="mt-2 flex flex-wrap gap-1.5">
                                     @forelse ($insights['struggling_students'] as $row)
                                         <a href="{{ route('classrooms.students.show', [$classroom, $row['id']]) }}"
-                                           class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-medium text-rose-800 hover:bg-rose-100">
+                                           class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-800 hover:bg-rose-100">
                                             {{ $row['name'] }}
                                             <span class="tabular-nums text-rose-600">{{ round($row['percent']) }}%</span>
                                         </a>
