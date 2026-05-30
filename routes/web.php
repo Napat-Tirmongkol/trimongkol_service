@@ -12,6 +12,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
 use App\Models\Classroom;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
@@ -208,6 +209,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::post('/feedback', [FeedbackController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('feedback.store');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

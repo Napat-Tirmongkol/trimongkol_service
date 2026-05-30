@@ -526,6 +526,23 @@ return [
         'homework_description' => 'Sample homework graded 0–10 — class average shows up in the Gradebook.',
     ],
 
+    'feedback' => [
+        'nav' => 'Report an issue',
+        'heading' => 'Report an issue / feedback',
+        'subtitle' => 'Found a bug, have a feature idea, or a question — we read every message.',
+        'field_category' => 'Type',
+        'cat_bug' => 'Bug / issue',
+        'cat_suggestion' => 'Feature idea',
+        'cat_question' => 'Question',
+        'field_subject' => 'Subject',
+        'field_subject_placeholder' => 'A short headline of the issue',
+        'field_message' => 'Details',
+        'field_message_placeholder' => 'What were you doing · what happened · what you expected',
+        'context_note' => 'We auto-attach the current URL, workspace, and browser — no need to type those.',
+        'submit' => 'Send',
+        'thanks' => 'Thanks! Our team received your message and will get back to you soon.',
+    ],
+
     'attendance' => [
         'nav' => 'Attendance',
         'heading' => 'Daily attendance',

@@ -80,6 +80,9 @@
                                         @if ($lead->company)
                                             <div class="text-xs text-slate-500">{{ $lead->company }}</div>
                                         @endif
+                                        @if ($lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
+                                            <span class="mt-1 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-inset ring-amber-200">{{ __('app.feedback.nav') }}</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-3 text-slate-600">
                                         <div>{{ $lead->email }}</div>
