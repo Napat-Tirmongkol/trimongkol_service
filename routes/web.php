@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicQueueController;
+use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubmissionController;
@@ -35,6 +38,10 @@ Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 // Smart Clipboard OCR — public, free, runs entirely in the browser (Tesseract.js
 // via CDN). No upload, no auth, no server processing — just returns the page.
 Route::get('/ocr', [PageController::class, 'ocr'])->name('ocr');
+
+// Public, login-free queue page — customers scan the QR / open the share link
+// to pull a ticket and watch the queue live. Resolved by unguessable token.
+Route::get('/q/{token}', [PublicQueueController::class, 'show'])->name('queue.public');
 
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
@@ -61,6 +68,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
 
     Route::get('/plans', [PlansController::class, 'index'])->name('plans.index');
+
+    // Queue System product — workspace-scoped. Counter staff operate here;
+    // customers pull tickets on the public /q/{token} page (registered below).
+    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+    Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+    Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
+    Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
+    Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
+    Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
+    Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
+    Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
+    Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
+    Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -186,6 +207,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/classrooms', [AdminScannerController::class, 'classrooms'])->name('classrooms');
                 Route::get('/classrooms/{classroom}', [AdminScannerController::class, 'showClassroom'])->name('classrooms.show');
                 Route::delete('/classrooms/{classroom}', [AdminScannerController::class, 'destroyClassroom'])->name('classrooms.destroy');
+            });
+
+            Route::prefix('products/queue')->name('queue.')->group(function () {
+                Route::get('/', [AdminQueueController::class, 'dashboard'])->name('dashboard');
+                Route::get('/queues', [AdminQueueController::class, 'index'])->name('index');
+                Route::delete('/queues/{queue}', [AdminQueueController::class, 'destroy'])->name('destroy');
             });
 
             // Back-compat redirects for the old flat URLs.
