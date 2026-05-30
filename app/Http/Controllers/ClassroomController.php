@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AttendanceSession;
 use App\Models\Classroom;
+use App\Models\Submission;
 use App\Services\Billing;
 use App\Services\ClassInsights;
 use App\Services\CurrentWorkspace;
@@ -17,6 +19,9 @@ class ClassroomController extends Controller
         $workspace = CurrentWorkspace::get();
         $classrooms = collect();
         $quota = null;
+        $today = null;
+        $recentActivity = collect();
+        $todayAttendanceByClassroom = [];
 
         if ($workspace) {
             $classrooms = Classroom::where('workspace_id', $workspace->id)
@@ -40,9 +45,63 @@ class ClassroomController extends Controller
                 'member_limit' => $memberLimit,
                 'student_limit_per_room' => $studentLimit,
             ];
+
+            [$today, $recentActivity, $todayAttendanceByClassroom] = $this->buildTodayOverview($classrooms);
         }
 
-        return view('dashboard', compact('classrooms', 'workspace', 'quota'));
+        return view('dashboard', compact(
+            'classrooms', 'workspace', 'quota', 'today', 'recentActivity', 'todayAttendanceByClassroom'
+        ));
+    }
+
+    /**
+     * Aggregate "what's happening right now" data for the dashboard:
+     * how many classrooms have taken attendance today, today's submissions,
+     * upcoming homework deadlines, plus a recent-activity feed of
+     * submissions across all of this workspace's classrooms.
+     *
+     * @param  \Illuminate\Support\Collection<Classroom>  $classrooms
+     * @return array{0: array, 1: \Illuminate\Support\Collection, 2: array<int, AttendanceSession>}
+     */
+    private function buildTodayOverview($classrooms): array
+    {
+        if ($classrooms->isEmpty()) {
+            return [null, collect(), []];
+        }
+
+        $classroomIds = $classrooms->pluck('id');
+        $todayStr = now()->toDateString();
+
+        $todaySessions = AttendanceSession::whereIn('classroom_id', $classroomIds)
+            ->whereDate('date', $todayStr)
+            ->get()
+            ->keyBy('classroom_id');
+
+        $assignmentIds = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)->pluck('id');
+
+        $submissionsToday = Submission::whereIn('assignment_id', $assignmentIds)
+            ->whereDate('submitted_at', $todayStr)
+            ->count();
+
+        $upcomingDue = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)
+            ->whereNotNull('due_date')
+            ->whereBetween('due_date', [now()->toDateString(), now()->addDays(7)->toDateString()])
+            ->count();
+
+        $today = [
+            'classrooms_total' => $classrooms->count(),
+            'classrooms_attended' => $todaySessions->count(),
+            'submissions_today' => $submissionsToday,
+            'upcoming_due_count' => $upcomingDue,
+        ];
+
+        $recentActivity = Submission::whereIn('assignment_id', $assignmentIds)
+            ->with(['student:id,name,number,classroom_id', 'assignment:id,name,classroom_id,scoring_mode'])
+            ->latest('submitted_at')
+            ->limit(8)
+            ->get();
+
+        return [$today, $recentActivity, $todaySessions->all()];
     }
 
     public function create()

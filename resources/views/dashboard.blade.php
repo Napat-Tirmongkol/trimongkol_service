@@ -11,7 +11,7 @@
         <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl"></div>
         <div class="pointer-events-none absolute -left-16 top-8 h-40 w-40 rounded-full bg-brand-100/50 blur-3xl"></div>
 
-        <div class="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div class="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-brand-600">{{ __('app.dashboard.greeting_label') }}</p>
@@ -227,74 +227,154 @@
                 </div>
             </div>
         @else
-            <div class="mb-4 flex items-center justify-between">
+            {{-- "Today" overview: what does the teacher need to do RIGHT NOW. --}}
+            @if ($today)
+                @php
+                    $attendanceDone = $today['classrooms_attended'];
+                    $attendanceTotal = $today['classrooms_total'];
+                    $attendancePct = $attendanceTotal > 0 ? round($attendanceDone / $attendanceTotal * 100) : 0;
+                    $attendanceTone = $attendanceDone === 0 ? 'rose' : ($attendanceDone < $attendanceTotal ? 'amber' : 'emerald');
+                    $attendanceToneClass = ['rose' => 'text-rose-700 bg-rose-50', 'amber' => 'text-amber-700 bg-amber-50', 'emerald' => 'text-emerald-700 bg-emerald-50'][$attendanceTone];
+                @endphp
+                <div class="mb-6">
+                    <div class="mb-3 flex items-baseline justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.today_heading') }}</h2>
+                        <span class="text-xs text-slate-500">{{ now()->translatedFormat('l d M Y') }}</span>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.today_attendance') }}</div>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $attendanceToneClass }}">
+                                    {{ $attendancePct }}%
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">
+                                {{ $attendanceDone }}<span class="text-base font-normal text-slate-500"> / {{ $attendanceTotal }} {{ __('app.dashboard.count_suffix') }}</span>
+                            </div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.today_attendance_hint') }}</div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.today_submissions') }}</div>
+                                <span class="grid h-6 w-6 place-items-center rounded-full bg-sky-50 text-sky-600">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">{{ $today['submissions_today'] }}</div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.today_submissions_hint') }}</div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.upcoming_due') }}</div>
+                                <span class="grid h-6 w-6 place-items-center rounded-full bg-amber-50 text-amber-600">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">{{ $today['upcoming_due_count'] }}</div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.upcoming_due_hint') }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <div class="mb-3 flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.your_classrooms') }}</h2>
                 <span class="text-xs text-slate-500">{{ $classrooms->count() }} {{ __('app.dashboard.count_suffix') }}</span>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($classrooms as $classroom)
-                    @php $latest = $classroom->assignments->first(); @endphp
-                    <a href="{{ route('classrooms.show', $classroom) }}"
-                       class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg hover:shadow-brand-600/5">
+                    @php
+                        $latest = $classroom->assignments->first();
+                        $studentCap = $quota['student_limit_per_room'] ?? null;
+                        $studentsFull = $studentCap && $classroom->students_count >= $studentCap;
+                        $studentsWarn = $studentCap && ! $studentsFull && $classroom->students_count >= (int) ($studentCap * 0.8);
+                        $attToday = $todayAttendanceByClassroom[$classroom->id] ?? null;
+                    @endphp
+                    <div class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg hover:shadow-brand-600/5">
                         <span class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand-50 opacity-0 transition group-hover:opacity-100"></span>
 
-                        <div class="relative flex items-start justify-between gap-3">
-                            <div class="min-w-0 flex-1">
-                                <h3 class="truncate text-lg font-semibold text-slate-900 group-hover:text-brand-700">
-                                    {{ $classroom->name }}
-                                </h3>
-                                @if ($classroom->description)
-                                    <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $classroom->description }}</p>
-                                @endif
-                            </div>
-                            @if ($classroom->grade_level)
-                                <span class="shrink-0 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
-                                    {{ $classroom->grade_level }}
-                                </span>
-                            @endif
-                        </div>
-
-                        @php
-                            $studentCap = $quota['student_limit_per_room'] ?? null;
-                            $studentsFull = $studentCap && $classroom->students_count >= $studentCap;
-                            $studentsWarn = $studentCap && ! $studentsFull && $classroom->students_count >= (int) ($studentCap * 0.8);
-                        @endphp
-                        <div class="relative mt-5 grid grid-cols-2 gap-2">
-                            <div class="rounded-lg bg-slate-50 px-3 py-2">
-                                <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
-                                <div class="mt-0.5 flex items-baseline gap-1">
-                                    <span class="text-lg font-bold tabular-nums {{ $studentsFull ? 'text-rose-700' : ($studentsWarn ? 'text-amber-700' : 'text-slate-900') }}">{{ $classroom->students_count }}</span>
-                                    @if ($studentCap !== null)
-                                        <span class="text-xs font-medium text-slate-400">/ {{ $studentCap }}</span>
+                        <a href="{{ route('classrooms.show', $classroom) }}" class="relative flex flex-1 flex-col p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="truncate text-lg font-semibold text-slate-900 group-hover:text-brand-700">
+                                        {{ $classroom->name }}
+                                    </h3>
+                                    @if ($classroom->description)
+                                        <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $classroom->description }}</p>
                                     @endif
                                 </div>
+                                @if ($classroom->grade_level)
+                                    <span class="shrink-0 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                                        {{ $classroom->grade_level }}
+                                    </span>
+                                @endif
                             </div>
-                            <div class="rounded-lg bg-slate-50 px-3 py-2">
-                                <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
-                                <div class="mt-0.5 text-lg font-bold tabular-nums text-slate-900">{{ $classroom->assignments_count }}</div>
-                            </div>
-                        </div>
 
-                        <div class="relative mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-                            @if ($latest)
-                                <span class="truncate">
-                                    <span class="text-slate-400">{{ __('app.dashboard.latest') }}:</span>
-                                    <span class="font-medium text-slate-700">{{ $latest->name }}</span>
+                            <div class="mt-5 grid grid-cols-2 gap-2">
+                                <div class="rounded-lg bg-slate-50 px-3 py-2">
+                                    <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
+                                    <div class="mt-0.5 flex items-baseline gap-1">
+                                        <span class="text-lg font-bold tabular-nums {{ $studentsFull ? 'text-rose-700' : ($studentsWarn ? 'text-amber-700' : 'text-slate-900') }}">{{ $classroom->students_count }}</span>
+                                        @if ($studentCap !== null)
+                                            <span class="text-xs font-medium text-slate-400">/ {{ $studentCap }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="rounded-lg bg-slate-50 px-3 py-2">
+                                    <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
+                                    <div class="mt-0.5 text-lg font-bold tabular-nums text-slate-900">{{ $classroom->assignments_count }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                                @if ($latest)
+                                    <span class="truncate">
+                                        <span class="text-slate-400">{{ __('app.dashboard.latest') }}:</span>
+                                        <span class="font-medium text-slate-700">{{ $latest->name }}</span>
+                                    </span>
+                                @else
+                                    <span class="text-slate-400">{{ __('app.assignments.empty_short') }}</span>
+                                @endif
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     class="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </a>
+
+                        {{-- Today's attendance status + CTA, kept outside the main link so it can be its own button. --}}
+                        <div class="relative flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 text-xs">
+                            @if ($attToday)
+                                <span class="inline-flex items-center gap-1.5 text-emerald-700">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span class="font-medium">{{ __('app.dashboard.attendance_done') }}</span>
                                 </span>
+                                <a href="{{ route('classrooms.attendance.show', [$classroom, $attToday->id]) }}"
+                                   class="font-medium text-brand-600 hover:text-brand-700">
+                                    {{ __('app.dashboard.view_today') }} →
+                                </a>
                             @else
-                                <span class="text-slate-400">{{ __('app.assignments.empty_short') }}</span>
+                                <span class="inline-flex items-center gap-1.5 text-slate-500">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <span>{{ __('app.dashboard.attendance_pending') }}</span>
+                                </span>
+                                <form method="POST" action="{{ route('classrooms.attendance.today', $classroom) }}">
+                                    @csrf
+                                    <button type="submit" class="font-semibold text-brand-600 hover:text-brand-700">
+                                        {{ __('app.dashboard.take_attendance') }} →
+                                    </button>
+                                </form>
                             @endif
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                 class="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                            </svg>
                         </div>
-                    </a>
+                    </div>
                 @endforeach
 
                 <a href="{{ route('classrooms.create') }}"
-                   class="group flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-5 text-center text-slate-500 transition hover:border-brand-400 hover:bg-brand-50/50 hover:text-brand-700">
+                   class="group flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-5 text-center text-slate-500 transition hover:border-brand-400 hover:bg-brand-50/50 hover:text-brand-700">
                     <span class="grid h-10 w-10 place-items-center rounded-full bg-white ring-1 ring-slate-200 transition group-hover:ring-brand-200">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -303,6 +383,45 @@
                     <span class="text-sm font-medium">{{ __('app.classrooms.add') }}</span>
                 </a>
             </div>
+
+            {{-- Recent activity feed --}}
+            @if ($recentActivity->isNotEmpty())
+                <div class="mt-8">
+                    <div class="mb-3 flex items-baseline justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.recent_activity') }}</h2>
+                        <span class="text-xs text-slate-500">{{ __('app.dashboard.last_n', ['n' => $recentActivity->count()]) }}</span>
+                    </div>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <ul class="divide-y divide-slate-100">
+                            @foreach ($recentActivity as $sub)
+                                @php
+                                    $classroomForRow = $classrooms->firstWhere('id', $sub->student?->classroom_id);
+                                @endphp
+                                <li class="flex items-center justify-between gap-3 px-5 py-3">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm text-slate-900">
+                                                <span class="font-medium">{{ $sub->student?->name ?? '—' }}</span>
+                                                <span class="text-slate-500">{{ __('app.dashboard.activity_submitted') }}</span>
+                                                <span class="font-medium">{{ $sub->assignment?->name ?? '—' }}</span>
+                                            </div>
+                                            @if ($classroomForRow)
+                                                <div class="text-xs text-slate-500">{{ $classroomForRow->name }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-slate-500 tabular-nums" title="{{ $sub->submitted_at }}">
+                                        {{ $sub->submitted_at?->diffForHumans() }}
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
         @endif
     </div>
 
