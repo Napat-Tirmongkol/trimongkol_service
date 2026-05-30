@@ -9,7 +9,7 @@
     $currentWorkspace = \App\Services\CurrentWorkspace::get($user);
     $userWorkspaces = $user ? $user->workspaces()->orderBy('name')->get() : collect();
 @endphp
-<nav x-data="{ open: false, feedbackOpen: false }" class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+<nav x-data="{ open: false, feedbackOpen: false, feedbackCategory: 'bug' }" class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex h-16 items-center justify-between gap-3">
             <div class="flex items-center gap-6">
@@ -235,18 +235,24 @@
 
                     <div class="space-y-4 px-5 py-4">
                         @php
-                            $categoryStyles = [
-                                'bug' => 'has-[:checked]:border-rose-400 has-[:checked]:bg-rose-50 has-[:checked]:text-rose-700',
-                                'suggestion' => 'has-[:checked]:border-sky-400 has-[:checked]:bg-sky-50 has-[:checked]:text-sky-700',
-                                'question' => 'has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50 has-[:checked]:text-amber-700',
+                            // Active-state class per category, kept as literal strings so
+                            // Tailwind picks them up at build time. Alpine swaps the active
+                            // set when feedbackCategory matches — :has(:checked) styling was
+                            // unreliable on hosts that hadn't rebuilt the CSS bundle.
+                            $categoryActive = [
+                                'bug' => 'border-rose-400 bg-rose-50 text-rose-700',
+                                'suggestion' => 'border-sky-400 bg-sky-50 text-sky-700',
+                                'question' => 'border-amber-400 bg-amber-50 text-amber-700',
                             ];
                         @endphp
                         <div>
                             <label class="block text-xs font-medium text-slate-600">{{ __('app.feedback.field_category') }}</label>
                             <div class="mt-1.5 grid grid-cols-3 gap-2">
-                                @foreach ($categoryStyles as $cat => $styles)
-                                    <label class="cursor-pointer rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-medium text-slate-700 hover:bg-slate-50 {{ $styles }}">
-                                        <input type="radio" name="category" value="{{ $cat }}" class="sr-only" @if ($cat === 'bug') checked @endif>
+                                @foreach ($categoryActive as $cat => $activeClass)
+                                    <label class="cursor-pointer rounded-lg border px-3 py-2 text-center text-xs font-medium transition hover:bg-slate-50"
+                                           :class="feedbackCategory === '{{ $cat }}' ? '{{ $activeClass }}' : 'border-slate-200 text-slate-700'">
+                                        <input type="radio" name="category" value="{{ $cat }}" class="sr-only"
+                                               x-model="feedbackCategory">
                                         {{ __("app.feedback.cat_{$cat}") }}
                                     </label>
                                 @endforeach
