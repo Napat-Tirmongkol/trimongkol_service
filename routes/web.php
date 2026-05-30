@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:leads.view')->group(function () {
             Route::get('/leads', [AdminLeadController::class, 'index'])->name('leads.index');
             Route::get('/leads/{lead}', [AdminLeadController::class, 'show'])->name('leads.show');
+            Route::get('/leads/{lead}/attachment', [AdminLeadController::class, 'attachment'])->name('leads.attachment');
         });
         Route::middleware('can:leads.manage')->group(function () {
             Route::patch('/leads/{lead}', [AdminLeadController::class, 'update'])->name('leads.update');

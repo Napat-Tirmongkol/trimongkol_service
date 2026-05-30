@@ -53,6 +53,23 @@
                             <p class="mt-4 whitespace-pre-line text-sm text-slate-700">{{ $lead->message }}</p>
                         @endif
 
+                        @if (! empty($lead->context['attachment_path']) && $lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
+                            <div class="mt-4">
+                                <div class="text-xs font-semibold text-slate-700">{{ __('app.admin.leads.attachment') }}</div>
+                                <a href="{{ route('admin.leads.attachment', $lead) }}" target="_blank"
+                                   class="mt-2 inline-block overflow-hidden rounded-lg border border-slate-200 transition hover:border-brand-400">
+                                    <img src="{{ route('admin.leads.attachment', $lead) }}" alt=""
+                                         class="block max-h-72 max-w-full object-contain bg-slate-50">
+                                </a>
+                                <div class="mt-1 text-xs text-slate-500">
+                                    {{ $lead->context['attachment_original'] ?? '' }}
+                                    @if (! empty($lead->context['attachment_size']))
+                                        · {{ number_format($lead->context['attachment_size'] / 1024, 0) }} KB
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
                         @if (! empty($lead->context) && $lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
                             <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
                                 <div class="font-semibold text-slate-700">Debug context</div>
