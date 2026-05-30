@@ -32,6 +32,10 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 
+// Smart Clipboard OCR — public, free, runs entirely in the browser (Tesseract.js
+// via CDN). No upload, no auth, no server processing — just returns the page.
+Route::get('/ocr', [PageController::class, 'ocr'])->name('ocr');
+
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
     ->name('locale.switch');

@@ -77,6 +77,32 @@
         </div>
     </section>
 
+    {{-- Available free tool: Smart Clipboard OCR --}}
+    <section class="mx-auto mt-6 max-w-6xl px-4 sm:px-6">
+        <a href="{{ route('ocr') }}"
+           class="group block overflow-hidden rounded-3xl bg-white shadow-lg shadow-slate-900/5 ring-1 ring-slate-200 transition hover:shadow-xl hover:ring-brand-300">
+            <div class="flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-8">
+                <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2"/><path d="M17 4h2a1 1 0 0 1 1 1v2"/><path d="M20 17v2a1 1 0 0 1-1 1h-2"/><path d="M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
+                </span>
+                <div class="flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-xl font-bold text-slate-900">{{ t('ocr.heading') }}</h3>
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                            {{ t('products.available_label') }}
+                        </span>
+                    </div>
+                    <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{{ t('ocr.subheading') }}</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/30 transition group-hover:bg-brand-700">
+                    {{ t('products.try_free') }}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition group-hover:translate-x-0.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+            </div>
+        </a>
+    </section>
+
     {{-- Coming soon: the enterprise services --}}
     <section class="mx-auto mt-20 max-w-7xl px-4 sm:px-6 md:mt-28">
         <div class="mx-auto max-w-2xl text-center">

@@ -52,6 +52,25 @@
         </div>
     </section>
 
+    {{-- Free tool highlight: Smart Clipboard OCR --}}
+    <section class="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
+        <a href="{{ route('ocr') }}"
+           class="group flex flex-col items-start gap-5 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 p-6 text-white shadow-xl shadow-brand-900/20 sm:flex-row sm:items-center sm:gap-6 sm:p-8">
+            <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 text-white ring-1 ring-white/25 backdrop-blur">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5a1 1 0 0 1 1-1h2"/><path d="M17 4h2a1 1 0 0 1 1 1v2"/><path d="M20 17v2a1 1 0 0 1-1 1h-2"/><path d="M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
+            </span>
+            <div class="flex-1">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider ring-1 ring-white/20">{{ t('ocr.eyebrow') }}</span>
+                <h3 class="mt-3 text-xl font-bold md:text-2xl">{{ t('ocr.heading') }}</h3>
+                <p class="mt-1.5 max-w-xl text-sm text-brand-100">{{ t('ocr.subheading') }}</p>
+            </div>
+            <span class="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-700 shadow-lg transition group-hover:bg-brand-50">
+                {{ t('products.try_free') }}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition group-hover:translate-x-0.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+        </a>
+    </section>
+
     {{-- Services preview --}}
     <section class="mx-auto mt-24 max-w-7xl px-4 sm:px-6 md:mt-32">
         <div class="mx-auto max-w-2xl text-center">

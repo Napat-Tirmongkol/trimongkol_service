@@ -4,6 +4,20 @@
 
 ---
 
+## 🔤 Smart Clipboard OCR — แปลงรูปเป็นข้อความ (ไทย/อังกฤษ)
+
+เครื่องมือฟรีสาธารณะที่ **`/ocr`** (marketing layout, ไม่ต้องล็อกอิน) ดึงข้อความจากรูปภาพ รองรับไทย + อังกฤษ
+
+- **ทำงานฝั่ง browser ทั้งหมด** ด้วย **Tesseract.js ผ่าน CDN** (jsDelivr) — ไม่เพิ่ม npm/composer, ไม่อัปโหลดรูปขึ้น server, รูป/ข้อความไม่ถูกเก็บที่ไหน
+- **รับรูปได้ 4 ทาง**: วาง (Ctrl+V), ลากวาง, เลือกไฟล์, ถ่ายจากกล้องมือถือ
+- เลือกภาษา **ไทย+อังกฤษ / ไทย / อังกฤษ**, มี progress bar ตอนอ่าน, ผลลัพธ์แก้ไขได้ + **คัดลอก / บันทึก .txt / ล้าง** (นับตัวอักษร/คำ)
+- โหลดชุดภาษาครั้งแรกจาก CDN แล้ว cache ใน browser (IndexedDB) — ครั้งต่อไปเร็วขึ้น
+- UI เป็น Alpine component (`ocrTool`) ใน `resources/views/pages/ocr.blade.php` + คีย์ `site.ocr.*` (TH/EN)
+- ลิงก์เข้าจาก **navbar + footer** เว็บ marketing และการ์ด CTA บน **หน้าแรก + หน้าบริการ**
+- ⚠️ หลัง deploy: **pull + clear cache** (มี route/view/lang/Tailwind class ใหม่)
+
+---
+
 ## 🛡️ Security hardening (จาก security review)
 
 - **กัน privilege escalation ผ่าน impersonation**: สวมสิทธิ์ได้เฉพาะผู้ใช้ทั่วไป (กัน Admin สวมเป็น Super Admin แล้วได้สิทธิ์เต็ม) + `session()->regenerate()` ตอนเริ่ม/หยุดสวมสิทธิ์ (กัน session fixation)
