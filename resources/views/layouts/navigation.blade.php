@@ -204,9 +204,11 @@
     </div>
 
     {{-- Feedback modal — opened from the user dropdown or mobile menu.
-         The outer overlay scrolls, the card is a bounded width and a
-         natural height. Uses only standard scale classes so it survives
-         a missed asset rebuild after deploy. --}}
+         Teleported to <body> because the nav has backdrop-blur, which
+         per the CSS spec creates a containing block for position:fixed
+         descendants and would otherwise trap the overlay inside the
+         topbar. --}}
+    <template x-teleport="body">
     <div x-show="feedbackOpen" x-cloak
          @keydown.escape.window="feedbackOpen = false"
          class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm"
@@ -284,4 +286,5 @@
             </div>
         </div>
     </div>
+    </template>
 </nav>
