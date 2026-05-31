@@ -154,11 +154,27 @@ class SlipVerifier
             // Map SlipOK's documented error codes to our own short messages so
             // the caller can react (and translate) without parsing Thai text.
             // The error body may also carry slip `data` (e.g. 1012/1013/1014).
-            $msg = match ((int) ($json['code'] ?? 0)) {
+            $code = (int) ($json['code'] ?? 0);
+
+            // No app-level code → a transport-level error. A 404 here means the
+            // /apikey/<BRANCH_ID> path didn't resolve (wrong/empty Branch ID);
+            // 401/403 means a bad API key. Surface those as config problems
+            // instead of a raw "Not Found".
+            if ($code === 0) {
+                $msg = match ($res->status()) {
+                    404 => 'slipok_branch',
+                    401, 403 => 'slipok_auth',
+                    default => $json['message'] ?? 'verify_failed',
+                };
+                return [false, $json['data'] ?? $json, $msg];
+            }
+
+            $msg = match ($code) {
                 1012 => 'duplicate',           // slip already used
                 1013 => 'amount_mismatch',     // amount != slip
                 1014 => 'receiver_mismatch',   // wrong destination account
                 1010 => 'bank_delay',          // BBL/SCB — retry shortly
+                1001 => 'slipok_branch',       // branch not found
                 1003, 1004, 1015 => 'slipok_quota',   // package expired / over quota
                 1002 => 'slipok_auth',         // bad API key
                 1005, 1006, 1007, 1008, 1011 => 'bad_slip', // not a valid payment slip

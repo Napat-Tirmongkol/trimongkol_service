@@ -203,11 +203,14 @@ class QueueController extends Controller
         $result = SlipVerifier::inspect($request->file('slip'));
 
         if (! $result['ok']) {
-            return back()->with('error', __('app.admin.products.queue.slip_test_fail', [
-                'error' => __('app.queue.billing.err_'.$result['message']) !== 'app.queue.billing.err_'.$result['message']
-                    ? __('app.queue.billing.err_'.$result['message'])
-                    : $result['message'],
-            ]));
+            // Translate the known failure tokens to an admin-facing hint; fall
+            // back to the raw token for anything unmapped.
+            $known = ['slipok_branch', 'slipok_auth', 'slipok_quota', 'bank_delay', 'bad_slip', 'slipok_unreachable'];
+            $reason = in_array($result['message'], $known, true)
+                ? __('app.admin.products.queue.slip_err_'.$result['message'])
+                : $result['message'];
+
+            return back()->with('error', __('app.admin.products.queue.slip_test_fail', ['error' => $reason]));
         }
 
         $summary = __('app.admin.products.queue.slip_test_summary', [
