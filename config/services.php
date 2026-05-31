@@ -50,4 +50,11 @@ return [
         'branch' => env('SLIPOK_BRANCH_ID'),
     ],
 
+    // LINE Messaging API — push notifications to the shop owner. Channel token
+    // is normally set in /admin (encrypted); env is an optional fallback.
+    'line' => [
+        'channel_token' => env('LINE_CHANNEL_TOKEN'),
+        'target_id' => env('LINE_TARGET_ID'),
+    ],
+
 ];

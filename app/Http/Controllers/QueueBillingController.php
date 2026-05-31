@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QueuePayment;
 use App\Models\Workspace;
 use App\Services\CurrentWorkspace;
+use App\Services\LineNotifier;
 use App\Services\QueuePlan;
 use App\Services\SlipVerifier;
 use App\Support\PromptPay;
@@ -103,7 +104,7 @@ class QueueBillingController extends Controller
 
         // No auto-verification configured → leave it for an admin to approve.
         if (! SlipVerifier::enabled()) {
-            QueuePayment::create([
+            $payment = QueuePayment::create([
                 'workspace_id' => $workspace->id,
                 'user_id' => auth()->id(),
                 'plan_key' => $plan,
@@ -112,6 +113,8 @@ class QueueBillingController extends Controller
                 'slip_path' => $path,
                 'note' => 'manual',
             ]);
+
+            self::notifyPending($payment);
 
             return redirect()->route('queues.billing')->with('status', __('app.queue.billing.slip_received'));
         }
@@ -125,7 +128,7 @@ class QueueBillingController extends Controller
             }
 
             // Transient/unknown failure → keep as pending for admin review.
-            QueuePayment::create([
+            $payment = QueuePayment::create([
                 'workspace_id' => $workspace->id,
                 'user_id' => auth()->id(),
                 'plan_key' => $plan,
@@ -135,6 +138,8 @@ class QueueBillingController extends Controller
                 'note' => $result['message'],
                 'meta' => $result['raw'] ?: null,
             ]);
+
+            self::notifyPending($payment);
 
             return redirect()->route('queues.billing')->with('status', __('app.queue.billing.slip_received'));
         }
@@ -157,6 +162,7 @@ class QueueBillingController extends Controller
         ]);
 
         self::activate($workspace, $plan, $payment->months);
+        self::notifyVerified($payment);
 
         return redirect()->route('queues.billing')->with('status', __('app.queue.billing.activated', [
             'plan' => config("queue-plans.{$plan}.name"),
@@ -175,5 +181,27 @@ class QueueBillingController extends Controller
             'queue_plan' => $plan,
             'queue_plan_until' => $base->addDays(30 * max(1, $months)),
         ]);
+    }
+
+    /** LINE push: a payment was auto-verified and a plan activated. */
+    public static function notifyVerified(QueuePayment $payment): void
+    {
+        $plan = config("queue-plans.{$payment->plan_key}.name") ?? $payment->plan_key;
+        LineNotifier::notify(__('app.queue.billing.line_verified', [
+            'shop' => $payment->workspace?->name ?? '-',
+            'plan' => $plan,
+            'amount' => number_format((int) $payment->amount),
+        ]));
+    }
+
+    /** LINE push: a slip is waiting for manual admin review. */
+    public static function notifyPending(QueuePayment $payment): void
+    {
+        $plan = config("queue-plans.{$payment->plan_key}.name") ?? $payment->plan_key;
+        LineNotifier::notify(__('app.queue.billing.line_pending', [
+            'shop' => $payment->workspace?->name ?? '-',
+            'plan' => $plan,
+            'amount' => number_format((int) $payment->amount),
+        ]));
     }
 }
