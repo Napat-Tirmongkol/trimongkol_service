@@ -120,7 +120,7 @@ class QueueBillingController extends Controller
 
         if (! $result['ok']) {
             // Hard rejects: show a clear reason and don't keep the record.
-            if (in_array($result['message'], ['duplicate', 'amount_mismatch'], true)) {
+            if (in_array($result['message'], ['duplicate', 'amount_mismatch', 'receiver_mismatch'], true)) {
                 return back()->with('error', __('app.queue.billing.err_'.$result['message']));
             }
 

@@ -42,16 +42,17 @@ class SlipVerifier
     }
 
     /**
-     * Verify $slip is a real transfer of at least $expectedAmount THB.
+     * Verify $slip is a real transfer of exactly $expectedAmount THB into the
+     * configured receiving account.
      *
-     * @return array{ok: bool, trans_ref: ?string, amount: ?int, receiver: ?string, message: string, raw: array}
+     * @return array{ok: bool, trans_ref: ?string, amount: ?int, receiver: ?string, receiver_acc: ?string, message: string, raw: array}
      */
     public static function verify(UploadedFile $slip, int $expectedAmount): array
     {
-        $fail = fn (string $msg, array $raw = []) => [
+        $fail = fn (string $msg, array $raw = [], array $extra = []) => array_merge([
             'ok' => false, 'trans_ref' => null, 'amount' => null,
-            'receiver' => null, 'message' => $msg, 'raw' => $raw,
-        ];
+            'receiver' => null, 'receiver_acc' => null, 'message' => $msg, 'raw' => $raw,
+        ], $extra);
 
         if (! self::enabled()) {
             return $fail('slipok_not_configured');
@@ -84,17 +85,61 @@ class SlipVerifier
         $transRef = $data['transRef'] ?? null;
         $receiver = $data['receiver']['displayName']
             ?? ($data['receiver']['account']['value'] ?? null);
+        $receiverAcc = $data['receiver']['account']['value']
+            ?? ($data['receiver']['proxy']['value'] ?? null);
 
-        if ($amount < $expectedAmount) {
-            return [
-                'ok' => false, 'trans_ref' => $transRef, 'amount' => $amount,
-                'receiver' => $receiver, 'message' => 'amount_mismatch', 'raw' => $data,
-            ];
+        $base = [
+            'trans_ref' => $transRef, 'amount' => $amount,
+            'receiver' => $receiver, 'receiver_acc' => $receiverAcc, 'raw' => $data,
+        ];
+
+        // Exact-amount match: an over- or under-payment is rejected so a plan
+        // can't be bought for the wrong price.
+        if ($amount !== $expectedAmount) {
+            return array_merge($base, ['ok' => false, 'message' => 'amount_mismatch']);
         }
 
-        return [
-            'ok' => true, 'trans_ref' => $transRef, 'amount' => $amount,
-            'receiver' => $receiver, 'message' => 'ok', 'raw' => $data,
-        ];
+        // The transfer must land in OUR receiving account. Compare against the
+        // configured PromptPay / bank number using masked-suffix matching,
+        // since slips usually expose only the last digits (e.g. "xxx-x-x1234").
+        if (! self::receiverMatches($receiverAcc)) {
+            return array_merge($base, ['ok' => false, 'message' => 'receiver_mismatch']);
+        }
+
+        return array_merge($base, ['ok' => true, 'message' => 'ok']);
+    }
+
+    /** Receiving account this branch should pay into (bank no. or PromptPay). */
+    public static function expectedReceiver(): ?string
+    {
+        return setting('queue_billing.method') === 'bank_account'
+            ? setting('queue_billing.account_no')
+            : setting('queue_billing.promptpay');
+    }
+
+    /**
+     * Loosely match the slip's receiver account against our configured number.
+     * Both are reduced to digits; we accept when one is a suffix of the other
+     * (banks mask all but the last 4-5 digits on slips). Empty config = skip
+     * the check (don't block on a misconfiguration).
+     */
+    public static function receiverMatches(?string $slipAcc): bool
+    {
+        $expected = preg_replace('/\D/', '', (string) self::expectedReceiver());
+        $got = preg_replace('/\D/', '', (string) $slipAcc);
+
+        if ($expected === '' ) {
+            return true; // not configured to check
+        }
+        if ($got === '') {
+            return false; // we expect a match but the slip exposed nothing
+        }
+
+        $len = min(strlen($expected), strlen($got), 4);
+        if ($len < 4) {
+            return false;
+        }
+
+        return substr($expected, -$len) === substr($got, -$len);
     }
 }

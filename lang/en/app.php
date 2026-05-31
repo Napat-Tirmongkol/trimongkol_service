@@ -939,7 +939,8 @@ return [
             'slip_received' => 'Slip received and under review — your plan activates once the amount is confirmed.',
             'activated' => ':plan activated — thank you!',
             'err_duplicate' => 'This slip has already been used. Please use a new transfer slip.',
-            'err_amount_mismatch' => "The transferred amount doesn't match the plan price.",
+            'err_amount_mismatch' => "The transferred amount doesn't match the plan price — please pay the exact amount.",
+            'err_receiver_mismatch' => "This slip wasn't transferred to our account — please check the destination account.",
         ],
     ],
 ];
