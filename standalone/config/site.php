@@ -1,12 +1,13 @@
 <?php
 
 return [
-    'name' => 'Tirmongkol Service',
-    'domain' => 'tirmongkol.com',
-    'url' => 'https://tirmongkol.com',
-    'email' => 'contact@tirmongkol.com',
-    'phone' => '+66 00 000 0000',
-    'line' => '@tirmongkol',
+    // Identity comes from the brand config (white-label via .env).
+    'name' => env('APP_NAME', 'Ledgerly'),
+    'domain' => env('APP_DOMAIN', 'example.com'),
+    'url' => env('APP_URL', 'http://localhost'),
+    'email' => env('BRAND_SUPPORT_EMAIL', 'support@example.com'),
+    'phone' => env('BRAND_PHONE', ''),
+    'line' => env('BRAND_LINE', ''),
     'locales' => ['th', 'en'],
 
     // Hero background images per marketing page.

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#1f47e6">
+    <meta name="theme-color" content="{{ config('brand.color') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', __('app.accounting.heading')) — {{ config('app.name') }}</title>

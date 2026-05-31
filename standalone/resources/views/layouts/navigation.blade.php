@@ -6,7 +6,6 @@
         ->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
         ->implode('') ?: '·';
     $otherLocale = app()->getLocale() === 'th' ? 'en' : 'th';
-    $brandInitial = mb_strtoupper(mb_substr(config('app.name'), 0, 1));
     $currentWorkspace = \App\Services\CurrentWorkspace::get($user);
     $userWorkspaces = $user ? $user->workspaces()->orderBy('name')->get() : collect();
 @endphp
@@ -15,7 +14,7 @@
         <div class="flex h-16 items-center justify-between gap-3">
             <div class="flex items-center gap-6">
                 <a href="{{ route('accounting.dashboard') }}" class="flex items-center gap-2">
-                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">{{ $brandInitial }}</span>
+                    <x-brand-logo class="shadow-md shadow-brand-500/30" />
                     <span class="hidden text-sm font-semibold tracking-tight text-slate-900 sm:inline">{{ config('app.name') }}</span>
                 </a>
 

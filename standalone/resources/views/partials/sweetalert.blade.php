@@ -44,7 +44,7 @@
                     showCancelButton: true,
                     confirmButtonText: form.dataset.confirmYes || @json(__('app.common.confirm')),
                     cancelButtonText: form.dataset.confirmNo || @json(__('app.common.cancel')),
-                    confirmButtonColor: isDanger ? '#e11d48' : '#1f47e6',
+                    confirmButtonColor: isDanger ? '#e11d48' : @json(config('brand.color')),
                     cancelButtonColor: '#94a3b8',
                     reverseButtons: true,
                 });

@@ -59,7 +59,7 @@
                 <div class="flex items-center justify-between">
                     {{-- mobile logo (hidden on desktop where the brand panel shows it) --}}
                     <a href="/" class="inline-flex items-center gap-2 lg:invisible">
-                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">{{ mb_strtoupper(mb_substr(config('app.name'), 0, 1)) }}</span>
+                        <x-brand-logo class="shadow-md shadow-brand-500/30" />
                         <span class="text-sm font-semibold tracking-tight text-slate-900">{{ config('app.name') }}</span>
                     </a>
                     <a href="{{ route('locale.switch', $otherLocale) }}"
