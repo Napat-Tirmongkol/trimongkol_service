@@ -4,6 +4,78 @@
 
 ---
 
+## 💵 ชำระเงินอัปเกรดแพ็กเกจคิวด้วย PromptPay + ตรวจสลิป SlipOK
+
+ลูกค้าอัปเกรดแพ็กเกจคิวเองได้ที่ **`/queues/billing`** — เลือกแพ็กเกจ → สแกน PromptPay QR (ระบุยอด) → อัปโหลดสลิป → ระบบเปิดแพ็กเกจ +30 วันอัตโนมัติ
+
+- **PromptPay QR ระบุยอด** สร้าง payload ฝั่ง server (`App\Support\PromptPay`, EMVCo + CRC16) แล้ว render เป็น QR ด้วย `qrcode` เดิม — ไม่เพิ่ม dependency
+- **ตรวจสลิปอัตโนมัติด้วย SlipOK** (`App\Services\SlipVerifier`, REST ฝั่ง server): เช็กยอด + กันสลิปซ้ำ (transRef unique) → ผ่านแล้วเปิดแพ็กเกจทันที
+- ถ้ายังไม่ตั้งค่า SlipOK → เก็บสลิปเป็น "รอตรวจสอบ" ให้แอดมินกดอนุมัติเองที่ **/admin → คิว → การชำระเงิน**
+- แพ็กเกจหมดอายุ (`queue_plan_until`) เด้งกลับ Free อัตโนมัติ; ต่ออายุก่อนหมดจะต่อท้ายวันให้
+- ตั้งค่าใน **/admin → คิว**: เปิด/ปิดการขาย, เลขพร้อมเพย์รับเงิน, ชื่อบัญชี, SlipOK key/branch (เข้ารหัสเก็บ)
+- โมเดล `QueuePayment` + 2 migration (`queue_plan_until`, `queue_payments`) — มี `down()` ครบ
+- คีย์ `app.queue.billing.*` + `app.admin.products.queue.{billing_*,pay_*,tab_payments}` (TH/EN)
+- ⚠️ หลัง deploy: **Run migrations + Clear caches** แล้วตั้งค่าที่ /admin → คิว
+
+---
+
+## 💳 แพ็กเกจระบบคิว + Control Panel จัดการ plan/billing
+
+แยกแพ็กเกจเฉพาะระบบคิว (free / starter / pro / enterprise) ออกจากแพ็กเกจ Scanner — บังคับลิมิตทันที (ไม่ขึ้นกับ free-launch)
+
+- **ลิมิต Phase 1:** Free = 1 จุดบริการ, 2 ช่องบริการ, 80 คิว/วัน + ลายน้ำบนหน้าลูกค้า; แพ็กเกจสูงขึ้นปลดล็อกตามตั้งค่า
+- บังคับใน: สร้างจุดบริการ, เพิ่มช่องบริการ, ออกบัตรคิว (ลูกค้าเห็นข้อความ "เต็มโควตา/อัปเกรด")
+- **Control Panel** ที่ `/admin` → **แพ็กเกจ & บิล**: ภาพรวมแพ็กเกจคิว/Scanner, รายได้ประมาณการ, สวิตช์ free-launch
+- ตั้งแพ็กเกจคิวราย workspace ได้ที่หน้า workspace (อัปเกรด/ลดด้วยตนเอง — ยังไม่มีระบบจ่ายเงินอัตโนมัติ)
+- `config/queue-plans.php`, `App\Services\QueuePlan`, คอลัมน์ `workspaces.queue_plan` (migration มี down())
+- เพิ่มคีย์ `app.queue.plan_limit_*`, `app.admin.billing.*`, `app.admin.workspaces.queue_plan_*` (TH/EN)
+- ⚠️ หลัง deploy: **Run migrations + Clear caches**
+
+---
+
+## 🔊 เสียงเรียกคิวคุณภาพสูงด้วย Google Cloud TTS (ตัวเลือก)
+
+เพิ่มทางเลือกใช้ Google Cloud Text-to-Speech ให้เสียงเรียกคิวเป็นเสียงไทยธรรมชาติทุกอุปกรณ์ (ไม่ต้องพึ่งเสียงที่ติดตั้งในเครื่องผู้ใช้) — ปิดไว้โดยปริยาย ใช้เสียงเบราว์เซอร์เดิมจนกว่าจะตั้งค่า
+
+- ตั้งค่าใน **/admin → ระบบเรียกคิว**: เลือกแหล่งเสียง (เบราว์เซอร์ / Google), ใส่ API key (เข้ารหัสเก็บใน DB), เลือกเสียง + ปุ่ม **ทดสอบ key**
+- เรียกผ่าน **REST** (ไม่เพิ่ม composer), **proxy ฝั่ง server** กัน key หลุด, **cache ไฟล์เสียง** ที่ `storage` (เรียกซ้ำไม่เปลืองโควตา)
+- เล่นเสียงทั้งหน้าควบคุมและหน้าลูกค้า — ถ้าโหลด/เรียกพลาดจะ **fallback กลับเสียงเบราว์เซอร์** อัตโนมัติ
+- คีย์อ่านจาก site_settings (เข้ารหัส) หรือ `.env` (`GOOGLE_TTS_KEY`) ก็ได้
+- เพิ่ม `App\Services\Tts`, route `queues.tts` / `queue.public.tts` (throttle) + คีย์ `app.admin.products.queue.tts_*`
+- ⚠️ ไม่มี migration ใหม่ — ถ้าจะเปิด Google: หลัง deploy **Clear caches** แล้วไปตั้งค่าที่ /admin
+
+---
+
+## 🎫 ระบบเรียกคิว (Queue System)
+
+product ใหม่ (ผูกกับ workspace เหมือน Scanner) — สร้างจุดบริการ เรียกคิวทีละหมายเลข มีเสียงเรียก และให้ลูกค้าสแกน QR รับบัตรคิวเอง
+
+- **หน้าควบคุมเจ้าหน้าที่** (`/queues/{queue}`): เลือกช่องบริการ → ปุ่ม **เรียกคิวถัดไป / เรียกซ้ำ / ข้าม** + บอร์ด "กำลังให้บริการ" ของทุกช่อง + สถิติ (รอ / ให้บริการแล้ววันนี้) — อัปเดตสดด้วย `wire:poll`
+- **หน้าลูกค้า (สาธารณะ)** ที่ `/q/{token}`: กดรับบัตรคิว ดูว่าเหลืออีกกี่คิว และเด้งแจ้ง "ถึงคิวคุณแล้ว" พร้อมเสียง — ไม่ต้องล็อกอิน
+- **เสียงเรียกคิวภาษาไทย** ผ่าน Web Speech API ของ browser + เสียงติ๊งต่อง (WebAudio) — ไม่เพิ่ม dependency
+- **QR / ลิงก์รับบัตร** + หน้า **พิมพ์ป้าย QR** (ใช้ `qrcode` ที่มีอยู่แล้ว) ไว้ติดหน้าร้าน
+- รองรับ **หลายช่องบริการ** ต่อจุดบริการ, ตั้ง prefix หมายเลข (เช่น A001), เปิด/ปิดรับคิว, ปุ่ม **เริ่มรอบใหม่**
+- โมเดล `Queue` / `QueueCounter` / `QueueTicket` (3 migration มี `down()` ครบ) — ออกบัตรด้วย transaction + `lockForUpdate` กันหมายเลขชนกัน
+- ลงทะเบียนเป็น product ใน `/admin` (ภาพรวม + รายการคิว + ลบ ผ่านสิทธิ์ `products.moderate`) + ลิงก์ในเมนูแอป
+- เพิ่มคีย์ `app.queue.*` + `app.admin.products.queue.*` (TH/EN ครบคู่)
+- ⚠️ หลัง deploy: **Pull → Run migrations → Clear caches** ที่ `/admin/system` (มี 3 ตารางใหม่ + route/view/lang/Tailwind class ใหม่)
+
+---
+
+## 🔤 Smart Clipboard OCR — แปลงรูปเป็นข้อความ (ไทย/อังกฤษ)
+
+เครื่องมือฟรีสาธารณะที่ **`/ocr`** (marketing layout, ไม่ต้องล็อกอิน) ดึงข้อความจากรูปภาพ รองรับไทย + อังกฤษ
+
+- **ทำงานฝั่ง browser ทั้งหมด** ด้วย **Tesseract.js ผ่าน CDN** (jsDelivr) — ไม่เพิ่ม npm/composer, ไม่อัปโหลดรูปขึ้น server, รูป/ข้อความไม่ถูกเก็บที่ไหน
+- **รับรูปได้ 4 ทาง**: วาง (Ctrl+V), ลากวาง, เลือกไฟล์, ถ่ายจากกล้องมือถือ
+- เลือกภาษา **ไทย+อังกฤษ / ไทย / อังกฤษ**, มี progress bar ตอนอ่าน, ผลลัพธ์แก้ไขได้ + **คัดลอก / บันทึก .txt / ล้าง** (นับตัวอักษร/คำ)
+- โหลดชุดภาษาครั้งแรกจาก CDN แล้ว cache ใน browser (IndexedDB) — ครั้งต่อไปเร็วขึ้น
+- UI เป็น Alpine component (`ocrTool`) ใน `resources/views/pages/ocr.blade.php` + คีย์ `site.ocr.*` (TH/EN)
+- ลิงก์เข้าจาก **navbar + footer** เว็บ marketing และการ์ด CTA บน **หน้าแรก + หน้าบริการ**
+- ⚠️ หลัง deploy: **pull + clear cache** (มี route/view/lang/Tailwind class ใหม่)
+
+---
+
 ## 🛡️ Security hardening (จาก security review)
 
 - **กัน privilege escalation ผ่าน impersonation**: สวมสิทธิ์ได้เฉพาะผู้ใช้ทั่วไป (กัน Admin สวมเป็น Super Admin แล้วได้สิทธิ์เต็ม) + `session()->regenerate()` ตอนเริ่ม/หยุดสวมสิทธิ์ (กัน session fixation)

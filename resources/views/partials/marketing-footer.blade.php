@@ -2,6 +2,7 @@
     $links = [
         ['route' => 'home', 'label' => t('nav.home')],
         ['route' => 'services', 'label' => t('nav.services')],
+        ['route' => 'ocr', 'label' => t('ocr.nav')],
         ['route' => 'about', 'label' => t('nav.about')],
         ['route' => 'contact', 'label' => t('nav.contact')],
     ];

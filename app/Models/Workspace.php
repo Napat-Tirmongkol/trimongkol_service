@@ -9,7 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Workspace extends Model
 {
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'queue_plan', 'queue_plan_until'];
+
+    protected $casts = [
+        'queue_plan_until' => 'datetime',
+    ];
 
     public function members(): BelongsToMany
     {

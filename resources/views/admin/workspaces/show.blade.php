@@ -77,6 +77,27 @@
                 </form>
             </div>
 
+            {{-- Queue product plan (billed separately) --}}
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.workspaces.queue_plan_heading') }}</h3>
+                <div class="mt-3 flex flex-wrap items-baseline gap-3 text-sm">
+                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 font-semibold text-slate-700">{{ \App\Services\QueuePlan::name($workspace) }}</span>
+                    <span class="text-xs text-slate-500">key: <code>{{ $workspace->queue_plan ?: 'free' }}</code></span>
+                </div>
+                <form method="POST" action="{{ route('admin.workspaces.update-queue-plan', $workspace) }}" class="mt-5 flex flex-wrap items-end gap-3 border-t border-slate-100 pt-5">
+                    @csrf @method('PATCH')
+                    <div>
+                        <label for="queue_plan" class="block text-xs font-medium text-slate-600">{{ __('app.admin.workspaces.queue_plan_label') }}</label>
+                        <select id="queue_plan" name="queue_plan" class="mt-1 block w-56 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            @foreach (config('queue-plans') as $key => $p)
+                                <option value="{{ $key }}" @selected(($workspace->queue_plan ?: 'free') === $key)>{{ $p['name'] }} ({{ $key }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.admin.workspaces.plan_save') }}</button>
+                </form>
+            </div>
+
             {{-- Members --}}
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-6 py-3">

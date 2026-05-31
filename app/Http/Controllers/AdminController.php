@@ -7,6 +7,8 @@ use App\Models\Classroom;
 use App\Models\Lead;
 use App\Models\LoginAttempt;
 use App\Models\Role;
+use App\Models\Setting;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\AuditLog;
@@ -17,6 +19,48 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
+    /** Plans & Billing control panel — plan distribution + free-launch toggle. */
+    public function billing()
+    {
+        $queueByPlan = Workspace::query()
+            ->selectRaw('queue_plan, COUNT(*) as c')
+            ->groupBy('queue_plan')
+            ->pluck('c', 'queue_plan')
+            ->all();
+
+        $queuePlans = config('queue-plans', []);
+        $queueMrr = 0;
+        foreach ($queueByPlan as $key => $count) {
+            $queueMrr += (int) ($queuePlans[$key]['price'] ?? 0) * (int) $count;
+        }
+
+        $scannerByPlan = Subscription::query()
+            ->whereIn('status', ['active', 'trial'])
+            ->selectRaw('plan_key, COUNT(*) as c')
+            ->groupBy('plan_key')
+            ->pluck('c', 'plan_key')
+            ->all();
+
+        $stats = [
+            'workspaces' => Workspace::count(),
+            'free_mode' => \App\Services\Billing::freeMode(),
+            'queue_by_plan' => $queueByPlan,
+            'queue_mrr' => $queueMrr,
+            'scanner_by_plan' => $scannerByPlan,
+        ];
+
+        return view('admin.billing', compact('stats', 'queuePlans'));
+    }
+
+    public function updateBilling(Request $request)
+    {
+        $on = $request->boolean('free_mode');
+        Setting::updateOrCreate(['key' => 'billing.free_mode'], ['value' => $on ? '1' : '0']);
+        AuditLog::record('billing.free_mode', null, $on ? 'on' : 'off');
+
+        return back()->with('status', __('app.admin.billing.saved'));
+    }
+
     public function dashboard()
     {
         $now = now();

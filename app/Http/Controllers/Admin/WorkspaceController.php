@@ -83,6 +83,19 @@ class WorkspaceController extends Controller
         return back()->with('status', __('app.admin.workspaces.plan_updated'));
     }
 
+    public function updateQueuePlan(Request $request, Workspace $workspace)
+    {
+        $data = $request->validate([
+            'queue_plan' => 'required|in:'.implode(',', \App\Services\QueuePlan::KEYS),
+        ]);
+
+        $workspace->update(['queue_plan' => $data['queue_plan']]);
+
+        AuditLog::record('workspace.update_queue_plan', $workspace, $workspace->name, $data);
+
+        return back()->with('status', __('app.admin.workspaces.queue_plan_updated'));
+    }
+
     public function destroy(Workspace $workspace)
     {
         $label = $workspace->name;

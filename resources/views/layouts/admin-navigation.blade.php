@@ -15,6 +15,8 @@
     // Less-frequent tools tucked into a "More" overflow menu so the top row
     // stays uncluttered and never wraps (see docs/ADMIN.md).
     $moreTabs = array_values(array_filter([
+        ['route' => 'admin.billing', 'label' => __('app.admin.tab_billing'), 'pattern' => 'admin.billing*', 'perm' => 'workspaces.manage'],
+        ['route' => 'admin.notifications.edit', 'label' => __('app.admin.notifications.nav'), 'pattern' => 'admin.notifications.*', 'perm' => 'cms.manage'],
         ['route' => 'admin.roles.index', 'label' => __('app.roles.nav'), 'pattern' => 'admin.roles.*', 'perm' => 'roles.manage'],
         ['route' => 'admin.security', 'label' => __('app.admin.tab_security'), 'pattern' => 'admin.security', 'perm' => 'security.view'],
         ['route' => 'admin.logs', 'label' => __('app.admin.tab_logs'), 'pattern' => 'admin.logs', 'perm' => 'audit.view'],

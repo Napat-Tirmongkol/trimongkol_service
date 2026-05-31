@@ -35,4 +35,32 @@ return [
         ],
     ],
 
+    // Google Cloud Text-to-Speech for queue voice announcements. The API key
+    // is normally set in /admin (encrypted in site_settings); these env vars
+    // are an optional fallback for ops that prefer .env.
+    'google_tts' => [
+        'key' => env('GOOGLE_TTS_KEY'),
+        'voice' => env('GOOGLE_TTS_VOICE'),
+    ],
+
+    // SlipOK PromptPay slip verification for queue plan self-checkout. Keys are
+    // normally set in /admin (encrypted in site_settings); env is a fallback.
+    'slipok' => [
+        'key' => env('SLIPOK_API_KEY'),
+        'branch' => env('SLIPOK_BRANCH_ID'),
+    ],
+
+    // LINE Messaging API — push notifications to the shop owner. Channel token
+    // is normally set in /admin (encrypted); env is an optional fallback.
+    'line' => [
+        'channel_token' => env('LINE_CHANNEL_TOKEN'),
+        'target_id' => env('LINE_TARGET_ID'),
+    ],
+
+    // Discord incoming webhook — owner notifications. Normally set in /admin;
+    // env is an optional fallback.
+    'discord' => [
+        'webhook' => env('DISCORD_WEBHOOK_URL'),
+    ],
+
 ];

@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
@@ -18,6 +20,9 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicQueueController;
+use App\Http\Controllers\QueueBillingController;
+use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubmissionController;
@@ -33,6 +38,15 @@ Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 Route::get('/donate', [PageController::class, 'donate'])->name('donate');
+
+// Smart Clipboard OCR — public, free, runs entirely in the browser (Tesseract.js
+// via CDN). No upload, no auth, no server processing — just returns the page.
+Route::get('/ocr', [PageController::class, 'ocr'])->name('ocr');
+
+// Public, login-free queue page — customers scan the QR / open the share link
+// to pull a ticket and watch the queue live. Resolved by unguessable token.
+Route::get('/q/{token}', [PublicQueueController::class, 'show'])->name('queue.public');
+Route::get('/q/{token}/tts', [PublicQueueController::class, 'tts'])->middleware('throttle:120,1')->name('queue.public.tts');
 
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
@@ -59,6 +73,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');
 
     Route::get('/plans', [PlansController::class, 'index'])->name('plans.index');
+
+    // Queue System product — workspace-scoped. Counter staff operate here;
+    // customers pull tickets on the public /q/{token} page (registered below).
+    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+    Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+    // Billing routes use a static /queues/billing prefix and must stay above the
+    // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
+    Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
+    Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
+    Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
+    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+    Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
+    Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
+    Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
+    Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
+    Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
+    Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
+    Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
+    Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
+    Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -140,9 +174,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:workspaces.view')->group(function () {
             Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
             Route::get('/workspaces/{workspace}', [AdminWorkspaceController::class, 'show'])->name('workspaces.show');
+            Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
         });
         Route::middleware('can:workspaces.manage')->group(function () {
             Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
+            Route::patch('/workspaces/{workspace}/queue-plan', [AdminWorkspaceController::class, 'updateQueuePlan'])->name('workspaces.update-queue-plan');
+            Route::post('/billing', [AdminController::class, 'updateBilling'])->name('billing.update');
             Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
         });
 
@@ -182,6 +219,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:cms.manage')->group(function () {
             Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
             Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+
+            // Platform notification channels (LINE, Discord) — shared by all products.
+            Route::get('/notifications', [AdminNotificationController::class, 'edit'])->name('notifications.edit');
+            Route::post('/notifications/line', [AdminNotificationController::class, 'updateLine'])->name('notifications.line');
+            Route::post('/notifications/line-test', [AdminNotificationController::class, 'testLine'])->name('notifications.line-test');
+            Route::post('/notifications/discord', [AdminNotificationController::class, 'updateDiscord'])->name('notifications.discord');
+            Route::post('/notifications/discord-test', [AdminNotificationController::class, 'testDiscord'])->name('notifications.discord-test');
         });
 
         Route::middleware('can:system.manage')->group(function () {
@@ -201,6 +245,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/classrooms', [AdminScannerController::class, 'classrooms'])->name('classrooms');
                 Route::get('/classrooms/{classroom}', [AdminScannerController::class, 'showClassroom'])->name('classrooms.show');
                 Route::delete('/classrooms/{classroom}', [AdminScannerController::class, 'destroyClassroom'])->name('classrooms.destroy');
+            });
+
+            Route::prefix('products/queue')->name('queue.')->group(function () {
+                Route::get('/', [AdminQueueController::class, 'dashboard'])->name('dashboard');
+                Route::get('/queues', [AdminQueueController::class, 'index'])->name('index');
+                Route::delete('/queues/{queue}', [AdminQueueController::class, 'destroy'])->name('destroy');
+                Route::post('/settings', [AdminQueueController::class, 'updateSettings'])->name('settings');
+                Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
+                Route::post('/billing-settings', [AdminQueueController::class, 'updateBilling'])->name('billing-settings');
+                Route::post('/slip-test', [AdminQueueController::class, 'testSlip'])->name('slip-test');
+                Route::get('/payments', [AdminQueueController::class, 'payments'])->name('payments');
+                Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
+                Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');
+                Route::post('/payments/{payment}/reject', [AdminQueueController::class, 'rejectPayment'])->name('payments.reject');
             });
 
             // Back-compat redirects for the old flat URLs.
