@@ -10,6 +10,7 @@ use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerContro
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TwoFactorAuthController;
@@ -17,7 +18,7 @@ use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => auth()->check() ? redirect()->route('accounting.dashboard') : redirect()->route('login'))->name('home');
+Route::get('/', [LandingController::class, 'index'])->name('home');
 
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
 
