@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QueuePayment;
 use App\Models\Workspace;
 use App\Services\CurrentWorkspace;
-use App\Services\DiscordNotifier;
-use App\Services\LineNotifier;
+use App\Services\Notifications\Notifier;
 use App\Services\QueuePlan;
 use App\Services\SlipVerifier;
 use App\Support\PromptPay;
@@ -205,7 +204,6 @@ class QueueBillingController extends Controller
             'amount' => number_format((int) $payment->amount),
         ]);
 
-        LineNotifier::notify($text);
-        DiscordNotifier::notify($text);
+        Notifier::send($text);
     }
 }

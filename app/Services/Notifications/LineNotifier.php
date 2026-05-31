@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Notifications;
 
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Push notifications to the shop owner via the LINE Messaging API.
+ * Push notifications via the LINE Messaging API. Platform-level channel —
+ * configured once in /admin → Notifications and reusable by any product.
  *
- * Configured in /admin → Queue (channel access token encrypted in
- * site_settings; target user/group ID). Every send is best-effort — any
- * failure is logged and swallowed so it never breaks the payment flow.
+ * Channel access token is encrypted in site_settings; target user/group ID
+ * is stored plain. Every send is best-effort — any failure is logged and
+ * swallowed so it never breaks the caller's flow.
  */
 class LineNotifier
 {

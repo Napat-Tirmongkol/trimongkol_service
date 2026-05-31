@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Notifications;
 
 use Illuminate\Support\Facades\Http;
 
 /**
  * Post notifications to a Discord channel via an incoming webhook URL.
+ * Platform-level channel — configured once in /admin → Notifications and
+ * reusable by any product.
  *
- * Simpler than the LINE channel — a single webhook URL (created in a Discord
- * channel's Integrations settings) is all that's needed; no token, no
- * recipient ID. Configured in /admin → Queue. Every send is best-effort: any
- * failure is logged and swallowed so it never breaks the payment flow.
+ * A single webhook URL is all that's needed (no token, no recipient ID).
+ * Every send is best-effort: any failure is logged and swallowed.
  */
 class DiscordNotifier
 {
@@ -22,8 +22,8 @@ class DiscordNotifier
     public static function webhook(): ?string
     {
         // Not encrypted: a Discord webhook URL is a capability, not a secret
-        // credential, and matching site_settings as plain text keeps the admin
-        // form able to show/verify it. Still server-side only.
+        // credential, and storing it as plain text keeps the admin form able
+        // to show/verify it. Still server-side only.
         return setting('discord.webhook') ?: config('services.discord.webhook');
     }
 

@@ -9,8 +9,6 @@ use App\Models\QueuePayment;
 use App\Models\QueueTicket;
 use App\Models\Setting;
 use App\Services\AuditLog;
-use App\Services\DiscordNotifier;
-use App\Services\LineNotifier;
 use App\Services\SlipVerifier;
 use App\Services\Tts;
 use Illuminate\Http\Request;
@@ -235,66 +233,4 @@ class QueueController extends Controller
             : back()->with('error', $summary);
     }
 
-    public function updateLine(Request $request)
-    {
-        $data = $request->validate([
-            'line_enabled' => 'nullable|boolean',
-            'line_target' => 'nullable|string|max:120',
-            'line_token' => 'nullable|string|max:400',
-        ]);
-
-        Setting::updateOrCreate(['key' => 'line.enabled'], ['value' => $request->boolean('line_enabled') ? '1' : '0']);
-        Setting::updateOrCreate(['key' => 'line.target_id'], ['value' => trim($data['line_target'] ?? '')]);
-
-        if (filled($data['line_token'] ?? null)) {
-            Setting::updateOrCreate(['key' => 'line.channel_token'], ['value' => Crypt::encryptString(trim($data['line_token']))]);
-        }
-
-        AuditLog::record('queue.line.settings', null, 'LINE notify settings updated');
-
-        return back()->with('status', __('app.admin.products.queue.line_saved'));
-    }
-
-    public function testLine()
-    {
-        [$ok, $message] = LineNotifier::push(__('app.admin.products.queue.line_test_message', [
-            'app' => config('app.name'),
-        ]));
-
-        return $ok
-            ? back()->with('status', __('app.admin.products.queue.line_test_ok'))
-            : back()->with('error', __('app.admin.products.queue.line_test_fail', [
-                'error' => __('app.admin.products.queue.line_err_'.$message) !== 'app.admin.products.queue.line_err_'.$message
-                    ? __('app.admin.products.queue.line_err_'.$message)
-                    : $message,
-            ]));
-    }
-
-    public function updateDiscord(Request $request)
-    {
-        $data = $request->validate([
-            'discord_webhook' => 'nullable|string|max:300',
-        ]);
-
-        Setting::updateOrCreate(['key' => 'discord.webhook'], ['value' => trim($data['discord_webhook'] ?? '')]);
-
-        AuditLog::record('queue.discord.settings', null, 'Discord notify settings updated');
-
-        return back()->with('status', __('app.admin.products.queue.discord_saved'));
-    }
-
-    public function testDiscord()
-    {
-        [$ok, $message] = DiscordNotifier::send(__('app.admin.products.queue.discord_test_message', [
-            'app' => config('app.name'),
-        ]));
-
-        return $ok
-            ? back()->with('status', __('app.admin.products.queue.discord_test_ok'))
-            : back()->with('error', __('app.admin.products.queue.discord_test_fail', [
-                'error' => __('app.admin.products.queue.discord_err_'.$message) !== 'app.admin.products.queue.discord_err_'.$message
-                    ? __('app.admin.products.queue.discord_err_'.$message)
-                    : $message,
-            ]));
-    }
 }

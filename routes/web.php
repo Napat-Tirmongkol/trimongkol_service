@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
@@ -200,6 +201,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:cms.manage')->group(function () {
             Route::get('/site', [SiteSettingsController::class, 'edit'])->name('site-settings.edit');
             Route::patch('/site', [SiteSettingsController::class, 'update'])->name('site-settings.update');
+
+            // Platform notification channels (LINE, Discord) — shared by all products.
+            Route::get('/notifications', [AdminNotificationController::class, 'edit'])->name('notifications.edit');
+            Route::post('/notifications/line', [AdminNotificationController::class, 'updateLine'])->name('notifications.line');
+            Route::post('/notifications/line-test', [AdminNotificationController::class, 'testLine'])->name('notifications.line-test');
+            Route::post('/notifications/discord', [AdminNotificationController::class, 'updateDiscord'])->name('notifications.discord');
+            Route::post('/notifications/discord-test', [AdminNotificationController::class, 'testDiscord'])->name('notifications.discord-test');
         });
 
         Route::middleware('can:system.manage')->group(function () {
@@ -228,10 +236,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
                 Route::post('/billing-settings', [AdminQueueController::class, 'updateBilling'])->name('billing-settings');
                 Route::post('/slip-test', [AdminQueueController::class, 'testSlip'])->name('slip-test');
-                Route::post('/line-settings', [AdminQueueController::class, 'updateLine'])->name('line-settings');
-                Route::post('/line-test', [AdminQueueController::class, 'testLine'])->name('line-test');
-                Route::post('/discord-settings', [AdminQueueController::class, 'updateDiscord'])->name('discord-settings');
-                Route::post('/discord-test', [AdminQueueController::class, 'testDiscord'])->name('discord-test');
                 Route::get('/payments', [AdminQueueController::class, 'payments'])->name('payments');
                 Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
                 Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');
