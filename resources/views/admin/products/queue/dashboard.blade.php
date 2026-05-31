@@ -212,6 +212,26 @@
 
                     <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.admin.products.queue.billing_save') }}</button>
                 </form>
+
+                {{-- Test transfer: upload a real test slip to confirm the SlipOK
+                     wiring without consuming the slip or activating anything. --}}
+                <form method="POST" action="{{ route('admin.queue.slip-test') }}" enctype="multipart/form-data"
+                      class="space-y-3 border-t border-slate-100 px-6 py-5">
+                    @csrf
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-900">{{ __('app.admin.products.queue.slip_test_heading') }}</h4>
+                        <p class="mt-0.5 text-xs text-slate-500">{{ __('app.admin.products.queue.slip_test_hint') }}</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <input type="file" name="slip" accept="image/*" required
+                               class="block w-full max-w-xs rounded-lg border border-slate-300 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700">
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            {{ __('app.admin.products.queue.slip_test_btn') }}
+                        </button>
+                    </div>
+                    @error('slip') <p class="text-xs text-rose-600">{{ $message }}</p> @enderror
+                </form>
             </div>
         </div>
     </div>

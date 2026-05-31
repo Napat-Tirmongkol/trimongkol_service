@@ -227,6 +227,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/settings', [AdminQueueController::class, 'updateSettings'])->name('settings');
                 Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
                 Route::post('/billing-settings', [AdminQueueController::class, 'updateBilling'])->name('billing-settings');
+                Route::post('/slip-test', [AdminQueueController::class, 'testSlip'])->name('slip-test');
                 Route::get('/payments', [AdminQueueController::class, 'payments'])->name('payments');
                 Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
                 Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');

@@ -58,55 +58,129 @@ class SlipVerifier
             return $fail('slipok_not_configured');
         }
 
-        try {
-            $res = Http::timeout(15)
-                ->withHeaders(['x-authorization' => (string) self::key()])
-                ->attach('files', file_get_contents($slip->getRealPath()), $slip->getClientOriginalName() ?: 'slip.jpg')
-                ->post('https://api.slipok.com/api/line/apikey/'.self::branchId(), [
-                    'amount' => $expectedAmount,
-                    'log' => 'true',
-                ]);
-        } catch (\Throwable $e) {
-            report($e);
-            return $fail('slipok_unreachable');
+        // log=true sends the amount + records the slip, so SlipOK authoritatively
+        // enforces amount (1013), receiver-account (1014) and duplicate (1012)
+        // against the bank account linked to this branch in its dashboard.
+        [$ok, $data, $msg] = self::call($slip, $expectedAmount, true);
+        if (! $ok) {
+            return $fail($msg, $data);
         }
 
-        $json = $res->json() ?? [];
-
-        if (! $res->successful() || ! ($json['success'] ?? false)) {
-            // 1012 = SlipOK's own "duplicate slip" guard.
-            $code = $json['code'] ?? null;
-            $msg = (int) $code === 1012 ? 'duplicate' : ($json['message'] ?? 'verify_failed');
-            return $fail($msg, $json);
-        }
-
-        $data = $json['data'] ?? [];
-        $amount = (int) round((float) ($data['amount'] ?? 0));
-        $transRef = $data['transRef'] ?? null;
-        $receiver = $data['receiver']['displayName']
-            ?? ($data['receiver']['account']['value'] ?? null);
-        $receiverAcc = $data['receiver']['account']['value']
-            ?? ($data['receiver']['proxy']['value'] ?? null);
-
+        $parsed = self::parse($data);
         $base = [
-            'trans_ref' => $transRef, 'amount' => $amount,
-            'receiver' => $receiver, 'receiver_acc' => $receiverAcc, 'raw' => $data,
+            'trans_ref' => $parsed['trans_ref'], 'amount' => $parsed['amount'],
+            'receiver' => $parsed['receiver'], 'receiver_acc' => $parsed['receiver_acc'], 'raw' => $data,
         ];
 
         // Exact-amount match: an over- or under-payment is rejected so a plan
         // can't be bought for the wrong price.
-        if ($amount !== $expectedAmount) {
+        if ($parsed['amount'] !== $expectedAmount) {
             return array_merge($base, ['ok' => false, 'message' => 'amount_mismatch']);
         }
 
         // The transfer must land in OUR receiving account. Compare against the
         // configured PromptPay / bank number using masked-suffix matching,
         // since slips usually expose only the last digits (e.g. "xxx-x-x1234").
-        if (! self::receiverMatches($receiverAcc)) {
+        if (! self::receiverMatches($parsed['receiver_acc'])) {
             return array_merge($base, ['ok' => false, 'message' => 'receiver_mismatch']);
         }
 
         return array_merge($base, ['ok' => true, 'message' => 'ok']);
+    }
+
+    /**
+     * Dry-run a slip for the admin "test transfer" tool: reads the slip via
+     * SlipOK without consuming it (log=false, so it can be re-tested) and
+     * reports what was read plus whether the receiver matches. Does NOT enforce
+     * an amount, create a payment, or activate anything.
+     *
+     * @return array{ok: bool, message: string, amount: ?int, receiver: ?string, receiver_acc: ?string, receiver_match: bool, trans_ref: ?string}
+     */
+    public static function inspect(UploadedFile $slip): array
+    {
+        $out = [
+            'ok' => false, 'message' => 'verify_failed', 'amount' => null,
+            'receiver' => null, 'receiver_acc' => null, 'receiver_match' => false, 'trans_ref' => null,
+        ];
+
+        if (! self::enabled()) {
+            $out['message'] = 'slipok_not_configured';
+            return $out;
+        }
+
+        [$ok, $data, $msg] = self::call($slip, null, false);
+        if (! $ok) {
+            $out['message'] = $msg;
+            return $out;
+        }
+
+        $parsed = self::parse($data);
+
+        return [
+            'ok' => true,
+            'message' => 'ok',
+            'amount' => $parsed['amount'],
+            'receiver' => $parsed['receiver'],
+            'receiver_acc' => $parsed['receiver_acc'],
+            'receiver_match' => self::receiverMatches($parsed['receiver_acc']),
+            'trans_ref' => $parsed['trans_ref'],
+        ];
+    }
+
+    /**
+     * Low-level SlipOK call. Returns [ok, data|errorJson, message].
+     * $log=false tells SlipOK not to store the slip (so a test can repeat).
+     */
+    private static function call(UploadedFile $slip, ?int $amount, bool $log): array
+    {
+        $payload = ['log' => $log ? 'true' : 'false'];
+        if ($amount !== null) {
+            $payload['amount'] = $amount;
+        }
+
+        try {
+            $res = Http::timeout(15)
+                ->withHeaders(['x-authorization' => (string) self::key()])
+                ->attach('files', file_get_contents($slip->getRealPath()), $slip->getClientOriginalName() ?: 'slip.jpg')
+                ->post('https://api.slipok.com/api/line/apikey/'.self::branchId(), $payload);
+        } catch (\Throwable $e) {
+            report($e);
+            return [false, [], 'slipok_unreachable'];
+        }
+
+        $json = $res->json() ?? [];
+
+        if (! $res->successful() || ! ($json['success'] ?? false)) {
+            // Map SlipOK's documented error codes to our own short messages so
+            // the caller can react (and translate) without parsing Thai text.
+            // The error body may also carry slip `data` (e.g. 1012/1013/1014).
+            $msg = match ((int) ($json['code'] ?? 0)) {
+                1012 => 'duplicate',           // slip already used
+                1013 => 'amount_mismatch',     // amount != slip
+                1014 => 'receiver_mismatch',   // wrong destination account
+                1010 => 'bank_delay',          // BBL/SCB — retry shortly
+                1003, 1004, 1015 => 'slipok_quota',   // package expired / over quota
+                1002 => 'slipok_auth',         // bad API key
+                1005, 1006, 1007, 1008, 1011 => 'bad_slip', // not a valid payment slip
+                default => $json['message'] ?? 'verify_failed',
+            };
+            return [false, $json['data'] ?? $json, $msg];
+        }
+
+        return [true, $json['data'] ?? [], 'ok'];
+    }
+
+    /** Pull the fields we care about out of a SlipOK `data` payload. */
+    private static function parse(array $data): array
+    {
+        return [
+            'amount' => (int) round((float) ($data['amount'] ?? 0)),
+            'trans_ref' => $data['transRef'] ?? null,
+            'receiver' => $data['receiver']['displayName']
+                ?? ($data['receiver']['account']['value'] ?? null),
+            'receiver_acc' => $data['receiver']['account']['value']
+                ?? ($data['receiver']['proxy']['value'] ?? null),
+        ];
     }
 
     /** Receiving account this branch should pay into (bank no. or PromptPay). */

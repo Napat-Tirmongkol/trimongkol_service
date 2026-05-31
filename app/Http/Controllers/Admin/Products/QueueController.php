@@ -9,6 +9,7 @@ use App\Models\QueuePayment;
 use App\Models\QueueTicket;
 use App\Models\Setting;
 use App\Services\AuditLog;
+use App\Services\SlipVerifier;
 use App\Services\Tts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -184,5 +185,41 @@ class QueueController extends Controller
         return response(Storage::disk('local')->get($payment->slip_path), 200, [
             'Content-Type' => Storage::disk('local')->mimeType($payment->slip_path) ?: 'image/jpeg',
         ]);
+    }
+
+    /**
+     * Admin tool: upload a real test-transfer slip to confirm the SlipOK key,
+     * branch, and receiving account are wired correctly — without consuming the
+     * slip, creating a payment, or activating a plan.
+     */
+    public function testSlip(Request $request)
+    {
+        $request->validate(['slip' => 'required|image|max:5120']);
+
+        if (! SlipVerifier::enabled()) {
+            return back()->with('error', __('app.admin.products.queue.slip_test_not_configured'));
+        }
+
+        $result = SlipVerifier::inspect($request->file('slip'));
+
+        if (! $result['ok']) {
+            return back()->with('error', __('app.admin.products.queue.slip_test_fail', [
+                'error' => __('app.queue.billing.err_'.$result['message']) !== 'app.queue.billing.err_'.$result['message']
+                    ? __('app.queue.billing.err_'.$result['message'])
+                    : $result['message'],
+            ]));
+        }
+
+        $summary = __('app.admin.products.queue.slip_test_summary', [
+            'amount' => number_format((int) $result['amount']),
+            'receiver' => $result['receiver'] ?: '—',
+            'match' => $result['receiver_match']
+                ? __('app.admin.products.queue.slip_test_match_ok')
+                : __('app.admin.products.queue.slip_test_match_no'),
+        ]);
+
+        return $result['receiver_match']
+            ? back()->with('status', $summary)
+            : back()->with('error', $summary);
     }
 }

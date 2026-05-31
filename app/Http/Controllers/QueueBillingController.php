@@ -119,8 +119,8 @@ class QueueBillingController extends Controller
         $result = SlipVerifier::verify($slip, $price);
 
         if (! $result['ok']) {
-            // Hard rejects: show a clear reason and don't keep the record.
-            if (in_array($result['message'], ['duplicate', 'amount_mismatch', 'receiver_mismatch'], true)) {
+            // Hard rejects: a clear, customer-fixable reason — don't keep a record.
+            if (in_array($result['message'], ['duplicate', 'amount_mismatch', 'receiver_mismatch', 'bad_slip'], true)) {
                 return back()->with('error', __('app.queue.billing.err_'.$result['message']));
             }
 
