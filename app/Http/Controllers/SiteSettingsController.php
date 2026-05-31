@@ -95,8 +95,8 @@ class SiteSettingsController extends Controller
             'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
         ],
         'ระบบที่เปิดใช้งาน (Products)' => [
-            'products.queue.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบเรียกคิว', 'hint' => 'ปิดแล้วจะซ่อนจากเมนูผู้ใช้และกันเข้า URL (สแกนเนอร์/ส่งการบ้านเปิดตลอด)'],
-            'products.accounting.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบบัญชี', 'hint' => 'ปิดแล้วจะซ่อนจากเมนูผู้ใช้และกันเข้า URL'],
+            'products.queue.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบเรียกคิว', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้ (สแกนเนอร์/ส่งการบ้านเปิดตลอด)'],
+            'products.accounting.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบบัญชี', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้'],
         ],
         'Free launch / Billing' => [
             'billing.free_mode' => ['type' => 'shared', 'label' => 'โหมดเปิดตัวฟรี — 1 = เปิด (ฟรีทุกคน ลิมิตช่วงเปิดตัว), 0 = ปิด (เริ่มเก็บเงิน ใช้แพ็คเกจจริง). ค่าเริ่มต้น = เปิด', 'wide' => true],

@@ -24,6 +24,16 @@ class ProductToggleTest extends TestCase
         return $user;
     }
 
+    private function actingAdmin(): User
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $workspace = Workspace::create(['name' => 'ACME Admin', 'slug' => 'adm-'.Str::random(6)]);
+        $workspace->members()->attach($user->id, ['role' => 'owner', 'joined_at' => now()]);
+        $this->actingAs($user);
+
+        return $user;
+    }
+
     private function disable(string $product): void
     {
         Setting::updateOrCreate(['key' => "products.{$product}.enabled"], ['value' => '0']);
@@ -77,5 +87,24 @@ class ProductToggleTest extends TestCase
 
         $this->disable('accounting');
         $this->get(route('dashboard'))->assertOk()->assertDontSee(route('accounting.dashboard'));
+    }
+
+    public function test_is_on_is_the_raw_switch_ignoring_the_viewer(): void
+    {
+        $this->assertTrue(ProductGate::isOn('accounting'));
+        $this->disable('accounting');
+        $this->assertFalse(ProductGate::isOn('accounting'));
+    }
+
+    public function test_admin_can_preview_a_disabled_product(): void
+    {
+        $this->actingAdmin();
+        $this->disable('accounting');
+
+        // Off for everyone, but the admin still gets through to test it.
+        $this->assertFalse(ProductGate::isOn('accounting'));
+        $this->assertTrue(ProductGate::enabled('accounting'));
+        $this->get(route('accounting.dashboard'))->assertOk();
+        $this->get(route('dashboard'))->assertOk()->assertSee(route('accounting.dashboard'));
     }
 }
