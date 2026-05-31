@@ -7,15 +7,11 @@ use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
 use App\Models\Accounting\Partner;
-use App\Models\Accounting\Period;
-use App\Services\Accounting\ChartOfAccounts;
 use App\Services\Accounting\Money;
 use App\Services\Accounting\Receipts;
 use App\Services\Accounting\Reporting;
 use App\Services\Accounting\SupplierPayments;
-use App\Services\Accounting\TaxCodes;
 use App\Services\Accounting\TaxReporting;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends AccountingController
 {
@@ -24,6 +20,11 @@ class DashboardController extends AccountingController
         $workspace = $this->currentWorkspace();
         if (! $workspace) {
             return view('accounting.dashboard', ['workspace' => null, 'isSetUp' => false]);
+        }
+
+        // First-run: send a brand-new workspace through the setup wizard.
+        if (! $workspace->isOnboarded() && ! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.onboarding');
         }
 
         $isSetUp = $this->isSetUp($workspace);
@@ -102,29 +103,5 @@ class DashboardController extends AccountingController
             ->first();
 
         return Money::toMinor((string) ($row->d ?? 0)) - Money::toMinor((string) ($row->c ?? 0));
-    }
-
-    /** One-click bootstrap: seed the chart of accounts, tax codes, and a period. */
-    public function setup()
-    {
-        $workspace = $this->requireWorkspace();
-        $this->assertPoster($workspace);
-
-        if ($this->isSetUp($workspace)) {
-            return redirect()->route('accounting.dashboard');
-        }
-
-        DB::transaction(function () use ($workspace) {
-            ChartOfAccounts::seed($workspace);
-            TaxCodes::seedDefault($workspace);
-
-            $year = now()->year;
-            Period::firstOrCreate(
-                ['workspace_id' => $workspace->id, 'starts_on' => "{$year}-01-01"],
-                ['name' => (string) ($year + 543), 'ends_on' => "{$year}-12-31", 'status' => Period::STATUS_OPEN],
-            );
-        });
-
-        return redirect()->route('accounting.dashboard')->with('status', __('app.accounting.setup_done'));
     }
 }

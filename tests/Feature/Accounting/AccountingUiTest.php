@@ -56,23 +56,42 @@ class AccountingUiTest extends TestCase
         return Partner::create(['workspace_id' => $workspace->id, 'name' => 'ลูกค้า ก', 'is_customer' => true]);
     }
 
-    public function test_owner_sees_setup_then_bootstraps_the_books(): void
+    public function test_new_workspace_is_sent_through_onboarding_then_bootstrapped(): void
     {
         [, $workspace] = $this->actingMember('owner');
 
-        $this->get(route('accounting.dashboard'))->assertOk();
+        // A brand-new workspace is redirected from the dashboard to the wizard.
+        $this->get(route('accounting.dashboard'))->assertRedirect(route('accounting.onboarding'));
+        $this->get(route('accounting.onboarding'))->assertOk();
 
-        $this->post(route('accounting.setup'))->assertRedirect(route('accounting.dashboard'));
+        $this->post(route('accounting.onboarding.store'), [
+            'company_name' => 'บริษัท เอซีเอ็มอี จำกัด',
+            'tax_id' => '0105500000017',
+            'branch' => 'สำนักงานใหญ่',
+            'phone' => '021234567',
+            'company_address' => '1 ถ.ทดสอบ กรุงเทพฯ 10110',
+            'chart_template' => 'standard_th',
+        ])->assertRedirect(route('accounting.dashboard'));
 
         $this->assertSame(count(ChartOfAccounts::template()), Account::forWorkspace($workspace)->count());
         $this->assertGreaterThan(0, TaxCode::forWorkspace($workspace)->count());
         $this->assertTrue(Period::forWorkspace($workspace)->exists());
+
+        $workspace->refresh();
+        $this->assertNotNull($workspace->onboarded_at);
+        $this->assertSame('บริษัท เอซีเอ็มอี จำกัด', $workspace->company_name);
+        $this->assertSame('0105500000017', $workspace->tax_id);
+
+        // Once onboarded the dashboard loads normally (no more redirect).
+        $this->get(route('accounting.dashboard'))->assertOk();
     }
 
-    public function test_member_cannot_set_up_accounting(): void
+    public function test_member_cannot_complete_onboarding(): void
     {
         $this->actingMember('member');
-        $this->post(route('accounting.setup'))->assertForbidden();
+        $this->post(route('accounting.onboarding.store'), [
+            'company_name' => 'x', 'chart_template' => 'standard_th',
+        ])->assertForbidden();
     }
 
     public function test_owner_creates_a_partner_via_the_form(): void

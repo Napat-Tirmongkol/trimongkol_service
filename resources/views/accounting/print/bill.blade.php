@@ -1,5 +1,5 @@
 <x-print-layout :title="'บิลซื้อ ' . $bill->no">
-    @include('accounting.print.company', ['docTitle' => 'บันทึกซื้อ', 'docTitleEn' => 'Purchase / Bill', 'docNo' => $bill->no])
+    @include('accounting.print.company', ['workspace' => $bill->workspace, 'docTitle' => 'บันทึกซื้อ', 'docTitleEn' => 'Purchase / Bill', 'docNo' => $bill->no])
 
     <div class="mt-5 flex justify-between gap-6">
         <div>

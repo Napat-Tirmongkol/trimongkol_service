@@ -62,7 +62,9 @@ class ProductToggleTest extends TestCase
     {
         $this->actingMember();
 
-        $this->get(route('accounting.dashboard'))->assertOk();   // on by default
+        // On by default: reachable. A brand-new workspace lands on the
+        // first-run onboarding wizard rather than the dashboard itself.
+        $this->get(route('accounting.dashboard'))->assertRedirect(route('accounting.onboarding'));
 
         $this->disable('accounting');
         $this->get(route('accounting.dashboard'))->assertNotFound();
@@ -101,10 +103,11 @@ class ProductToggleTest extends TestCase
         $this->actingAdmin();
         $this->disable('accounting');
 
-        // Off for everyone, but the admin still gets through to test it.
+        // Off for everyone, but the admin still gets through to test it
+        // (a fresh workspace is routed to the onboarding wizard).
         $this->assertFalse(ProductGate::isOn('accounting'));
         $this->assertTrue(ProductGate::enabled('accounting'));
-        $this->get(route('accounting.dashboard'))->assertOk();
+        $this->get(route('accounting.dashboard'))->assertRedirect(route('accounting.onboarding'));
         $this->get(route('dashboard'))->assertOk()->assertSee(route('accounting.dashboard'));
     }
 }

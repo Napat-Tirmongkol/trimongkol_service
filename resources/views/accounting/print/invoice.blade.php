@@ -1,5 +1,5 @@
 <x-print-layout :title="'ใบกำกับภาษี ' . $invoice->no">
-    @include('accounting.print.company', ['docTitle' => 'ใบกำกับภาษี / ใบเสร็จรับเงิน', 'docTitleEn' => 'Tax Invoice / Receipt', 'docNo' => $invoice->no])
+    @include('accounting.print.company', ['workspace' => $invoice->workspace, 'docTitle' => 'ใบกำกับภาษี / ใบเสร็จรับเงิน', 'docTitleEn' => 'Tax Invoice / Receipt', 'docNo' => $invoice->no])
 
     <div class="mt-5 flex justify-between gap-6">
         <div>

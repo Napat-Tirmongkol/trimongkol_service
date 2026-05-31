@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
@@ -108,13 +110,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // receipts). Posting to the ledger is gated to owners/admins in the controllers.
     Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
-        Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
+        Route::get('/onboarding', [AccountingOnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
         Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
 
         Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
         Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
+
+        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/create', [AccountingAccountController::class, 'create'])->name('accounts.create');
+        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
+        Route::get('/accounts/{account}/edit', [AccountingAccountController::class, 'edit'])->name('accounts.edit');
+        Route::patch('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
 
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
