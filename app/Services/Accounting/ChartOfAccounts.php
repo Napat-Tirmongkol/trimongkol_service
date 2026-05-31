@@ -29,7 +29,7 @@ class ChartOfAccounts
         ['code' => '1114-01', 'name' => 'สลากออมทรัพย์ ธ.ก.ส. 400046598996', 'name_en' => 'Savings lottery — BAAC 400046598996', 'type' => 'asset'],
         ['code' => '1130-01', 'name' => 'ลูกหนี้การค้า', 'name_en' => 'Trade accounts receivable', 'type' => 'asset', 'role' => 'ar_control'],
         ['code' => '1130-02', 'name' => 'เช็ครับลงวันที่ล่วงหน้า', 'name_en' => 'Post-dated cheques received', 'type' => 'asset'],
-        ['code' => '1151-02', 'name' => 'ภาษีนิติบุคคลจ่ายล่วงหน้า', 'name_en' => 'Prepaid corporate income tax', 'type' => 'asset'],
+        ['code' => '1151-02', 'name' => 'ภาษีนิติบุคคลจ่ายล่วงหน้า', 'name_en' => 'Prepaid corporate income tax', 'type' => 'asset', 'role' => 'wht_receivable'],
         ['code' => '1151-05', 'name' => 'ภาษีเงินได้นิติบุคคลจ่ายล่วงหน้า ภงด.51', 'name_en' => 'Prepaid CIT (PND.51)', 'type' => 'asset'],
         ['code' => '1151-06', 'name' => 'ภาษีเงินได้นิติบุคคลจ่ายล่วงหน้าปี 2567', 'name_en' => 'Prepaid CIT (FY2567)', 'type' => 'asset'],
         ['code' => '1154-00', 'name' => 'ภาษีซื้อ', 'name_en' => 'Input VAT', 'type' => 'asset', 'role' => 'vat_input'],
