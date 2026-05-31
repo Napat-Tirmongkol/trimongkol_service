@@ -81,27 +81,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Queue System product — workspace-scoped. Counter staff operate here;
     // customers pull tickets on the public /q/{token} page (registered below).
-    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
-    Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
-    // Billing routes use a static /queues/billing prefix and must stay above the
-    // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
-    Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
-    Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
-    Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
-    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
-    Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
-    Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
-    Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
-    Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
-    Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
-    Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
-    Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
-    Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
-    Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+    Route::middleware('product:queue')->group(function () {
+        Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+        Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+        // Billing routes use a static /queues/billing prefix and must stay above the
+        // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
+        Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
+        Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
+        Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
+        Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+        Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
+        Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
+        Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
+        Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
+        Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
+        Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
+        Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
+        Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
+        Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+    });
 
     // Accounting product — workspace-scoped front-office (partners, invoices,
     // receipts). Posting to the ledger is gated to owners/admins in the controllers.
-    Route::prefix('accounting')->name('accounting.')->group(function () {
+    Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
         Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');

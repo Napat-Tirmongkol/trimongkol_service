@@ -94,6 +94,10 @@ class SiteSettingsController extends Controller
             'maintenance.enabled' => ['type' => 'shared', 'label' => 'Enable maintenance mode (1 = on, blank = off)'],
             'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
         ],
+        'ระบบที่เปิดใช้งาน (Products)' => [
+            'products.queue.enabled' => ['type' => 'shared', 'label' => 'ระบบเรียกคิว — 1 = เปิด, 0 = ปิด (ซ่อนจากเมนูผู้ใช้ + กันเข้า URL). เว้นว่าง = เปิด', 'wide' => true],
+            'products.accounting.enabled' => ['type' => 'shared', 'label' => 'ระบบบัญชี — 1 = เปิด, 0 = ปิด (ซ่อนจากเมนูผู้ใช้ + กันเข้า URL). เว้นว่าง = เปิด', 'wide' => true],
+        ],
         'Free launch / Billing' => [
             'billing.free_mode' => ['type' => 'shared', 'label' => 'โหมดเปิดตัวฟรี — 1 = เปิด (ฟรีทุกคน ลิมิตช่วงเปิดตัว), 0 = ปิด (เริ่มเก็บเงิน ใช้แพ็คเกจจริง). ค่าเริ่มต้น = เปิด', 'wide' => true],
             'billing.launch_max_classrooms' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: ห้องเรียนต่อบัญชี (เว้นว่าง = ค่าเริ่มต้น 15)'],

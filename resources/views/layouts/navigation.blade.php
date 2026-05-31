@@ -77,20 +77,24 @@
                                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                         {{ __('app.classrooms.heading') }}
                     </a>
-                    <a href="{{ route('queues.index') }}"
-                       class="rounded-full px-4 py-1.5 text-sm font-medium transition
-                              {{ request()->routeIs('queues.*')
-                                  ? 'bg-slate-900 text-white'
-                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                        {{ __('app.queue.nav') }}
-                    </a>
-                    <a href="{{ route('accounting.dashboard') }}"
-                       class="rounded-full px-4 py-1.5 text-sm font-medium transition
-                              {{ request()->routeIs('accounting.*')
-                                  ? 'bg-slate-900 text-white'
-                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
-                        {{ __('app.accounting.nav') }}
-                    </a>
+                    @if (\App\Services\ProductGate::enabled('queue'))
+                        <a href="{{ route('queues.index') }}"
+                           class="rounded-full px-4 py-1.5 text-sm font-medium transition
+                                  {{ request()->routeIs('queues.*')
+                                      ? 'bg-slate-900 text-white'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                            {{ __('app.queue.nav') }}
+                        </a>
+                    @endif
+                    @if (\App\Services\ProductGate::enabled('accounting'))
+                        <a href="{{ route('accounting.dashboard') }}"
+                           class="rounded-full px-4 py-1.5 text-sm font-medium transition
+                                  {{ request()->routeIs('accounting.*')
+                                      ? 'bg-slate-900 text-white'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                            {{ __('app.accounting.nav') }}
+                        </a>
+                    @endif
                     @if ($user?->is_admin)
                         <a href="{{ route('admin.dashboard') }}"
                            class="rounded-full px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
@@ -226,20 +230,24 @@
                               : 'text-slate-700 hover:bg-slate-100' }}">
                     {{ __('app.classrooms.heading') }}
                 </a>
-                <a href="{{ route('queues.index') }}"
-                   class="rounded-md px-3 py-2 text-sm font-medium
-                          {{ request()->routeIs('queues.*')
-                              ? 'bg-slate-900 text-white'
-                              : 'text-slate-700 hover:bg-slate-100' }}">
-                    {{ __('app.queue.nav') }}
-                </a>
-                <a href="{{ route('accounting.dashboard') }}"
-                   class="rounded-md px-3 py-2 text-sm font-medium
-                          {{ request()->routeIs('accounting.*')
-                              ? 'bg-slate-900 text-white'
-                              : 'text-slate-700 hover:bg-slate-100' }}">
-                    {{ __('app.accounting.nav') }}
-                </a>
+                @if (\App\Services\ProductGate::enabled('queue'))
+                    <a href="{{ route('queues.index') }}"
+                       class="rounded-md px-3 py-2 text-sm font-medium
+                              {{ request()->routeIs('queues.*')
+                                  ? 'bg-slate-900 text-white'
+                                  : 'text-slate-700 hover:bg-slate-100' }}">
+                        {{ __('app.queue.nav') }}
+                    </a>
+                @endif
+                @if (\App\Services\ProductGate::enabled('accounting'))
+                    <a href="{{ route('accounting.dashboard') }}"
+                       class="rounded-md px-3 py-2 text-sm font-medium
+                              {{ request()->routeIs('accounting.*')
+                                  ? 'bg-slate-900 text-white'
+                                  : 'text-slate-700 hover:bg-slate-100' }}">
+                        {{ __('app.accounting.nav') }}
+                    </a>
+                @endif
                 @if ($user?->is_admin)
                     <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
                         {{ __('app.admin.nav') }}
