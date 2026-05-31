@@ -203,6 +203,13 @@ class QueueController extends Controller
         $result = SlipVerifier::inspect($request->file('slip'));
 
         if (! $result['ok']) {
+            // A "duplicate" during a TEST actually proves the connection works:
+            // SlipOK read the slip and recognised it — the key/branch are right.
+            // Show it as success and nudge them to use a fresh slip.
+            if ($result['message'] === 'duplicate') {
+                return back()->with('status', __('app.admin.products.queue.slip_test_dup_ok'));
+            }
+
             // Translate the known failure tokens to an admin-facing hint; fall
             // back to the raw token for anything unmapped.
             $known = ['slipok_branch', 'slipok_auth', 'slipok_quota', 'bank_delay', 'bad_slip', 'slipok_unreachable'];

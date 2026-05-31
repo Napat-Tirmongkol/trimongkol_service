@@ -177,7 +177,7 @@ class SlipVerifier
                 1001 => 'slipok_branch',       // branch not found
                 1003, 1004, 1015 => 'slipok_quota',   // package expired / over quota
                 1002 => 'slipok_auth',         // bad API key
-                1005, 1006, 1007, 1008, 1011 => 'bad_slip', // not a valid payment slip
+                1000, 1005, 1006, 1007, 1008, 1011 => 'bad_slip', // missing/invalid slip data
                 default => $json['message'] ?? 'verify_failed',
             };
             return [false, $json['data'] ?? $json, $msg];

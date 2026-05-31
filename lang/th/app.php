@@ -338,6 +338,7 @@ return [
                 'slip_test_summary' => 'อ่านสลิปสำเร็จ — ยอด ฿:amount · ผู้รับ :receiver · :match',
                 'slip_test_match_ok' => 'บัญชีผู้รับตรงกับที่ตั้งไว้ ✓',
                 'slip_test_match_no' => 'บัญชีผู้รับไม่ตรงกับที่ตั้งไว้ ✗',
+                'slip_test_dup_ok' => '✓ เชื่อมต่อ SlipOK สำเร็จ! (สลิปใบนี้เคยทดสอบไปแล้ว ระบบกันสลิปซ้ำทำงานปกติ) — พร้อมเปิดรับชำระเงินจริงได้เลย',
                 'slip_err_slipok_branch' => 'ไม่พบสาขา (Branch ID) — ตรวจว่ากรอก Branch ID ถูกต้อง และไม่ได้สลับกับ API Key',
                 'slip_err_slipok_auth' => 'API Key ไม่ถูกต้อง — ตรวจสอบ SlipOK API Key อีกครั้ง',
                 'slip_err_slipok_quota' => 'แพ็กเกจ SlipOK หมดอายุหรือโควตาหมด — ต่ออายุที่ SlipOK',

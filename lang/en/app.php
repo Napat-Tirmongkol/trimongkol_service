@@ -338,6 +338,7 @@ return [
                 'slip_test_summary' => 'Slip read OK — amount ฿:amount · receiver :receiver · :match',
                 'slip_test_match_ok' => 'receiver matches your configured account ✓',
                 'slip_test_match_no' => "receiver does NOT match your configured account ✗",
+                'slip_test_dup_ok' => '✓ SlipOK connected! (this slip was already tested — the duplicate guard is working) — you can open real payments now.',
                 'slip_err_slipok_branch' => 'Branch not found — check the Branch ID is correct and not swapped with the API Key.',
                 'slip_err_slipok_auth' => 'Invalid API Key — double-check your SlipOK API Key.',
                 'slip_err_slipok_quota' => 'SlipOK package expired or out of quota — renew at SlipOK.',
