@@ -794,6 +794,7 @@ return [
         'voice_on' => 'Voice: on',
         'voice_off' => 'Voice: off',
         'voice_test' => 'Test sound',
+        'voice_no_thai' => 'This device has no Thai voice, so it may read in another language — install or enable a Thai voice in your system settings.',
         'voice_call' => 'Now calling number',
         'voice_counter' => 'at counter',
         'no_counters' => 'No counters yet — add at least one to start calling.',

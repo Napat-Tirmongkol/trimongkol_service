@@ -300,13 +300,16 @@ new class extends Component {
         Alpine.data('queueControl', () => ({
             audioCtx: null,
             voices: [],
+            callWord: @js(__('app.queue.voice_call', [], 'th')),
+            counterWord: @js(__('app.queue.voice_counter', [], 'th')),
+            sampleNumber: @js(($queue->prefix ? $queue->prefix.' ' : '').'1'),
 
             init() {
                 // Voices often aren't ready on first paint — (re)load them when
                 // the browser fires voiceschanged so we can pick a Thai voice.
                 this.loadVoices();
                 if ('speechSynthesis' in window) {
-                    window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                    window.speechSynthesis.addEventListener('voiceschanged', () => this.loadVoices());
                 }
 
                 // Re-announce only when THIS operator calls — other counters'
@@ -317,7 +320,7 @@ new class extends Component {
                     this.chime();
                     if (p && p.voice) {
                         const spoken = (p.prefix ? p.prefix + ' ' : '') + p.number;
-                        this.speak(`@js(__('app.queue.voice_call', [], 'th')) ${spoken} @js(__('app.queue.voice_counter', [], 'th')) ${p.counter}`);
+                        this.speak(this.callWord + ' ' + spoken + ' ' + this.counterWord + ' ' + p.counter);
                     }
                 });
                 // Browsers need a gesture before audio can play.
@@ -328,11 +331,26 @@ new class extends Component {
                 try { this.voices = window.speechSynthesis.getVoices() || []; } catch (e) { this.voices = []; }
             },
 
-            // Play a sample call so staff can check the speaker + Thai voice.
+            thaiVoice() {
+                if (!this.voices.length) this.loadVoices();
+                return this.voices.find((v) => {
+                    const lang = (v.lang || '').toLowerCase().replace('_', '-');
+                    const name = (v.name || '').toLowerCase();
+                    return lang.startsWith('th') || name.includes('thai') || name.includes('ไทย');
+                }) || null;
+            },
+
+            // Sample call so staff can verify the speaker + that a Thai voice
+            // actually exists on this device.
             testVoice() {
                 this.unlockAudio();
                 this.chime();
-                this.speak(@js(__('app.queue.voice_call', [], 'th').' '.($queue->prefix ? $queue->prefix.' ' : '').'1 '.__('app.queue.voice_counter', [], 'th').' 1'));
+                const ok = this.speak(this.callWord + ' ' + this.sampleNumber + ' ' + this.counterWord + ' 1');
+                if (!ok) {
+                    console.warn('Queue: no Thai TTS voice on this device. Available voices:',
+                        (this.voices || []).map((v) => v.name + ' [' + v.lang + ']'));
+                    if (window.flashToast) window.flashToast({ message: @js(__('app.queue.voice_no_thai')), type: 'warning', timer: 6000 });
+                }
             },
 
             unlockAudio() {
@@ -363,14 +381,15 @@ new class extends Component {
             },
 
             speak(text) {
-                if (!('speechSynthesis' in window)) return;
+                if (!('speechSynthesis' in window)) return false;
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'th-TH';
-                u.rate = 0.95;
-                const thai = this.voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('th'));
+                u.rate = 0.92;
+                const thai = this.thaiVoice();
                 if (thai) u.voice = thai;
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(u);
+                return !!thai;
             },
         }));
     </script>

@@ -214,11 +214,12 @@ new class extends Component {
         Alpine.data('queuePublic', () => ({
             audioCtx: null,
             voices: [],
+            turnWord: @js(__('app.queue.voice_your_turn', [], 'th')),
 
             init() {
                 this.loadVoices();
                 if ('speechSynthesis' in window) {
-                    window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                    window.speechSynthesis.addEventListener('voiceschanged', () => this.loadVoices());
                 }
 
                 this.$wire.on('queue-your-turn', (payload) => {
@@ -226,7 +227,7 @@ new class extends Component {
                     this.unlockAudio();
                     this.chime();
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                    this.speak(`@js(__('app.queue.voice_your_turn', [], 'th'))${p && p.counter ? ' ' + p.counter : ''}`);
+                    this.speak(this.turnWord + (p && p.counter ? ' ' + p.counter : ''));
                 });
                 window.addEventListener('pointerdown', () => this.unlockAudio(), { once: true });
             },
@@ -262,15 +263,25 @@ new class extends Component {
                 });
             },
 
+            thaiVoice() {
+                if (!this.voices.length) this.loadVoices();
+                return this.voices.find((v) => {
+                    const lang = (v.lang || '').toLowerCase().replace('_', '-');
+                    const name = (v.name || '').toLowerCase();
+                    return lang.startsWith('th') || name.includes('thai') || name.includes('ไทย');
+                }) || null;
+            },
+
             speak(text) {
-                if (!('speechSynthesis' in window)) return;
+                if (!('speechSynthesis' in window)) return false;
                 const u = new SpeechSynthesisUtterance(text);
                 u.lang = 'th-TH';
-                u.rate = 0.95;
-                const thai = this.voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('th'));
+                u.rate = 0.92;
+                const thai = this.thaiVoice();
                 if (thai) u.voice = thai;
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(u);
+                return !!thai;
             },
         }));
     </script>
