@@ -303,6 +303,8 @@ new class extends Component {
             callWord: @js(__('app.queue.voice_call', [], 'th')),
             counterWord: @js(__('app.queue.voice_counter', [], 'th')),
             sampleNumber: @js(($queue->prefix ? $queue->prefix.' ' : '').'1'),
+            googleTts: @js(\App\Services\Tts::enabled()),
+            ttsBase: @js(route('queues.tts', $queue)),
 
             init() {
                 // Voices often aren't ready on first paint — (re)load them when
@@ -320,7 +322,8 @@ new class extends Component {
                     this.chime();
                     if (p && p.voice) {
                         const spoken = (p.prefix ? p.prefix + ' ' : '') + p.number;
-                        this.speak(this.callWord + ' ' + spoken + ' ' + this.counterWord + ' ' + p.counter);
+                        const fallback = this.callWord + ' ' + spoken + ' ' + this.counterWord + ' ' + p.counter;
+                        this.play(this.ttsUrl('call', p.number, p.counter), fallback);
                     }
                 });
                 // Browsers need a gesture before audio can play.
@@ -340,11 +343,34 @@ new class extends Component {
                 }) || null;
             },
 
-            // Sample call so staff can verify the speaker + that a Thai voice
-            // actually exists on this device.
+            ttsUrl(type, number, counter) {
+                const q = new URLSearchParams({ type: type, number: number ?? 0, counter: counter ?? '' });
+                return this.ttsBase + '?' + q.toString();
+            },
+
+            // Play Google TTS audio when it's configured; fall back to the
+            // browser voice on any error. Fire and forget.
+            play(url, fallbackText) {
+                if (this.googleTts && url) {
+                    try {
+                        const audio = new Audio(url);
+                        audio.onerror = () => this.speak(fallbackText);
+                        const pr = audio.play();
+                        if (pr && pr.catch) pr.catch(() => this.speak(fallbackText));
+                        return;
+                    } catch (e) { /* fall through to the browser voice */ }
+                }
+                this.speak(fallbackText);
+            },
+
+            // Sample call so staff can verify the speaker + voice.
             testVoice() {
                 this.unlockAudio();
                 this.chime();
+                if (this.googleTts) {
+                    this.play(this.ttsUrl('call', 1, '1'), this.callWord + ' ' + this.sampleNumber + ' ' + this.counterWord + ' 1');
+                    return;
+                }
                 const ok = this.speak(this.callWord + ' ' + this.sampleNumber + ' ' + this.counterWord + ' 1');
                 if (!ok) {
                     console.warn('Queue: no Thai TTS voice on this device. Available voices:',

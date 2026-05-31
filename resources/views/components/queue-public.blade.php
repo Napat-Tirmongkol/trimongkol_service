@@ -215,6 +215,8 @@ new class extends Component {
             audioCtx: null,
             voices: [],
             turnWord: @js(__('app.queue.voice_your_turn', [], 'th')),
+            googleTts: @js(\App\Services\Tts::enabled()),
+            ttsBase: @js(route('queue.public.tts', $queue->public_token)),
 
             init() {
                 this.loadVoices();
@@ -227,13 +229,34 @@ new class extends Component {
                     this.unlockAudio();
                     this.chime();
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                    this.speak(this.turnWord + (p && p.counter ? ' ' + p.counter : ''));
+                    const fallback = this.turnWord + (p && p.counter ? ' ' + p.counter : '');
+                    this.play(this.ttsUrl('turn', (p && p.number) || 0, (p && p.counter) || ''), fallback);
                 });
                 window.addEventListener('pointerdown', () => this.unlockAudio(), { once: true });
             },
 
             loadVoices() {
                 try { this.voices = window.speechSynthesis.getVoices() || []; } catch (e) { this.voices = []; }
+            },
+
+            ttsUrl(type, number, counter) {
+                const q = new URLSearchParams({ type: type, number: number ?? 0, counter: counter ?? '' });
+                return this.ttsBase + '?' + q.toString();
+            },
+
+            // Play Google TTS audio when configured; fall back to the browser
+            // voice on any error.
+            play(url, fallbackText) {
+                if (this.googleTts && url) {
+                    try {
+                        const audio = new Audio(url);
+                        audio.onerror = () => this.speak(fallbackText);
+                        const pr = audio.play();
+                        if (pr && pr.catch) pr.catch(() => this.speak(fallbackText));
+                        return;
+                    } catch (e) { /* fall through to the browser voice */ }
+                }
+                this.speak(fallbackText);
             },
 
             unlockAudio() {

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin\Products;
 use App\Http\Controllers\Controller;
 use App\Models\Queue;
 use App\Models\QueueTicket;
+use App\Models\Setting;
 use App\Services\AuditLog;
+use App\Services\Tts;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 
 class QueueController extends Controller
 {
@@ -66,5 +69,36 @@ class QueueController extends Controller
 
         return redirect()->route('admin.queue.index')
             ->with('status', __('app.admin.products.queue.deleted'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate([
+            'provider' => 'required|in:browser,google',
+            'voice' => 'nullable|string|max:60',
+            'google_key' => 'nullable|string|max:300',
+        ]);
+
+        Setting::updateOrCreate(['key' => 'tts.provider'], ['value' => $data['provider']]);
+        Setting::updateOrCreate(['key' => 'tts.voice'], ['value' => $data['voice'] ?: 'th-TH-Neural2-C']);
+
+        // Only overwrite the key when a new one is typed — the form never
+        // echoes the stored key back. Encrypted at rest.
+        if (filled($data['google_key'] ?? null)) {
+            Setting::updateOrCreate(['key' => 'tts.google_key'], ['value' => Crypt::encryptString(trim($data['google_key']))]);
+        }
+
+        AuditLog::record('queue.tts.settings', null, 'TTS provider: '.$data['provider']);
+
+        return back()->with('status', __('app.admin.products.queue.tts_saved'));
+    }
+
+    public function testTts()
+    {
+        [$ok, $message] = Tts::test();
+
+        return $ok
+            ? back()->with('status', __('app.admin.products.queue.tts_test_ok'))
+            : back()->with('error', __('app.admin.products.queue.tts_test_fail', ['error' => $message]));
     }
 }

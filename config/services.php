@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Google Cloud Text-to-Speech for queue voice announcements. The API key
+    // is normally set in /admin (encrypted in site_settings); these env vars
+    // are an optional fallback for ops that prefer .env.
+    'google_tts' => [
+        'key' => env('GOOGLE_TTS_KEY'),
+        'voice' => env('GOOGLE_TTS_VOICE'),
+    ],
+
 ];

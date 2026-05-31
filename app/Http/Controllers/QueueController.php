@@ -6,6 +6,7 @@ use App\Models\Queue;
 use App\Models\QueueCounter;
 use App\Models\QueueTicket;
 use App\Services\CurrentWorkspace;
+use App\Services\Tts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -147,6 +148,20 @@ class QueueController extends Controller
         $this->authorizeQueue($queue);
 
         return view('queues.poster', compact('queue'));
+    }
+
+    /** Server-proxied Google TTS audio for the operator's announcements. */
+    public function tts(Request $request, Queue $queue)
+    {
+        $this->authorizeQueue($queue);
+
+        $mp3 = Tts::audioFor($queue, $request->query('type'), (int) $request->query('number', 0), (string) $request->query('counter', ''));
+        abort_if($mp3 === null, 404);
+
+        return response($mp3, 200, [
+            'Content-Type' => 'audio/mpeg',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     private function authorizeQueue(Queue $queue): void

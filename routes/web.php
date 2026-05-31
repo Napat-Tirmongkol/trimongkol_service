@@ -42,6 +42,7 @@ Route::get('/ocr', [PageController::class, 'ocr'])->name('ocr');
 // Public, login-free queue page — customers scan the QR / open the share link
 // to pull a ticket and watch the queue live. Resolved by unguessable token.
 Route::get('/q/{token}', [PublicQueueController::class, 'show'])->name('queue.public');
+Route::get('/q/{token}/tts', [PublicQueueController::class, 'tts'])->middleware('throttle:120,1')->name('queue.public.tts');
 
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])
     ->where('locale', 'th|en')
@@ -82,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
     Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
     Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
+    Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -213,6 +215,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/', [AdminQueueController::class, 'dashboard'])->name('dashboard');
                 Route::get('/queues', [AdminQueueController::class, 'index'])->name('index');
                 Route::delete('/queues/{queue}', [AdminQueueController::class, 'destroy'])->name('destroy');
+                Route::post('/settings', [AdminQueueController::class, 'updateSettings'])->name('settings');
+                Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
             });
 
             // Back-compat redirects for the old flat URLs.
