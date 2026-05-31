@@ -1,19 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between gap-3">
-            <div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.queue.heading') }}</h2>
                 <p class="mt-0.5 text-sm text-slate-500">{{ __('app.queue.subheading') }}</p>
             </div>
             @if ($workspace)
-                <div class="flex shrink-0 items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
                     <a href="{{ route('queues.billing') }}"
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-bold text-brand-700">{{ \App\Services\QueuePlan::name($workspace) }}</span>
                         {{ __('app.queue.billing.upgrade') }}
                     </a>
                     <a href="{{ route('queues.create') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
+                       class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 sm:flex-none">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         {{ __('app.queue.create') }}
                     </a>
