@@ -213,16 +213,26 @@ new class extends Component {
     <script>
         Alpine.data('queuePublic', () => ({
             audioCtx: null,
+            voices: [],
 
             init() {
+                this.loadVoices();
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                }
+
                 this.$wire.on('queue-your-turn', (payload) => {
                     const p = Array.isArray(payload) ? payload[0] : payload;
                     this.unlockAudio();
                     this.chime();
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                    this.speak(`@js(__('app.queue.voice_your_turn'))${p && p.counter ? ' ' + p.counter : ''}`);
+                    this.speak(`@js(__('app.queue.voice_your_turn', [], 'th'))${p && p.counter ? ' ' + p.counter : ''}`);
                 });
                 window.addEventListener('pointerdown', () => this.unlockAudio(), { once: true });
+            },
+
+            loadVoices() {
+                try { this.voices = window.speechSynthesis.getVoices() || []; } catch (e) { this.voices = []; }
             },
 
             unlockAudio() {
@@ -255,10 +265,10 @@ new class extends Component {
             speak(text) {
                 if (!('speechSynthesis' in window)) return;
                 const u = new SpeechSynthesisUtterance(text);
-                u.lang = @js(app()->getLocale() === 'th' ? 'th-TH' : 'en-US');
+                u.lang = 'th-TH';
                 u.rate = 0.95;
-                const voice = window.speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(u.lang.slice(0, 2)));
-                if (voice) u.voice = voice;
+                const thai = this.voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('th'));
+                if (thai) u.voice = thai;
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(u);
             },

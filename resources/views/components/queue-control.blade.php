@@ -178,17 +178,24 @@ new class extends Component {
     <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="text-sm font-semibold text-slate-500">{{ __('app.queue.your_counter') }}</div>
-            <button type="button" wire:click="toggleVoice"
-                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition
-                           {{ $queue->voice_enabled ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-slate-100 text-slate-500 ring-slate-200' }}">
-                @if ($queue->voice_enabled)
+            <div class="flex items-center gap-2">
+                <button type="button" @click="testVoice()"
+                        class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-200">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-                    {{ __('app.queue.voice_on') }}
-                @else
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-                    {{ __('app.queue.voice_off') }}
-                @endif
-            </button>
+                    {{ __('app.queue.voice_test') }}
+                </button>
+                <button type="button" wire:click="toggleVoice"
+                        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition
+                               {{ $queue->voice_enabled ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-slate-100 text-slate-500 ring-slate-200' }}">
+                    @if ($queue->voice_enabled)
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        {{ __('app.queue.voice_on') }}
+                    @else
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                        {{ __('app.queue.voice_off') }}
+                    @endif
+                </button>
+            </div>
         </div>
 
         @if ($counters->isEmpty())
@@ -292,8 +299,16 @@ new class extends Component {
     <script>
         Alpine.data('queueControl', () => ({
             audioCtx: null,
+            voices: [],
 
             init() {
+                // Voices often aren't ready on first paint — (re)load them when
+                // the browser fires voiceschanged so we can pick a Thai voice.
+                this.loadVoices();
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+                }
+
                 // Re-announce only when THIS operator calls — other counters'
                 // calls arrive via polling and must stay silent here.
                 this.$wire.on('queue-called', (payload) => {
@@ -302,11 +317,22 @@ new class extends Component {
                     this.chime();
                     if (p && p.voice) {
                         const spoken = (p.prefix ? p.prefix + ' ' : '') + p.number;
-                        this.speak(`@js(__('app.queue.voice_call')) ${spoken} @js(__('app.queue.voice_counter')) ${p.counter}`);
+                        this.speak(`@js(__('app.queue.voice_call', [], 'th')) ${spoken} @js(__('app.queue.voice_counter', [], 'th')) ${p.counter}`);
                     }
                 });
                 // Browsers need a gesture before audio can play.
                 window.addEventListener('pointerdown', () => this.unlockAudio(), { once: true });
+            },
+
+            loadVoices() {
+                try { this.voices = window.speechSynthesis.getVoices() || []; } catch (e) { this.voices = []; }
+            },
+
+            // Play a sample call so staff can check the speaker + Thai voice.
+            testVoice() {
+                this.unlockAudio();
+                this.chime();
+                this.speak(@js(__('app.queue.voice_call', [], 'th').' '.($queue->prefix ? $queue->prefix.' ' : '').'1 '.__('app.queue.voice_counter', [], 'th').' 1'));
             },
 
             unlockAudio() {
@@ -339,10 +365,10 @@ new class extends Component {
             speak(text) {
                 if (!('speechSynthesis' in window)) return;
                 const u = new SpeechSynthesisUtterance(text);
-                u.lang = @js(app()->getLocale() === 'th' ? 'th-TH' : 'en-US');
+                u.lang = 'th-TH';
                 u.rate = 0.95;
-                const voice = window.speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(u.lang.slice(0, 2)));
-                if (voice) u.voice = voice;
+                const thai = this.voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('th'));
+                if (thai) u.voice = thai;
                 window.speechSynthesis.cancel();
                 window.speechSynthesis.speak(u);
             },

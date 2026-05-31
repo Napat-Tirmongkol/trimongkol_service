@@ -793,6 +793,7 @@ return [
         'counters' => 'Counters',
         'voice_on' => 'Voice: on',
         'voice_off' => 'Voice: off',
+        'voice_test' => 'Test sound',
         'voice_call' => 'Now calling number',
         'voice_counter' => 'at counter',
         'no_counters' => 'No counters yet — add at least one to start calling.',
