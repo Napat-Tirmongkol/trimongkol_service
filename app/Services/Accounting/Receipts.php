@@ -169,6 +169,12 @@ class Receipts
         });
     }
 
+    /** Remaining balance on an invoice as a decimal string. */
+    public static function outstanding(Invoice $invoice): string
+    {
+        return Money::fromMinor(self::outstandingMinor($invoice));
+    }
+
     /** Invoice total minus everything already allocated to it, in minor units. */
     private static function outstandingMinor(Invoice $invoice): int
     {

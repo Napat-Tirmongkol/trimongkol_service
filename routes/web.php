@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
@@ -94,6 +97,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
     Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
     Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+
+    // Accounting product — workspace-scoped front-office (partners, invoices,
+    // receipts). Posting to the ledger is gated to owners/admins in the controllers.
+    Route::prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
+
+        Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
+        Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
+        Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
+
+        Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
+        Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
+        Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
+    });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
