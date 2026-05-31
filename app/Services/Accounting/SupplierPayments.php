@@ -189,6 +189,12 @@ class SupplierPayments
         ]);
     }
 
+    /** Remaining balance on a bill as a decimal string. */
+    public static function outstanding(Bill $bill): string
+    {
+        return Money::fromMinor(self::outstandingMinor($bill));
+    }
+
     private static function outstandingMinor(Bill $bill): int
     {
         $allocated = PaymentAllocation::query()

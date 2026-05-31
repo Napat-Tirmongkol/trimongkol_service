@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
@@ -118,6 +119,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
         Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
         Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
+
+        Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
+        Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
+        Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
+        Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
+        Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
+        Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
     });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
