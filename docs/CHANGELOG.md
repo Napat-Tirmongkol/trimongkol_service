@@ -4,6 +4,21 @@
 
 ---
 
+## 💵 ชำระเงินอัปเกรดแพ็กเกจคิวด้วย PromptPay + ตรวจสลิป SlipOK
+
+ลูกค้าอัปเกรดแพ็กเกจคิวเองได้ที่ **`/queues/billing`** — เลือกแพ็กเกจ → สแกน PromptPay QR (ระบุยอด) → อัปโหลดสลิป → ระบบเปิดแพ็กเกจ +30 วันอัตโนมัติ
+
+- **PromptPay QR ระบุยอด** สร้าง payload ฝั่ง server (`App\Support\PromptPay`, EMVCo + CRC16) แล้ว render เป็น QR ด้วย `qrcode` เดิม — ไม่เพิ่ม dependency
+- **ตรวจสลิปอัตโนมัติด้วย SlipOK** (`App\Services\SlipVerifier`, REST ฝั่ง server): เช็กยอด + กันสลิปซ้ำ (transRef unique) → ผ่านแล้วเปิดแพ็กเกจทันที
+- ถ้ายังไม่ตั้งค่า SlipOK → เก็บสลิปเป็น "รอตรวจสอบ" ให้แอดมินกดอนุมัติเองที่ **/admin → คิว → การชำระเงิน**
+- แพ็กเกจหมดอายุ (`queue_plan_until`) เด้งกลับ Free อัตโนมัติ; ต่ออายุก่อนหมดจะต่อท้ายวันให้
+- ตั้งค่าใน **/admin → คิว**: เปิด/ปิดการขาย, เลขพร้อมเพย์รับเงิน, ชื่อบัญชี, SlipOK key/branch (เข้ารหัสเก็บ)
+- โมเดล `QueuePayment` + 2 migration (`queue_plan_until`, `queue_payments`) — มี `down()` ครบ
+- คีย์ `app.queue.billing.*` + `app.admin.products.queue.{billing_*,pay_*,tab_payments}` (TH/EN)
+- ⚠️ หลัง deploy: **Run migrations + Clear caches** แล้วตั้งค่าที่ /admin → คิว
+
+---
+
 ## 💳 แพ็กเกจระบบคิว + Control Panel จัดการ plan/billing
 
 แยกแพ็กเกจเฉพาะระบบคิว (free / starter / pro / enterprise) ออกจากแพ็กเกจ Scanner — บังคับลิมิตทันที (ไม่ขึ้นกับ free-launch)
