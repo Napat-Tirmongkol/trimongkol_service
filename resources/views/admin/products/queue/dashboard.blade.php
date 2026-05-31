@@ -124,7 +124,10 @@
             {{-- Billing / SlipOK settings --}}
             @php
                 $billEnabled = setting('queue_billing.enabled') === '1';
+                $billMethod = setting('queue_billing.method') ?: 'promptpay_phone';
                 $promptpay = setting('queue_billing.promptpay');
+                $bankName = setting('queue_billing.bank_name');
+                $accountNo = setting('queue_billing.account_no');
                 $accountName = setting('queue_billing.account_name');
                 $slipBranch = setting('queue_billing.slipok_branch');
                 $slipKeySet = filled(setting('queue_billing.slipok_key')) || filled(config('services.slipok.key'));
@@ -138,7 +141,8 @@
                     <a href="{{ route('admin.queue.payments') }}" class="text-xs font-medium text-brand-700 hover:text-brand-800">{{ __('app.admin.products.queue.tab_payments') }} →</a>
                 </div>
 
-                <form method="POST" action="{{ route('admin.queue.billing-settings') }}" class="space-y-4 px-6 py-5">
+                <form method="POST" action="{{ route('admin.queue.billing-settings') }}" class="space-y-4 px-6 py-5"
+                      x-data="{ method: @js($billMethod) }">
                     @csrf
                     <label class="flex items-center gap-3">
                         <input type="hidden" name="enabled" value="0">
@@ -147,13 +151,39 @@
                         <span class="text-sm text-slate-700">{{ __('app.admin.products.queue.billing_enabled_label') }}</span>
                     </label>
 
+                    {{-- Receiving method --}}
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_method') }}</label>
+                        <select name="method" x-model="method"
+                                class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:w-72">
+                            <option value="promptpay_phone">{{ __('app.admin.products.queue.billing_method_phone') }}</option>
+                            <option value="promptpay_id">{{ __('app.admin.products.queue.billing_method_id') }}</option>
+                            <option value="bank_account">{{ __('app.admin.products.queue.billing_method_bank') }}</option>
+                        </select>
+                    </div>
+
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
+                        {{-- PromptPay value (phone / national ID) --}}
+                        <div x-show="method !== 'bank_account'">
                             <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_promptpay') }}</label>
-                            <input type="text" name="promptpay" value="{{ $promptpay }}" placeholder="0812345678"
+                            <input type="text" name="promptpay" value="{{ $promptpay }}"
+                                   :placeholder="method === 'promptpay_id' ? '1-2345-67890-12-3' : '0812345678'"
                                    class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.products.queue.billing_promptpay_hint') }}</p>
                         </div>
+
+                        {{-- Bank account fields --}}
+                        <div x-show="method === 'bank_account'" x-cloak>
+                            <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_bank_name') }}</label>
+                            <input type="text" name="bank_name" value="{{ $bankName }}" placeholder="กสิกรไทย"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div x-show="method === 'bank_account'" x-cloak>
+                            <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_account_no') }}</label>
+                            <input type="text" name="account_no" value="{{ $accountNo }}" placeholder="1328846019"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_account_name') }}</label>
                             <input type="text" name="account_name" value="{{ $accountName }}"
@@ -177,6 +207,7 @@
                         </div>
                     </div>
 
+                    <p class="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{{ __('app.admin.products.queue.billing_match_hint') }}</p>
                     <p class="text-xs text-slate-500">{{ __('app.admin.products.queue.billing_slipok_hint') }}</p>
 
                     <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.admin.products.queue.billing_save') }}</button>

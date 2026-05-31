@@ -14,7 +14,21 @@ class QueueBillingController extends Controller
 {
     public static function enabled(): bool
     {
-        return setting('queue_billing.enabled') === '1' && filled(setting('queue_billing.promptpay'));
+        return setting('queue_billing.enabled') === '1' && self::receiverConfigured();
+    }
+
+    /** promptpay_phone | promptpay_id | bank_account */
+    public static function method(): string
+    {
+        $m = setting('queue_billing.method');
+        return in_array($m, ['promptpay_phone', 'promptpay_id', 'bank_account'], true) ? $m : 'promptpay_phone';
+    }
+
+    public static function receiverConfigured(): bool
+    {
+        return self::method() === 'bank_account'
+            ? filled(setting('queue_billing.account_no'))
+            : filled(setting('queue_billing.promptpay'));
     }
 
     public function show()
@@ -50,15 +64,23 @@ class QueueBillingController extends Controller
         abort_unless(in_array($plan, QueuePlan::PURCHASABLE, true), 404);
 
         $price = QueuePlan::price($plan);
-        $promptpay = setting('queue_billing.promptpay');
-        $payload = PromptPay::payload($promptpay, $price);
+        $method = self::method();
+        $isBank = $method === 'bank_account';
+
+        // Bank-account mode shows the number as text for a manual transfer; a
+        // raw account number can't be encoded into a scannable PromptPay QR.
+        $payload = $isBank ? null : PromptPay::payload((string) setting('queue_billing.promptpay'), $price);
 
         return view('queues.pay', [
             'workspace' => $workspace,
             'plan' => $plan,
             'planConfig' => config("queue-plans.{$plan}"),
             'price' => $price,
+            'method' => $method,
+            'isBank' => $isBank,
             'promptpayPayload' => $payload,
+            'bankName' => setting('queue_billing.bank_name'),
+            'accountNo' => setting('queue_billing.account_no'),
             'accountName' => setting('queue_billing.account_name'),
             'slipAuto' => SlipVerifier::enabled(),
         ]);

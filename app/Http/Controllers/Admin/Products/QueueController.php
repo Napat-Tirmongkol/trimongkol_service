@@ -109,14 +109,20 @@ class QueueController extends Controller
     {
         $data = $request->validate([
             'enabled' => 'nullable|boolean',
+            'method' => 'required|in:promptpay_phone,promptpay_id,bank_account',
             'promptpay' => 'nullable|string|max:30',
+            'bank_name' => 'nullable|string|max:60',
+            'account_no' => 'nullable|string|max:30',
             'account_name' => 'nullable|string|max:120',
             'slipok_branch' => 'nullable|string|max:60',
             'slipok_key' => 'nullable|string|max:300',
         ]);
 
         Setting::updateOrCreate(['key' => 'queue_billing.enabled'], ['value' => $request->boolean('enabled') ? '1' : '0']);
+        Setting::updateOrCreate(['key' => 'queue_billing.method'], ['value' => $data['method']]);
         Setting::updateOrCreate(['key' => 'queue_billing.promptpay'], ['value' => trim($data['promptpay'] ?? '')]);
+        Setting::updateOrCreate(['key' => 'queue_billing.bank_name'], ['value' => trim($data['bank_name'] ?? '')]);
+        Setting::updateOrCreate(['key' => 'queue_billing.account_no'], ['value' => trim($data['account_no'] ?? '')]);
         Setting::updateOrCreate(['key' => 'queue_billing.account_name'], ['value' => trim($data['account_name'] ?? '')]);
         Setting::updateOrCreate(['key' => 'queue_billing.slipok_branch'], ['value' => trim($data['slipok_branch'] ?? '')]);
 
