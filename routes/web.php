@@ -109,6 +109,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
         Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
+        Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
+        Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
 
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');

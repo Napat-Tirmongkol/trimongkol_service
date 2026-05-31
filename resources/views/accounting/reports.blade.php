@@ -5,6 +5,7 @@
                 <a href="{{ route('accounting.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.heading') }}</a>
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.reports') }}</h2>
                 <p class="mt-0.5 text-sm text-slate-500">{{ __('app.accounting.reports_sub') }}</p>
+                <a href="{{ route('accounting.reports.tax') }}" class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:text-brand-800">{{ __('app.accounting.tax_reports') }} →</a>
             </div>
             <form method="GET" action="{{ route('accounting.reports') }}" class="flex flex-wrap items-end gap-2 sm:shrink-0">
                 <div>
