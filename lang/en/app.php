@@ -277,7 +277,7 @@ return [
                 'tts_key' => 'Google API Key',
                 'tts_key_set' => 'configured',
                 'tts_key_keep' => 'leave blank to keep current',
-                'tts_key_hint' => 'The key is stored encrypted and used server-side only (never exposed to the browser).',
+                'tts_key_hint' => 'The key is stored encrypted and used server-side only (never exposed to the browser). • In Google, set the key\'s Application restrictions to "None" or "IP addresses" — not "HTTP referrers", since calls come from the server.',
                 'tts_save' => 'Save voice settings',
                 'tts_saved' => 'Voice settings saved',
                 'tts_test' => 'Test key with Google',
