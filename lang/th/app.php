@@ -128,6 +128,7 @@ return [
         'tab_security' => 'ความปลอดภัย',
         'tab_system' => 'System',
         'tab_workspaces' => 'Workspaces',
+        'tab_billing' => 'แพ็กเกจ & บิล',
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
         'owner' => 'เจ้าของ',
@@ -156,6 +157,9 @@ return [
             'plan_trial_days_hint' => 'ใช้เฉพาะเมื่อ status = trial — ที่อื่นจะถูก ignore',
             'plan_save' => 'บันทึก subscription',
             'plan_updated' => 'อัปเดตแพ็คเกจ workspace เรียบร้อย',
+            'queue_plan_heading' => 'แพ็กเกจระบบคิว (แยกต่างหาก)',
+            'queue_plan_label' => 'เลือกแพ็กเกจคิว',
+            'queue_plan_updated' => 'อัปเดตแพ็กเกจคิวแล้ว',
         ],
 
         'system' => [

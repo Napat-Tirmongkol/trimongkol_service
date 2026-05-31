@@ -20,6 +20,8 @@ new class extends Component {
     #[Locked]
     public ?string $announcedStatus = null;
 
+    public ?string $limitMessage = null;
+
     public function mount(Queue $queue): void
     {
         $this->queue = $queue;

@@ -128,6 +128,7 @@ return [
         'tab_security' => 'Security',
         'tab_system' => 'System',
         'tab_workspaces' => 'Workspaces',
+        'tab_billing' => 'Plans & Billing',
         'stat_workspaces' => 'Workspaces',
         'nav_products' => 'Products',
         'owner' => 'Owner',
@@ -156,6 +157,9 @@ return [
             'plan_trial_days_hint' => 'Used only when status = trial — ignored otherwise.',
             'plan_save' => 'Save subscription',
             'plan_updated' => 'Subscription updated.',
+            'queue_plan_heading' => 'Queue plan (billed separately)',
+            'queue_plan_label' => 'Queue plan',
+            'queue_plan_updated' => 'Queue plan updated',
         ],
 
         'system' => [
