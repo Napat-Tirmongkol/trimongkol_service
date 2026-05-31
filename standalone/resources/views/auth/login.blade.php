@@ -164,9 +164,9 @@
 
         <p class="mt-6 text-pretty text-xs text-slate-500">
             {{ __('app.auth.terms_prefix') }}
-            <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
+            <a href="#" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
             {{ __('app.auth.terms_and') }}
-            <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.privacy') }}</a>.
+            <a href="#" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.privacy') }}</a>.
         </p>
 
     @else
@@ -208,9 +208,9 @@
 
         <p class="mt-6 text-pretty text-xs text-slate-500">
             {{ __('app.auth.terms_prefix') }}
-            <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
+            <a href="#" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.terms') }}</a>
             {{ __('app.auth.terms_and') }}
-            <a href="{{ route('about') }}" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.privacy') }}</a>.
+            <a href="#" class="underline underline-offset-2 hover:text-slate-700">{{ __('app.auth.privacy') }}</a>.
         </p>
 
     @endif

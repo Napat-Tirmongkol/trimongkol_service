@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#1f47e6">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', __('app.classrooms.heading')) — {{ config('app.name') }}</title>
+    <title>@yield('title', __('app.accounting.heading')) — {{ config('app.name') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,11 +14,8 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @include('partials.product-tour')
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
-    <x-impersonation-banner />
-    <x-trial-banner />
     @include('layouts.navigation')
 
     @isset($header)
