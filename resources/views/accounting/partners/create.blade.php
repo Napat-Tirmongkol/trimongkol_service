@@ -6,7 +6,7 @@
     <div class="py-8">
         <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <form method="POST" action="{{ route('accounting.partners.store') }}" class="space-y-5">
+                <form method="POST" action="{{ route('accounting.partners.store') }}" x-data="{ submitting: false }" @submit="submitting = true" class="space-y-5">
                     @csrf
 
                     <div>
@@ -59,7 +59,10 @@
 
                     <div class="flex items-center justify-end gap-3 pt-2">
                         <a href="{{ route('accounting.partners.index') }}" class="text-sm text-slate-600 hover:text-slate-900">{{ __('app.common.cancel') }}</a>
-                        <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.common.save') }}</button>
+                        <button type="submit" :disabled="submitting" class="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                            <svg x-show="submitting" x-cloak class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+                            {{ __('app.common.save') }}
+                        </button>
                     </div>
                 </form>
             </div>

@@ -91,7 +91,7 @@
             @elseif (in_array($invoice->status, ['issued', 'partial'], true) && $canPost)
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.record_payment') }}</h3>
-                    <form method="POST" action="{{ route('accounting.invoices.receipts.store', $invoice) }}" class="mt-4 space-y-4">
+                    <form method="POST" action="{{ route('accounting.invoices.receipts.store', $invoice) }}" x-data="{ submitting: false }" @submit="submitting = true" class="mt-4 space-y-4">
                         @csrf
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
@@ -125,7 +125,10 @@
                             <p class="mt-1 text-xs text-slate-500">{{ __('app.accounting.receipt_hint') }}</p>
                         </div>
                         <div class="flex justify-end">
-                            <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.accounting.record_payment') }}</button>
+                            <button type="submit" :disabled="submitting" class="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                                <svg x-show="submitting" x-cloak class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+                                {{ __('app.accounting.record_payment') }}
+                            </button>
                         </div>
                     </form>
                 </div>

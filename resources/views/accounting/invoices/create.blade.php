@@ -11,7 +11,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('accounting.invoices.store') }}" x-data="invoiceForm()" class="space-y-6">
+            <form method="POST" action="{{ route('accounting.invoices.store') }}" x-data="invoiceForm()" @submit="submitting = true" class="space-y-6">
                 @csrf
 
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -33,63 +33,48 @@
                 </div>
 
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead>
-                                <tr class="text-left text-xs uppercase tracking-wider text-slate-500">
-                                    <th class="pb-2 pr-2 font-medium">{{ __('app.accounting.line_desc') }}</th>
-                                    <th class="px-2 pb-2 font-medium">{{ __('app.accounting.line_account') }}</th>
-                                    <th class="px-2 pb-2 text-right font-medium">{{ __('app.accounting.line_qty') }}</th>
-                                    <th class="px-2 pb-2 text-right font-medium">{{ __('app.accounting.line_price') }}</th>
-                                    <th class="px-2 pb-2 font-medium">{{ __('app.accounting.line_tax') }}</th>
-                                    <th class="px-2 pb-2 text-right font-medium">{{ __('app.accounting.col_total') }}</th>
-                                    <th class="pb-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="(line, i) in lines" :key="i">
-                                    <tr class="align-top">
-                                        <td class="py-1.5 pr-2">
-                                            <input type="text" x-model="line.description" :name="`lines[${i}][description]`"
-                                                   class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                        </td>
-                                        <td class="px-2 py-1.5">
-                                            <select x-model="line.account_id" :name="`lines[${i}][account_id]`" required
-                                                    class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <option value="">—</option>
-                                                @foreach ($revenueAccounts as $acc)
-                                                    <option value="{{ $acc->id }}">{{ $acc->code }} {{ $acc->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="px-2 py-1.5">
-                                            <input type="number" step="0.01" min="0" x-model="line.quantity" :name="`lines[${i}][quantity]`" required
-                                                   class="block w-20 rounded-md border-slate-300 text-right text-sm tabular-nums shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                        </td>
-                                        <td class="px-2 py-1.5">
-                                            <input type="number" step="0.01" min="0" x-model="line.unit_price" :name="`lines[${i}][unit_price]`" required
-                                                   class="block w-28 rounded-md border-slate-300 text-right text-sm tabular-nums shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                        </td>
-                                        <td class="px-2 py-1.5">
-                                            <select x-model="line.tax_code_id" :name="`lines[${i}][tax_code_id]`"
-                                                    class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <option value="">{{ __('app.accounting.no_tax') }}</option>
-                                                @foreach ($vatCodes as $code)
-                                                    <option value="{{ $code->id }}">{{ $code->code }} ({{ rtrim(rtrim(number_format((float) $code->rate, 3), '0'), '.') }}%)</option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="px-2 py-1.5 text-right align-middle font-medium tabular-nums text-slate-900" x-text="money(lineAmount(line))"></td>
-                                        <td class="py-1.5 pl-1 align-middle">
-                                            <button type="button" @click="removeLine(i)" x-show="lines.length > 1"
-                                                    class="grid h-7 w-7 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="remove">
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                    <div class="space-y-3">
+                        <template x-for="(line, i) in lines" :key="i">
+                            <div class="rounded-xl border border-slate-200 p-3 sm:p-2.5">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    <input type="text" x-model="line.description" :name="`lines[${i}][description]`"
+                                           placeholder="{{ __('app.accounting.line_desc') }}"
+                                           class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:flex-1">
+                                    <select x-model="line.account_id" :name="`lines[${i}][account_id]`" required
+                                            aria-label="{{ __('app.accounting.line_account') }}"
+                                            class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:w-44">
+                                        <option value="">{{ __('app.accounting.line_account') }}</option>
+                                        @foreach ($revenueAccounts as $acc)
+                                            <option value="{{ $acc->id }}">{{ $acc->code }} {{ $acc->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex gap-2">
+                                        <input type="number" step="0.01" min="0" x-model="line.quantity" :name="`lines[${i}][quantity]`" required
+                                               placeholder="{{ __('app.accounting.line_qty') }}" aria-label="{{ __('app.accounting.line_qty') }}"
+                                               class="block w-20 rounded-md border-slate-300 text-right text-sm tabular-nums shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <input type="number" step="0.01" min="0" x-model="line.unit_price" :name="`lines[${i}][unit_price]`" required
+                                               placeholder="{{ __('app.accounting.line_price') }}" aria-label="{{ __('app.accounting.line_price') }}"
+                                               class="block w-full rounded-md border-slate-300 text-right text-sm tabular-nums shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:w-28">
+                                    </div>
+                                    <select x-model="line.tax_code_id" :name="`lines[${i}][tax_code_id]`"
+                                            aria-label="{{ __('app.accounting.line_tax') }}"
+                                            class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:w-32">
+                                        <option value="">{{ __('app.accounting.no_tax') }}</option>
+                                        @foreach ($vatCodes as $code)
+                                            <option value="{{ $code->id }}">{{ $code->code }} ({{ rtrim(rtrim(number_format((float) $code->rate, 3), '0'), '.') }}%)</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+                                        <span class="text-xs text-slate-400 sm:hidden">{{ __('app.accounting.col_total') }}</span>
+                                        <span class="font-medium tabular-nums text-slate-900 sm:w-24 sm:text-right" x-text="money(lineAmount(line))"></span>
+                                        <button type="button" @click="removeLine(i)" x-show="lines.length > 1"
+                                                class="grid h-7 w-7 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="ลบรายการ">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     <button type="button" @click="addLine()"
@@ -121,7 +106,10 @@
 
                 <div class="flex items-center justify-end gap-3">
                     <a href="{{ route('accounting.invoices.index') }}" class="text-sm text-slate-600 hover:text-slate-900">{{ __('app.common.cancel') }}</a>
-                    <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.accounting.save_draft') }}</button>
+                    <button type="submit" :disabled="submitting" class="inline-flex items-center gap-2 rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+                        <svg x-show="submitting" x-cloak class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+                        {{ __('app.accounting.save_draft') }}
+                    </button>
                 </div>
             </form>
         </div>
@@ -130,6 +118,7 @@
     <script>
         function invoiceForm() {
             return {
+                submitting: false,
                 lines: [{ description: '', quantity: 1, unit_price: '', account_id: '', tax_code_id: '' }],
                 whtCode: '',
                 vatRates: @js($vatCodes->pluck('rate', 'id')),
