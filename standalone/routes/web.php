@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
@@ -35,6 +36,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
         Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
+
+        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/create', [AccountingAccountController::class, 'create'])->name('accounts.create');
+        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
+        Route::get('/accounts/{account}/edit', [AccountingAccountController::class, 'edit'])->name('accounts.edit');
+        Route::patch('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
 
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
