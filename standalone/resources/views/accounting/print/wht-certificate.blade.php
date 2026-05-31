@@ -1,5 +1,10 @@
 <x-print-layout :title="'หนังสือรับรองหัก ณ ที่จ่าย ' . $certificate->no">
-    @php $companyName = setting('company.name') ?: (setting('brand.name') ?: config('app.name')); @endphp
+    @php
+        $ws = $certificate->workspace;
+        $companyName = ($ws?->company_name) ?: (setting('company.name') ?: config('app.name'));
+        $companyTaxId = ($ws?->tax_id) ?: setting('company.tax_id');
+        $companyAddress = ($ws?->company_address) ?: setting('company.address');
+    @endphp
 
     <div class="flex items-start justify-between border-b-2 border-slate-900 pb-4">
         <div>
@@ -16,8 +21,8 @@
         <div class="rounded-lg border border-slate-200 p-3">
             <div class="text-xs uppercase tracking-wider text-slate-400">ผู้จ่ายเงิน / ผู้หักภาษี (Payer)</div>
             <div class="mt-1 font-semibold text-slate-900">{{ $companyName }}</div>
-            @if (setting('company.tax_id'))<div class="text-xs text-slate-500">เลขผู้เสียภาษี {{ setting('company.tax_id') }}</div>@endif
-            @if (setting('company.address'))<div class="mt-0.5 whitespace-pre-line text-xs text-slate-500">{{ setting('company.address') }}</div>@endif
+            @if ($companyTaxId)<div class="text-xs text-slate-500">เลขผู้เสียภาษี {{ $companyTaxId }}</div>@endif
+            @if ($companyAddress)<div class="mt-0.5 whitespace-pre-line text-xs text-slate-500">{{ $companyAddress }}</div>@endif
         </div>
         <div class="rounded-lg border border-slate-200 p-3">
             <div class="text-xs uppercase tracking-wider text-slate-400">ผู้ถูกหักภาษี (Payee)</div>

@@ -48,12 +48,9 @@
                     </div>
                     <h3 class="mt-4 text-lg font-semibold text-slate-900">{{ __('app.accounting.setup_title') }}</h3>
                     <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">{{ __('app.accounting.setup_desc') }}</p>
-                    <form method="POST" action="{{ route('accounting.setup') }}" class="mt-6" data-confirm="{{ __('app.accounting.setup_confirm') }}">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
-                            {{ __('app.accounting.setup_cta') }}
-                        </button>
-                    </form>
+                    <a href="{{ route('accounting.onboarding') }}" class="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
+                        {{ __('app.accounting.setup_cta') }}
+                    </a>
                 </div>
             @else
                 @php $baht = fn ($v) => ((float) $v < 0 ? '-฿' : '฿').number_format(abs((float) $v), 2); @endphp

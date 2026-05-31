@@ -4,6 +4,7 @@ use App\Http\Controllers\Accounting\AccountController as AccountingAccountContro
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
@@ -29,7 +30,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
-        Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
+        Route::get('/onboarding', [AccountingOnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
         Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
