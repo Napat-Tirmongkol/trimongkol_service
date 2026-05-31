@@ -4,6 +4,22 @@
 
 ---
 
+## 📒 ระบบบัญชี (เฟส 1) — แกนบัญชีคู่ + ผังบัญชีของบริษัท
+
+วางรากฐาน product ใหม่ **"ระบบบัญชี"** (multi-tenant, scope ด้วย `workspace_id`) — เฟส 1 เน้นแกน double-entry ที่ถูกต้องและทดสอบได้ ยังไม่มี UI ฝั่ง tenant (เฟส 2)
+
+- **6 ตาราง** (`accounting_accounts`, `_periods`, `_journals`, `_journal_lines`, `_departments`, `_activity_log`) — เงินเป็น `DECIMAL(18,2)` ทุกช่อง, มี `down()` ครบ, scope ทุกตารางด้วย `workspace_id`
+- **`App\Services\Accounting\LedgerPosting`** = ทางเดียวที่เขียน ledger ได้: ห่อ `DB::transaction` (ACID), บังคับ **Debit = Credit** ด้วยเลขจำนวนเต็มสตางค์ (ไม่มี float / ไม่พึ่ง bcmath), post ได้เฉพาะงวดที่เปิด, กันบัญชีข้าม workspace
+- **Immutable ledger**: journal ที่ post แล้วแก้/ลบไม่ได้ (guard ใน model) — แก้ด้วย `reverse()` ที่สร้างรายการกลับด้านอ้างกลับ; activity log เป็น append-only
+- **ผังบัญชีจริงของบริษัท 54 บัญชี** (`ChartOfAccounts`) ถอดจากงบทดลอง 31-12-2568 — tag บทบาทให้ engine (ar/ap control, VAT ซื้อ-ขาย + deferred, WHT ภงด.3/53, กำไรสะสม ฯลฯ) + flag ค่าใช้จ่ายต้องห้าม; seed แบบ idempotent
+- **`departments`** เป็น dimension เผื่อ cost center (nullable — ไม่บังคับกรอก)
+- Admin oversight ที่ **/admin → บัญชี** (ลงทะเบียนใน `config/admin-products.php`, ใช้สิทธิ์ `products.moderate` เดิม) + คีย์ `app.admin.products.accounting.*` (TH/EN)
+- **2 ชุดเทสต์** (`tests/Feature/Accounting`): พิสูจน์ดุล / กันไม่ดุล + rollback, immutability, ปิดงวด, isolation ข้าม workspace, reverse และ seed ผังบัญชี
+- ℹ️ ต้องเปิด `ext-bcmath` ไหม? **ไม่ต้อง** — คำนวณเงินเป็น integer สตางค์ล้วน
+- ⚠️ หลัง deploy: **Run migrations** ที่ /admin → ระบบ (เฟส 2 ค่อยทำ UI ออกเอกสาร + AR/AP + ภาษี)
+
+---
+
 ## 💵 ชำระเงินอัปเกรดแพ็กเกจคิวด้วย PromptPay + ตรวจสลิป SlipOK
 
 ลูกค้าอัปเกรดแพ็กเกจคิวเองได้ที่ **`/queues/billing`** — เลือกแพ็กเกจ → สแกน PromptPay QR (ระบุยอด) → อัปโหลดสลิป → ระบบเปิดแพ็กเกจ +30 วันอัตโนมัติ

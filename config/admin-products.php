@@ -29,4 +29,14 @@ return [
             ['route' => 'admin.queue.payments', 'label_key' => 'app.admin.products.queue.tab_payments', 'pattern' => 'admin.queue.payments*'],
         ],
     ],
+
+    'accounting' => [
+        'label_key' => 'app.admin.products.accounting.label',
+        'desc_key' => 'app.admin.products.accounting.desc',
+        'route' => 'admin.accounting.dashboard',
+        'pattern' => 'admin.accounting.*',
+        'tabs' => [
+            ['route' => 'admin.accounting.dashboard', 'label_key' => 'app.admin.products.accounting.tab_overview', 'pattern' => 'admin.accounting.dashboard'],
+        ],
+    ],
 ];

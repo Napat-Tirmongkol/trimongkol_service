@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
 use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
@@ -259,6 +260,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
                 Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');
                 Route::post('/payments/{payment}/reject', [AdminQueueController::class, 'rejectPayment'])->name('payments.reject');
+            });
+
+            Route::prefix('products/accounting')->name('accounting.')->group(function () {
+                Route::get('/', [AdminAccountingController::class, 'dashboard'])->name('dashboard');
             });
 
             // Back-compat redirects for the old flat URLs.
