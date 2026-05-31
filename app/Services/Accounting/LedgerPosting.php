@@ -45,8 +45,8 @@ class LedgerPosting
             $rows = [];
 
             foreach ($lines as $i => $line) {
-                $debit = self::toSatang($line['debit'] ?? 0);
-                $credit = self::toSatang($line['credit'] ?? 0);
+                $debit = Money::toMinor($line['debit'] ?? 0);
+                $credit = Money::toMinor($line['credit'] ?? 0);
 
                 if ($debit < 0 || $credit < 0) {
                     throw new UnbalancedJournalException('Line amounts cannot be negative.');
@@ -64,8 +64,8 @@ class LedgerPosting
                     'workspace_id' => $workspace->id,
                     'line_no' => $i + 1,
                     'account_id' => $accounts[$line['account_id']]->id,
-                    'debit' => self::fromSatang($debit),
-                    'credit' => self::fromSatang($credit),
+                    'debit' => Money::fromMinor($debit),
+                    'credit' => Money::fromMinor($credit),
                     'description' => $line['description'] ?? null,
                     'department_id' => $line['department_id'] ?? null,
                     'partner_id' => $line['partner_id'] ?? null,
@@ -76,8 +76,8 @@ class LedgerPosting
             if ($totalDebit !== $totalCredit) {
                 throw new UnbalancedJournalException(sprintf(
                     'Journal does not balance: debit %s ≠ credit %s.',
-                    self::fromSatang($totalDebit),
-                    self::fromSatang($totalCredit),
+                    Money::fromMinor($totalDebit),
+                    Money::fromMinor($totalCredit),
                 ));
             }
             if ($totalDebit <= 0) {
@@ -112,7 +112,7 @@ class LedgerPosting
 
             self::log($workspace, 'journal.posted', $journal, [
                 'no' => $journal->no,
-                'amount' => self::fromSatang($totalDebit),
+                'amount' => Money::fromMinor($totalDebit),
                 'lines' => count($rows),
             ]);
 
@@ -214,32 +214,6 @@ class LedgerPosting
         $seq = $last ? ((int) substr($last, strlen($prefix))) + 1 : 1;
 
         return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
-    }
-
-    /** Parse a money value into integer satang with no float arithmetic. */
-    private static function toSatang($value): int
-    {
-        $s = trim((string) $value);
-        $negative = str_starts_with($s, '-');
-        $s = ltrim($s, '+-');
-
-        if ($s === '' || ! preg_match('/^\d*(\.\d*)?$/', $s)) {
-            throw new LedgerException("Invalid money value: {$value}");
-        }
-
-        [$whole, $frac] = array_pad(explode('.', $s, 2), 2, '');
-        $frac = substr(str_pad($frac, 2, '0'), 0, 2);          // exactly 2 dp
-        $satang = ((int) $whole) * 100 + (int) $frac;
-
-        return $negative ? -$satang : $satang;
-    }
-
-    private static function fromSatang(int $satang): string
-    {
-        $sign = $satang < 0 ? '-' : '';
-        $satang = abs($satang);
-
-        return $sign.intdiv($satang, 100).'.'.str_pad((string) ($satang % 100), 2, '0', STR_PAD_LEFT);
     }
 
     private static function log(Workspace $workspace, string $action, Journal $journal, array $meta): void

@@ -4,6 +4,22 @@
 
 ---
 
+## 🧾 ระบบบัญชี (เฟส 2.1–2.3) — คู่ค้า + ภาษี + ใบกำกับขาย (AR)
+
+ต่อจากเฟส 1 — เริ่มงาน front-office: ออกใบกำกับภาษีขายแล้ว **ลงบัญชีอัตโนมัติ**
+
+- **4 ตาราง** (`accounting_partners`, `_tax_codes`, `_invoices`, `_invoice_lines`) — เงิน `DECIMAL`, scope ด้วย `workspace_id`, มี `down()` ครบ
+- **คู่ค้า** (`Partner`) — ลูกค้า/ผู้ขาย, เลขภาษี 13 หลัก + สาขา, credit term (คำนวณ due date ให้), ผูกบัญชีคุม AR/AP
+- **ภาษี** (`TaxCode` + `TaxCodes::seedDefault`) — VAT7 / VAT7P / WHT3 / WHT5 ผูกบัญชีที่ tag ไว้ตั้งแต่เฟส 1 (ภาษีขาย/ซื้อ/หัก ณ ที่จ่าย) seed แบบ idempotent
+- **ใบกำกับขาย** (`SalesInvoicing`) — `create()` ร่าง + คำนวณ subtotal/VAT/WHT/total · `issue()` post ผ่าน `LedgerPosting`: **เดบิตลูกหนี้ / เครดิตรายได้ + ภาษีขาย** แล้วผูก journal กลับเข้า invoice (polymorphic source) · เลขที่รันตามปี พ.ศ. (`INV2569-xxxxx`)
+- **WHT บนใบขาย = ข้อมูลประกอบ** (ลูกค้าหักตอนจ่าย) — ยังไม่ลงบัญชีตอนออกบิล รอเฟสรับเงิน (2.4)
+- **`Money`** — สกัดตัวคำนวณเลขสตางค์ (`toMinor`/`fromMinor`/`percentage`/`lineAmount`) ใช้ร่วมกับ `LedgerPosting` (เลิกโค้ดซ้ำ) ปัด % ภาษีครึ่งขึ้นด้วย integer ล้วน
+- **เทสต์ใหม่ 9** (`SalesInvoicingTest` + `MoneyTest`) → รวมทั้งโมดูลบัญชี **23 เทสต์ผ่าน**
+- ยังไม่มี UI ฝั่ง tenant (เฟส 2.6) — ใบที่ issue แล้วจะโผล่เป็น journal ที่ `/admin → บัญชี`
+- ⚠️ หลัง deploy: **Run migrations**
+
+---
+
 ## 📒 ระบบบัญชี (เฟส 1) — แกนบัญชีคู่ + ผังบัญชีของบริษัท
 
 วางรากฐาน product ใหม่ **"ระบบบัญชี"** (multi-tenant, scope ด้วย `workspace_id`) — เฟส 1 เน้นแกน double-entry ที่ถูกต้องและทดสอบได้ ยังไม่มี UI ฝั่ง tenant (เฟส 2)
