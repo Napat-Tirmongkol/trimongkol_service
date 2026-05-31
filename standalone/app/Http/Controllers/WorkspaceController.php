@@ -54,10 +54,10 @@ class WorkspaceController extends Controller
             'joined_at' => now(),
         ]);
 
-        // 14-day Basic trial on every new workspace.
+        // 14-day Pro trial on every new workspace.
         Subscription::create([
             'workspace_id' => $workspace->id,
-            'plan_key' => 'basic',
+            'plan_key' => \App\Models\Plan::PRO,
             'status' => Subscription::STATUS_TRIAL,
             'trial_ends_at' => now()->addDays(14),
         ]);

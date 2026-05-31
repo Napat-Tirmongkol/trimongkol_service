@@ -1,84 +1,84 @@
 <?php
 
 /**
- * Subscription plan catalog. Edit prices/limits here — there's no DB
- * row to keep in sync. Limit checks live in App\Services\PlanGate.
+ * Subscription plan catalog for Ledgerly. Edit prices/limits here — there's no
+ * DB row to keep in sync. Limit checks live in App\Services\PlanGate.
  *
  * `unlimited`: use null. Code treats null as "no cap".
+ * Limit dimensions in use: max_members (team seats per workspace),
+ * max_invoices_per_month (issued sales documents), max_workspaces is enforced
+ * elsewhere if needed.
  */
 
 return [
     'free' => [
         'name' => 'Free',
         'price' => 0,            // THB / month
-        'tagline' => 'เริ่มต้นใช้งาน — สำหรับครูคนเดียว ห้องไม่กี่ห้อง',
-        'tagline_en' => 'Get started — for solo teachers with a few classrooms.',
+        'tagline' => 'เริ่มต้นใช้งาน — สำหรับกิจการเล็กที่เพิ่งเริ่ม',
+        'tagline_en' => 'Get started — for small businesses just beginning.',
         'features' => [
-            'ห้องเรียนสูงสุด 5 ห้อง',
-            'ครูในทีม 1 คน',
-            'นักเรียนสูงสุด 40 คน/ห้อง',
-            'สแกน QR + ตรวจการบ้าน + เช็คชื่อ',
+            'ออกใบกำกับ/ใบเสร็จสูงสุด 20 ใบ/เดือน',
+            'ผู้ใช้ในทีม 1 คน',
+            'ผังบัญชี + ลูกหนี้-เจ้าหนี้',
+            'รายงานภาษีซื้อ-ขาย + หัก ณ ที่จ่าย',
         ],
         'features_en' => [
-            'Up to 5 classrooms',
+            'Up to 20 invoices/receipts per month',
             '1 team member',
-            'Up to 40 students per classroom',
-            'QR scan + grading + attendance',
+            'Chart of accounts + AR/AP',
+            'VAT & withholding tax reports',
         ],
         'limits' => [
-            'max_classrooms' => 5,
             'max_members' => 1,
-            'max_students_per_classroom' => 40,
-        ],
-    ],
-
-    'basic' => [
-        'name' => 'Basic',
-        'price' => 199,
-        'tagline' => 'สำหรับโรงเรียนเล็ก — มีทีม + ห้องเยอะขึ้น',
-        'tagline_en' => 'For small schools — team plus more classrooms.',
-        'features' => [
-            'ห้องเรียนสูงสุด 20 ห้อง',
-            'ครูในทีม 5 คน',
-            'นักเรียนสูงสุด 200 คน/ห้อง',
-            'Gradebook + Export CSV',
-        ],
-        'features_en' => [
-            'Up to 20 classrooms',
-            '5 team members',
-            'Up to 200 students per classroom',
-            'Gradebook + CSV export',
-        ],
-        'limits' => [
-            'max_classrooms' => 20,
-            'max_members' => 5,
-            'max_students_per_classroom' => 200,
+            'max_invoices_per_month' => 20,
         ],
     ],
 
     'pro' => [
         'name' => 'Pro',
-        'price' => 499,
-        'tagline' => 'สำหรับโรงเรียนใหญ่ — ไม่จำกัด',
-        'tagline_en' => 'For large schools — unlimited.',
+        'price' => 299,
+        'tagline' => 'สำหรับธุรกิจที่กำลังโต — ทีมเล็ก เอกสารเยอะขึ้น',
+        'tagline_en' => 'For growing businesses — a small team, more documents.',
         'features' => [
-            'ห้องเรียนไม่จำกัด',
-            'ครูในทีมไม่จำกัด',
-            'นักเรียนไม่จำกัด',
-            'ทุกฟีเจอร์ของ Basic',
+            'ออกเอกสารไม่จำกัด',
+            'ผู้ใช้ในทีมสูงสุด 5 คน',
+            'ทุกฟีเจอร์ของ Free',
+            'ส่งออกสมุดรายวัน (CSV) ให้สำนักงานบัญชี',
+            'ยอดยกมา + งบการเงิน',
+        ],
+        'features_en' => [
+            'Unlimited documents',
+            'Up to 5 team members',
+            'Everything in Free',
+            'Journal CSV export for your accountant',
+            'Opening balances + financial statements',
+        ],
+        'limits' => [
+            'max_members' => 5,
+            'max_invoices_per_month' => null,
+        ],
+    ],
+
+    'business' => [
+        'name' => 'Business',
+        'price' => 699,
+        'tagline' => 'สำหรับกิจการที่มีหลายทีม — ไม่จำกัด',
+        'tagline_en' => 'For multi-team operations — unlimited.',
+        'features' => [
+            'ทุกอย่างไม่จำกัด',
+            'ผู้ใช้ในทีมไม่จำกัด',
+            'ทุกฟีเจอร์ของ Pro',
             'Priority support',
         ],
         'features_en' => [
-            'Unlimited classrooms',
+            'Everything unlimited',
             'Unlimited team members',
-            'Unlimited students',
-            'Everything in Basic',
+            'Everything in Pro',
             'Priority support',
         ],
         'limits' => [
-            'max_classrooms' => null,
             'max_members' => null,
-            'max_students_per_classroom' => null,
+            'max_invoices_per_month' => null,
         ],
     ],
 ];

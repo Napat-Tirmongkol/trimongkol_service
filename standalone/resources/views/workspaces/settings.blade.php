@@ -38,7 +38,7 @@
                         </div>
                         <p class="mt-1 text-xs text-slate-500">{{ $plan->tagline }}</p>
                     </div>
-                    <a href="{{ route('plans.index') }}" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    <a href="{{ route('billing.index') }}" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                         {{ __('app.plans.view_all_plans') }}
                     </a>
                 </div>

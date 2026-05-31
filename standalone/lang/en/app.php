@@ -787,6 +787,24 @@ return [
         'all_doing_well' => 'Everyone is at or above the class average 👏',
     ],
 
+    'billing' => [
+        'nav' => 'Plans & billing',
+        'heading' => 'Subscription plans',
+        'sub' => 'Choose the plan that fits your business',
+        'current_plan' => 'Current plan',
+        'current_badge' => 'Current plan',
+        'per_month' => 'month',
+        'trial_days' => 'Trial · :days days left',
+        'choose' => 'Choose :plan',
+        'switch_free' => 'Switch to Free',
+        'confirm' => 'Switch to the :plan plan?',
+        'switched_free' => 'Switched to the Free plan.',
+        'selected_paid' => ':plan selected — we will reach out about payment.',
+        'contact_note' => 'Want to change plan? Pick one below.',
+        'gateway_note' => 'Automatic card billing is not enabled yet — after you choose a plan we will confirm payment with you.',
+        'owner_only' => 'Only the workspace owner can change the plan.',
+    ],
+
     'plans' => [
         'nav' => 'Plans',
         'heading' => 'Subscription plans',

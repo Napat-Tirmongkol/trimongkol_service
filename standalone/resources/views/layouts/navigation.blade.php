@@ -94,6 +94,10 @@
                            class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                             {{ __('app.workspaces.manage') }}
                         </a>
+                        <a href="{{ route('billing.index') }}"
+                           class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            {{ __('app.billing.nav') }}
+                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="block w-full border-t border-slate-100 px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">

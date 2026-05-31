@@ -14,7 +14,7 @@ use App\Models\Setting;
 class Billing
 {
     /** Limit dimensions the launch caps cover. */
-    public const LIMITS = ['max_classrooms', 'max_members', 'max_students_per_classroom'];
+    public const LIMITS = ['max_members', 'max_invoices_per_month'];
 
     public static function freeMode(): bool
     {

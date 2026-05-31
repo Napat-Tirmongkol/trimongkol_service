@@ -23,11 +23,11 @@
 | ลูกค้าแก้ผังบัญชีเอง | 100 | ✅ |
 | Onboarding (เลือกผัง + ข้อมูลบริษัท) | 100 | ✅ |
 | White-label (สี/โลโก้/ชื่อ) | 90 | ✅ ปรับผ่าน .env (config/brand.php) · เหลือลบ lang/site.php เก่า |
-| Billing เก็บเงินรายเดือน | 0 | ⏳ |
+| Billing เก็บเงินรายเดือน | 60 | ⏳ แพ็คเกจ/เลือกแผน/หน้า billing พร้อม · เหลือต่อ payment gateway |
 | Landing + pricing | 10 | ⏳ |
 | Infra (domain/hosting/email/backup) | 0 | ⏳ |
 | กฎหมาย (PDPA, terms/privacy) | 0 | ⏳ ลิงก์เป็น `#` ชั่วคราว |
-| **พร้อมขาย SaaS รวม** | **~68** | |
+| **พร้อมขาย SaaS รวม** | **~72** | |
 
 ---
 
@@ -45,10 +45,13 @@
 
 ## ⏳ ต้องทำต่อ (เรียงตามลำดับแนะนำ)
 
-### 1. Billing — เก็บเงินรายเดือน
-- [ ] เลือกวิธี: Stripe / Omise / โอนเอง+อนุมัติ (มี `SlipVerifier`/`PromptPay` เดิมใน repo แม่ให้ดูเป็นแนว)
-- [ ] แพ็กเกจ/ราคา + ผูกกับ workspace (`Subscription` model เดิมยังอยู่ ใช้ต่อหรือเขียนใหม่)
-- [ ] กันใช้งานเมื่อหมดอายุ/ยังไม่จ่าย (trial → active → past_due)
+### 1. Billing — เก็บเงินรายเดือน (ทำพื้นฐานแล้ว)
+- [x] แพ็กเกจ accounting (`config/plans.php`: Free/Pro/Business) + limit `max_members`/`max_invoices_per_month`
+- [x] `Subscription` ต่อยอด (trial → active, trial หมดอายุ fallback Free อัตโนมัติ)
+- [x] หน้า `/billing` — การ์ดราคา + เลือกแผน (owner เท่านั้น) + badge ทดลองใช้ · `BillingTest` 8 เทสต์
+- [ ] ต่อ payment gateway (Stripe/Omise) — checkout redirect + webhook → flip เป็น active (ตอนนี้เลือกแผนแล้ว "ทีมงานติดต่อ")
+- [ ] กันใช้งานเมื่อ trial หมด/ค้างจ่าย — บังคับ limit `max_invoices_per_month` ใน SalesInvoicing
+- [ ] (option) slip โอนเอง — มี `SlipVerifier`/`PromptPay` ใน `app/Services/Payments/` ให้ต่อ
 
 ### 2. Landing + pricing
 - [ ] หน้าแลนดิ้งสาธารณะ (ตอนนี้ `/` redirect เข้า login เลย)

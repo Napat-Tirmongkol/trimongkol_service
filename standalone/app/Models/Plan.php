@@ -9,8 +9,8 @@ namespace App\Models;
 class Plan
 {
     public const FREE = 'free';
-    public const BASIC = 'basic';
     public const PRO = 'pro';
+    public const BUSINESS = 'business';
 
     public function __construct(
         public readonly string $key,

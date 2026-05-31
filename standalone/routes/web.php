@@ -9,6 +9,7 @@ use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpenin
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TwoFactorAuthController;
@@ -69,6 +70,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
         Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
     });
+
+    // Subscription billing.
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
 
     // Workspaces (tenants) — create, switch, members, invitations.
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
