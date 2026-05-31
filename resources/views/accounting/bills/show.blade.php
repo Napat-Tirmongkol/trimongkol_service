@@ -14,7 +14,11 @@
                     'void' => 'bg-rose-50 text-rose-600 ring-rose-200',
                 ][$bill->status] ?? 'bg-slate-100 text-slate-600 ring-slate-200';
             @endphp
-            <span class="shrink-0 rounded-full px-3 py-1 text-sm ring-1 ring-inset {{ $badge }}">{{ __('app.accounting.status_'.$bill->status) }}</span>
+            <div class="flex shrink-0 items-center gap-2">
+                <a href="{{ route('accounting.bills.print', $bill) }}" target="_blank" rel="noopener"
+                   class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">{{ __('app.accounting.print') }} ↗</a>
+                <span class="rounded-full px-3 py-1 text-sm ring-1 ring-inset {{ $badge }}">{{ __('app.accounting.status_'.$bill->status) }}</span>
+            </div>
         </div>
     </x-slot>
 

@@ -90,6 +90,15 @@ class BillController extends AccountingController
         ]);
     }
 
+    public function print(Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+        $bill->load('partner', 'lines.account');
+
+        return view('accounting.print.bill', compact('bill'));
+    }
+
     public function post(Bill $bill)
     {
         $workspace = $this->requireWorkspace();

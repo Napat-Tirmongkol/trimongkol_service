@@ -1109,6 +1109,16 @@ return [
         'income_type' => 'Income type',
         'pay_hint' => 'If WHT applies a 50-ทวิ certificate is issued automatically; cash paid = outstanding − WHT.',
 
+        'print' => 'Print',
+        'wht_certificates' => 'WHT certificates (50 ทวิ)',
+        'wht_certificates_sub' => 'Withholding-tax certificates issued to suppliers',
+        'wht_certificates_empty' => 'No certificates yet',
+        'col_payee' => 'Payee',
+        'col_pnd' => 'Form',
+        'col_paid_on' => 'Paid on',
+        'col_base' => 'Base',
+        'col_wht' => 'WHT',
+
         'col_no' => 'No.',
         'col_partner' => 'Partner',
         'col_date' => 'Date',

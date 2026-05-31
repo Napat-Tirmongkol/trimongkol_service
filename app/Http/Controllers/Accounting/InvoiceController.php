@@ -100,6 +100,14 @@ class InvoiceController extends AccountingController
         ]);
     }
 
+    public function print(Invoice $invoice)
+    {
+        $this->scopedInvoice($invoice);
+        $invoice->load('partner', 'lines.account');
+
+        return view('accounting.print.invoice', compact('invoice'));
+    }
+
     public function issue(Invoice $invoice)
     {
         $workspace = $this->scopedInvoice($invoice);

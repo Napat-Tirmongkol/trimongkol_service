@@ -98,6 +98,13 @@ class SiteSettingsController extends Controller
             'products.queue.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบเรียกคิว', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้ (สแกนเนอร์/ส่งการบ้านเปิดตลอด)'],
             'products.accounting.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบบัญชี', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้'],
         ],
+        'ข้อมูลบริษัท (สำหรับเอกสาร)' => [
+            'company.name' => ['type' => 'shared', 'label' => 'ชื่อบริษัท (หัวเอกสาร — เว้นว่าง = ใช้ชื่อแบรนด์)', 'wide' => true],
+            'company.tax_id' => ['type' => 'shared', 'label' => 'เลขประจำตัวผู้เสียภาษี'],
+            'company.branch' => ['type' => 'shared', 'label' => 'สาขา (เช่น สำนักงานใหญ่)'],
+            'company.phone' => ['type' => 'shared', 'label' => 'โทรศัพท์'],
+            'company.address' => ['type' => 'shared', 'label' => 'ที่อยู่', 'textarea' => true, 'wide' => true],
+        ],
         'Free launch / Billing' => [
             'billing.free_mode' => ['type' => 'shared', 'label' => 'โหมดเปิดตัวฟรี — 1 = เปิด (ฟรีทุกคน ลิมิตช่วงเปิดตัว), 0 = ปิด (เริ่มเก็บเงิน ใช้แพ็คเกจจริง). ค่าเริ่มต้น = เปิด', 'wide' => true],
             'billing.launch_max_classrooms' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: ห้องเรียนต่อบัญชี (เว้นว่าง = ค่าเริ่มต้น 15)'],

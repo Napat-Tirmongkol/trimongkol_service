@@ -5,6 +5,7 @@ use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardCo
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
+use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
@@ -126,6 +127,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
         Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
         Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
+
+        Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');
+        Route::get('/bills/{bill}/print', [AccountingBillController::class, 'print'])->name('bills.print');
+        Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
+        Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
     });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
