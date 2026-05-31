@@ -27,7 +27,8 @@ class TaxReportingTest extends TestCase
     private function actingOwner(): Workspace
     {
         $user = User::factory()->create();
-        $workspace = Workspace::create(['name' => 'ACME Co.', 'slug' => 'acme-'.Str::random(6)]);
+        // Starter+ unlocks the journal CSV export this suite exercises.
+        $workspace = Workspace::create(['name' => 'ACME Co.', 'slug' => 'acme-'.Str::random(6), 'accounting_plan' => 'starter']);
         $workspace->members()->attach($user->id, ['role' => 'owner', 'joined_at' => now()]);
         ChartOfAccounts::seed($workspace);
         TaxCodes::seedDefault($workspace);

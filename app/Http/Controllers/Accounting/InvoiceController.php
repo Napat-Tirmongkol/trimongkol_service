@@ -10,6 +10,7 @@ use App\Models\Accounting\TaxCode;
 use App\Services\Accounting\Money;
 use App\Services\Accounting\Receipts;
 use App\Services\Accounting\SalesInvoicing;
+use App\Services\AccountingPlan;
 use Illuminate\Http\Request;
 
 class InvoiceController extends AccountingController
@@ -31,6 +32,9 @@ class InvoiceController extends AccountingController
         if (! $this->isSetUp($workspace)) {
             return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
         }
+        if ($reason = AccountingPlan::reasonCannotCreateInvoice($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', $reason);
+        }
 
         $partners = Partner::forWorkspace($workspace)->where('is_customer', true)->orderBy('name')->get();
         if ($partners->isEmpty()) {
@@ -47,6 +51,9 @@ class InvoiceController extends AccountingController
     public function store(Request $request)
     {
         $workspace = $this->requireWorkspace();
+        if ($reason = AccountingPlan::reasonCannotCreateInvoice($workspace)) {
+            return back()->withInput()->with('error', $reason);
+        }
 
         $data = $request->validate([
             'partner_id' => 'required|integer',

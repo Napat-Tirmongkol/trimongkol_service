@@ -96,6 +96,26 @@ class WorkspaceController extends Controller
         return back()->with('status', __('app.admin.workspaces.queue_plan_updated'));
     }
 
+    public function updateAccountingPlan(Request $request, Workspace $workspace)
+    {
+        $data = $request->validate([
+            'accounting_plan' => 'required|in:'.implode(',', \App\Services\AccountingPlan::KEYS),
+            'months' => 'nullable|integer|min:1|max:36',
+        ]);
+
+        // Paid plans run for the billing cycle the admin grants; free clears it.
+        $workspace->update([
+            'accounting_plan' => $data['accounting_plan'],
+            'accounting_plan_until' => $data['accounting_plan'] === 'free'
+                ? null
+                : now()->addMonths($data['months'] ?? 1),
+        ]);
+
+        AuditLog::record('workspace.update_accounting_plan', $workspace, $workspace->name, $data);
+
+        return back()->with('status', __('app.admin.workspaces.accounting_plan_updated'));
+    }
+
     public function destroy(Workspace $workspace)
     {
         $label = $workspace->name;

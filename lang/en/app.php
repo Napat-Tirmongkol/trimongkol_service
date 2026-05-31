@@ -160,6 +160,12 @@ return [
             'queue_plan_heading' => 'Queue plan (billed separately)',
             'queue_plan_label' => 'Queue plan',
             'queue_plan_updated' => 'Queue plan updated',
+            'accounting_plan_heading' => 'Accounting plan (billed separately)',
+            'accounting_plan_label' => 'Accounting plan',
+            'accounting_plan_updated' => 'Accounting plan updated',
+            'plan_months' => 'Months',
+            'plan_until' => 'until',
+            'plan_expired' => 'expired',
         ],
 
         'system' => [
@@ -1059,6 +1065,8 @@ return [
         'setup_cta' => 'Set up accounting',
         'setup_done' => 'Accounting is set up.',
         'setup_required' => 'Accounting is not set up yet — set it up before issuing documents.',
+        'plan_limit_invoices' => 'Your plan allows :limit documents per month — upgrade to issue more.',
+        'plan_feature_locked' => 'This feature is on a higher plan — upgrade to use it.',
 
         'onboarding_title' => 'Get started',
         'onboarding_sub' => 'Enter your company details and pick a chart of accounts to start keeping books',

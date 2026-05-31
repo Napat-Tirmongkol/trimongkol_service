@@ -235,6 +235,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:workspaces.manage')->group(function () {
             Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
             Route::patch('/workspaces/{workspace}/queue-plan', [AdminWorkspaceController::class, 'updateQueuePlan'])->name('workspaces.update-queue-plan');
+            Route::patch('/workspaces/{workspace}/accounting-plan', [AdminWorkspaceController::class, 'updateAccountingPlan'])->name('workspaces.update-accounting-plan');
             Route::post('/billing', [AdminController::class, 'updateBilling'])->name('billing.update');
             Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
         });

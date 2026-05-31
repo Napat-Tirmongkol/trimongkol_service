@@ -6,6 +6,7 @@ use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
 use App\Services\Accounting\Reporting;
 use App\Services\Accounting\TaxReporting;
+use App\Services\AccountingPlan;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -51,9 +52,12 @@ class ReportController extends AccountingController
     }
 
     /** Posted journal lines for the period as CSV — the hand-off to the accountant. */
-    public function exportJournal(Request $request): StreamedResponse
+    public function exportJournal(Request $request)
     {
         $workspace = $this->requireWorkspace();
+        if (! AccountingPlan::can($workspace, 'csv_export')) {
+            return redirect()->route('accounting.reports.tax')->with('error', __('app.accounting.plan_feature_locked'));
+        }
         $from = ($request->date('from') ?? now()->startOfMonth())->toDateString();
         $to = ($request->date('to') ?? now()->endOfMonth())->toDateString();
 
