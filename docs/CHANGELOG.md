@@ -4,6 +4,20 @@
 
 ---
 
+## 💳 แพ็กเกจระบบคิว + Control Panel จัดการ plan/billing
+
+แยกแพ็กเกจเฉพาะระบบคิว (free / starter / pro / enterprise) ออกจากแพ็กเกจ Scanner — บังคับลิมิตทันที (ไม่ขึ้นกับ free-launch)
+
+- **ลิมิต Phase 1:** Free = 1 จุดบริการ, 2 ช่องบริการ, 80 คิว/วัน + ลายน้ำบนหน้าลูกค้า; แพ็กเกจสูงขึ้นปลดล็อกตามตั้งค่า
+- บังคับใน: สร้างจุดบริการ, เพิ่มช่องบริการ, ออกบัตรคิว (ลูกค้าเห็นข้อความ "เต็มโควตา/อัปเกรด")
+- **Control Panel** ที่ `/admin` → **แพ็กเกจ & บิล**: ภาพรวมแพ็กเกจคิว/Scanner, รายได้ประมาณการ, สวิตช์ free-launch
+- ตั้งแพ็กเกจคิวราย workspace ได้ที่หน้า workspace (อัปเกรด/ลดด้วยตนเอง — ยังไม่มีระบบจ่ายเงินอัตโนมัติ)
+- `config/queue-plans.php`, `App\Services\QueuePlan`, คอลัมน์ `workspaces.queue_plan` (migration มี down())
+- เพิ่มคีย์ `app.queue.plan_limit_*`, `app.admin.billing.*`, `app.admin.workspaces.queue_plan_*` (TH/EN)
+- ⚠️ หลัง deploy: **Run migrations + Clear caches**
+
+---
+
 ## 🔊 เสียงเรียกคิวคุณภาพสูงด้วย Google Cloud TTS (ตัวเลือก)
 
 เพิ่มทางเลือกใช้ Google Cloud Text-to-Speech ให้เสียงเรียกคิวเป็นเสียงไทยธรรมชาติทุกอุปกรณ์ (ไม่ต้องพึ่งเสียงที่ติดตั้งในเครื่องผู้ใช้) — ปิดไว้โดยปริยาย ใช้เสียงเบราว์เซอร์เดิมจนกว่าจะตั้งค่า

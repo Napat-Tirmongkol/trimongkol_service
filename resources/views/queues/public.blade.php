@@ -20,7 +20,9 @@
     <main class="relative flex min-h-screen flex-col items-center justify-center py-8">
         <livewire:queue-public :queue="$queue" />
 
-        <p class="mt-6 text-center text-xs text-white/40">{{ config('app.name') }}</p>
+        @if (\App\Services\QueuePlan::showsWatermark($queue->workspace))
+            <p class="mt-6 text-center text-xs text-white/40">{{ __('app.queue.powered_by') }} {{ config('app.name') }}</p>
+        @endif
     </main>
 
     @include('partials.sweetalert')

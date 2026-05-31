@@ -6,6 +6,7 @@ use App\Models\Queue;
 use App\Models\QueueCounter;
 use App\Models\QueueTicket;
 use App\Services\CurrentWorkspace;
+use App\Services\QueuePlan;
 use App\Services\Tts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -39,6 +40,10 @@ class QueueController extends Controller
     {
         $workspace = CurrentWorkspace::get();
         abort_unless($workspace, 422, __('app.workspaces.no_workspace'));
+
+        if ($reason = QueuePlan::reasonCannotCreateQueue($workspace)) {
+            return redirect()->route('queues.index')->with('error', $reason);
+        }
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -108,6 +113,10 @@ class QueueController extends Controller
     public function addCounter(Request $request, Queue $queue)
     {
         $this->authorizeQueue($queue);
+
+        if ($reason = QueuePlan::reasonCannotAddCounter($queue)) {
+            return back()->with('error', $reason);
+        }
 
         $data = $request->validate([
             'label' => 'required|string|max:40',

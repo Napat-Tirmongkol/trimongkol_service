@@ -244,6 +244,29 @@ return [
             'delete_confirm' => 'ลบข้อความนี้ถาวร? กู้คืนไม่ได้',
         ],
 
+        'billing' => [
+            'heading' => 'แพ็กเกจ & การเรียกเก็บเงิน',
+            'subheading' => 'ภาพรวมแพ็กเกจของทุก workspace + โหมดเปิดตัวฟรี',
+            'queue_mrr' => 'รายได้คิว/เดือน (ประมาณ)',
+            'mrr_hint' => 'รวมจากแพ็กเกจคิวที่ตั้งไว้',
+            'per_month' => 'เดือน',
+            'free_mode' => 'โหมดเปิดตัวฟรี',
+            'free_mode_on' => 'เปิด (ฟรีทุกคน)',
+            'free_mode_off' => 'ปิด (เก็บเงิน)',
+            'free_mode_scope' => 'มีผลกับแพ็กเกจ Scanner',
+            'free_mode_desc' => 'เมื่อเปิด: ลิมิต Scanner ใช้ลิมิตช่วงเปิดตัว และซ่อนปุ่มอัปเกรด — ส่วนลิมิตระบบคิวบังคับแยกเสมอ',
+            'free_mode_label' => 'เปิดโหมดฟรีสำหรับ Scanner',
+            'launch_caps_link' => 'ตั้งลิมิตช่วงเปิดตัว',
+            'queue_plans' => 'แพ็กเกจระบบคิว',
+            'scanner_plans' => 'แพ็กเกจ Scanner (subscription ที่ใช้งาน)',
+            'manage_workspaces' => 'จัดการราย workspace',
+            'workspaces_unit' => 'workspace',
+            'custom_price' => 'ตามตกลง',
+            'no_subscriptions' => 'ยังไม่มี subscription',
+            'saved' => 'บันทึกการตั้งค่าการเงินแล้ว',
+            'manual_note' => 'ตอนนี้อัปเกรด/ลดแพ็กเกจตั้งผ่านแอดมินด้วยตนเอง (ยังไม่มีระบบจ่ายเงินอัตโนมัติ)',
+        ],
+
         'products' => [
             'scanner' => [
                 'label' => 'Homework Scanner',
@@ -848,6 +871,10 @@ return [
         'cancel_confirm' => 'ยกเลิกบัตรคิวนี้?',
         'closed' => 'ขณะนี้ปิดรับคิว',
         'voice_your_turn' => 'ถึงคิวของคุณแล้ว เชิญที่ช่องบริการ',
+        'plan_limit_queues' => 'แพ็กเกจปัจจุบันสร้างได้สูงสุด :limit จุดบริการ — อัปเกรดเพื่อเพิ่ม',
+        'plan_limit_counters' => 'แพ็กเกจปัจจุบันเพิ่มได้สูงสุด :limit ช่องบริการ — อัปเกรดเพื่อเพิ่ม',
+        'plan_limit_tickets' => 'วันนี้ครบโควตา :limit คิวแล้ว — อัปเกรดเพื่อรับคิวไม่จำกัด',
+        'powered_by' => 'ขับเคลื่อนโดย',
     ],
 
 ];

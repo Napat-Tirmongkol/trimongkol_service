@@ -43,6 +43,8 @@ new class extends Component {
 
     public function issueTicket(): void
     {
+        $this->limitMessage = null;
+
         if (! $this->queue->is_active) {
             return;
         }
@@ -50,6 +52,11 @@ new class extends Component {
         $existing = $this->myTicket();
         if ($existing && in_array($existing->status, ['waiting', 'called', 'serving'])) {
             return; // one active ticket per device
+        }
+
+        if ($reason = \App\Services\QueuePlan::reasonCannotIssueTicket($this->queue)) {
+            $this->limitMessage = $reason;
+            return;
         }
 
         $ticket = DB::transaction(function () {
@@ -118,6 +125,7 @@ new class extends Component {
             'current' => $current,
             'myTicket' => $myTicket,
             'aheadCount' => $aheadCount,
+            'watermark' => \App\Services\QueuePlan::showsWatermark($this->queue->workspace),
         ];
     }
 };
@@ -185,6 +193,9 @@ new class extends Component {
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
                     {{ __('app.queue.get_ticket') }}
                 </button>
+                @if ($limitMessage)
+                    <p class="mt-3 rounded-xl bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">{{ $limitMessage }}</p>
+                @endif
             </div>
         @endif
 

@@ -244,6 +244,29 @@ return [
             'delete_confirm' => 'Delete this lead permanently? Cannot be undone.',
         ],
 
+        'billing' => [
+            'heading' => 'Plans & Billing',
+            'subheading' => 'Plan distribution across workspaces + free-launch mode',
+            'queue_mrr' => 'Queue MRR (est.)',
+            'mrr_hint' => 'summed from assigned queue plans',
+            'per_month' => 'mo',
+            'free_mode' => 'Free-launch mode',
+            'free_mode_on' => 'On (free for all)',
+            'free_mode_off' => 'Off (billing)',
+            'free_mode_scope' => 'Applies to Scanner plans',
+            'free_mode_desc' => 'When on: Scanner limits use the launch caps and the upgrade UI is hidden — queue limits are always enforced separately.',
+            'free_mode_label' => 'Enable free-launch for Scanner',
+            'launch_caps_link' => 'Edit launch caps',
+            'queue_plans' => 'Queue plans',
+            'scanner_plans' => 'Scanner plans (active subscriptions)',
+            'manage_workspaces' => 'Manage per workspace',
+            'workspaces_unit' => 'workspaces',
+            'custom_price' => 'Custom',
+            'no_subscriptions' => 'No subscriptions yet',
+            'saved' => 'Billing settings saved',
+            'manual_note' => 'Upgrades/downgrades are currently set manually by an admin (no automated payment yet).',
+        ],
+
         'products' => [
             'scanner' => [
                 'label' => 'Homework Scanner',
@@ -848,5 +871,9 @@ return [
         'cancel_confirm' => 'Cancel this ticket?',
         'closed' => 'This queue is currently closed',
         'voice_your_turn' => "It's your turn. Please go to counter",
+        'plan_limit_queues' => 'Your plan allows up to :limit service point(s) — upgrade for more.',
+        'plan_limit_counters' => 'Your plan allows up to :limit counters — upgrade for more.',
+        'plan_limit_tickets' => "Today's quota of :limit tickets is full — upgrade for unlimited.",
+        'powered_by' => 'Powered by',
     ],
 ];
