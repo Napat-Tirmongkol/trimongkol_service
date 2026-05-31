@@ -103,7 +103,16 @@ class SystemController extends Controller
     public function migrate(Request $request)
     {
         $output = new BufferedOutput();
-        $exitCode = Artisan::call('migrate', ['--force' => true], $output);
+
+        // A failing migration throws; catch it so the admin sees the error in
+        // the result panel instead of a bare 500 page.
+        try {
+            $exitCode = Artisan::call('migrate', ['--force' => true], $output);
+            $result = $output->fetch();
+        } catch (\Throwable $e) {
+            $exitCode = 1;
+            $result = $output->fetch()."\n\nMigration failed: ".$e->getMessage();
+        }
 
         AuditLog::record('system.migrate', null, 'artisan migrate', [
             'exit_code' => $exitCode,
@@ -112,7 +121,7 @@ class SystemController extends Controller
         return redirect()->route('admin.system')
             ->with('system_result', [
                 'command' => 'php artisan migrate --force',
-                'output' => $output->fetch(),
+                'output' => $result,
                 'exit_code' => $exitCode,
             ]);
     }
