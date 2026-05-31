@@ -26,6 +26,7 @@ return [
         'tabs' => [
             ['route' => 'admin.queue.dashboard', 'label_key' => 'app.admin.products.queue.tab_overview', 'pattern' => 'admin.queue.dashboard'],
             ['route' => 'admin.queue.index', 'label_key' => 'app.admin.products.queue.tab_queues', 'pattern' => 'admin.queue.index*'],
+            ['route' => 'admin.queue.payments', 'label_key' => 'app.admin.products.queue.tab_payments', 'pattern' => 'admin.queue.payments*'],
         ],
     ],
 ];

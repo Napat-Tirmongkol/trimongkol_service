@@ -43,4 +43,11 @@ return [
         'voice' => env('GOOGLE_TTS_VOICE'),
     ],
 
+    // SlipOK PromptPay slip verification for queue plan self-checkout. Keys are
+    // normally set in /admin (encrypted in site_settings); env is a fallback.
+    'slipok' => [
+        'key' => env('SLIPOK_API_KEY'),
+        'branch' => env('SLIPOK_BRANCH_ID'),
+    ],
+
 ];

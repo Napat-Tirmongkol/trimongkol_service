@@ -120,6 +120,68 @@
                     <span class="text-xs text-slate-400">{{ __('app.admin.products.queue.tts_test_hint') }}</span>
                 </div>
             </div>
+
+            {{-- Billing / SlipOK settings --}}
+            @php
+                $billEnabled = setting('queue_billing.enabled') === '1';
+                $promptpay = setting('queue_billing.promptpay');
+                $accountName = setting('queue_billing.account_name');
+                $slipBranch = setting('queue_billing.slipok_branch');
+                $slipKeySet = filled(setting('queue_billing.slipok_key')) || filled(config('services.slipok.key'));
+            @endphp
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.products.queue.billing_heading') }}</h3>
+                        <p class="mt-0.5 text-xs text-slate-500">{{ __('app.admin.products.queue.billing_desc') }}</p>
+                    </div>
+                    <a href="{{ route('admin.queue.payments') }}" class="text-xs font-medium text-brand-700 hover:text-brand-800">{{ __('app.admin.products.queue.tab_payments') }} →</a>
+                </div>
+
+                <form method="POST" action="{{ route('admin.queue.billing-settings') }}" class="space-y-4 px-6 py-5">
+                    @csrf
+                    <label class="flex items-center gap-3">
+                        <input type="hidden" name="enabled" value="0">
+                        <input type="checkbox" name="enabled" value="1" @checked($billEnabled)
+                               class="h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                        <span class="text-sm text-slate-700">{{ __('app.admin.products.queue.billing_enabled_label') }}</span>
+                    </label>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_promptpay') }}</label>
+                            <input type="text" name="promptpay" value="{{ $promptpay }}" placeholder="0812345678"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.products.queue.billing_promptpay_hint') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_account_name') }}</label>
+                            <input type="text" name="account_name" value="{{ $accountName }}"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.billing_slipok_branch') }}</label>
+                            <input type="text" name="slipok_branch" value="{{ $slipBranch }}"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">
+                                {{ __('app.admin.products.queue.billing_slipok_key') }}
+                                @if ($slipKeySet)
+                                    <span class="ml-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{{ __('app.admin.products.queue.tts_key_set') }}</span>
+                                @endif
+                            </label>
+                            <input type="password" name="slipok_key" autocomplete="off"
+                                   placeholder="{{ $slipKeySet ? '••••••••  ('.__('app.admin.products.queue.tts_key_keep').')' : 'SLIPOK…' }}"
+                                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500">{{ __('app.admin.products.queue.billing_slipok_hint') }}</p>
+
+                    <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.admin.products.queue.billing_save') }}</button>
+                </form>
+            </div>
         </div>
     </div>
 </x-admin-layout>

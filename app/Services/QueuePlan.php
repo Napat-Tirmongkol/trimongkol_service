@@ -17,10 +17,50 @@ class QueuePlan
 {
     public const KEYS = ['free', 'starter', 'pro', 'enterprise'];
 
+    /** Plans a customer can self-purchase via slip (free is default, enterprise is contact-sales). */
+    public const PURCHASABLE = ['starter', 'pro'];
+
+    /**
+     * Effective plan key, accounting for expiry: a paid plan past its
+     * queue_plan_until silently drops back to free (no scheduler needed).
+     */
     public static function key(?Workspace $workspace): string
     {
         $key = $workspace?->queue_plan ?: 'free';
+        if (! config("queue-plans.{$key}") || $key === 'free') {
+            return 'free';
+        }
+
+        $until = $workspace?->queue_plan_until;
+        if ($until !== null && $until->isPast()) {
+            return 'free';
+        }
+
+        return $key;
+    }
+
+    public static function price(string $key): ?int
+    {
+        $p = config("queue-plans.{$key}.price");
+        return $p === null ? null : (int) $p;
+    }
+
+    /** Stored plan even if expired — for showing "Starter (expired)" in admin. */
+    public static function storedKey(?Workspace $workspace): string
+    {
+        $key = $workspace?->queue_plan ?: 'free';
         return config("queue-plans.{$key}") ? $key : 'free';
+    }
+
+    public static function isExpired(?Workspace $workspace): bool
+    {
+        $until = $workspace?->queue_plan_until;
+        return self::storedKey($workspace) !== 'free' && $until !== null && $until->isPast();
+    }
+
+    public static function expiresAt(?Workspace $workspace): ?\Illuminate\Support\Carbon
+    {
+        return $workspace?->queue_plan_until;
     }
 
     /** @return array<string, mixed> */

@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Admin\Products;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\QueueBillingController;
 use App\Models\Queue;
+use App\Models\QueuePayment;
 use App\Models\QueueTicket;
 use App\Models\Setting;
 use App\Services\AuditLog;
 use App\Services\Tts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
 
 class QueueController extends Controller
 {
@@ -100,5 +103,80 @@ class QueueController extends Controller
         return $ok
             ? back()->with('status', __('app.admin.products.queue.tts_test_ok'))
             : back()->with('error', __('app.admin.products.queue.tts_test_fail', ['error' => $message]));
+    }
+
+    public function updateBilling(Request $request)
+    {
+        $data = $request->validate([
+            'enabled' => 'nullable|boolean',
+            'promptpay' => 'nullable|string|max:30',
+            'account_name' => 'nullable|string|max:120',
+            'slipok_branch' => 'nullable|string|max:60',
+            'slipok_key' => 'nullable|string|max:300',
+        ]);
+
+        Setting::updateOrCreate(['key' => 'queue_billing.enabled'], ['value' => $request->boolean('enabled') ? '1' : '0']);
+        Setting::updateOrCreate(['key' => 'queue_billing.promptpay'], ['value' => trim($data['promptpay'] ?? '')]);
+        Setting::updateOrCreate(['key' => 'queue_billing.account_name'], ['value' => trim($data['account_name'] ?? '')]);
+        Setting::updateOrCreate(['key' => 'queue_billing.slipok_branch'], ['value' => trim($data['slipok_branch'] ?? '')]);
+
+        if (filled($data['slipok_key'] ?? null)) {
+            Setting::updateOrCreate(['key' => 'queue_billing.slipok_key'], ['value' => Crypt::encryptString(trim($data['slipok_key']))]);
+        }
+
+        AuditLog::record('queue.billing.settings', null, 'Queue billing updated');
+
+        return back()->with('status', __('app.admin.products.queue.billing_saved'));
+    }
+
+    public function payments(Request $request)
+    {
+        $status = $request->query('status', 'pending');
+
+        $payments = QueuePayment::query()
+            ->with('workspace:id,name,queue_plan', 'user:id,name,email')
+            ->when(in_array($status, ['pending', 'verified', 'rejected'], true), fn ($q) => $q->where('status', $status))
+            ->latest()
+            ->paginate(30)
+            ->withQueryString();
+
+        return view('admin.products.queue.payments', compact('payments', 'status'));
+    }
+
+    public function approvePayment(QueuePayment $payment)
+    {
+        if ($payment->status !== QueuePayment::STATUS_PENDING) {
+            return back()->with('error', __('app.admin.products.queue.pay_already_done'));
+        }
+
+        $payment->update(['status' => QueuePayment::STATUS_VERIFIED, 'verified_at' => now()]);
+        QueueBillingController::activate($payment->workspace, $payment->plan_key, $payment->months);
+
+        AuditLog::record('queue.payment.approve', $payment->workspace, $payment->workspace?->name, [
+            'plan' => $payment->plan_key, 'amount' => $payment->amount,
+        ]);
+
+        return back()->with('status', __('app.admin.products.queue.pay_approved'));
+    }
+
+    public function rejectPayment(QueuePayment $payment)
+    {
+        if ($payment->status !== QueuePayment::STATUS_PENDING) {
+            return back()->with('error', __('app.admin.products.queue.pay_already_done'));
+        }
+
+        $payment->update(['status' => QueuePayment::STATUS_REJECTED]);
+        AuditLog::record('queue.payment.reject', $payment->workspace, $payment->workspace?->name);
+
+        return back()->with('status', __('app.admin.products.queue.pay_rejected'));
+    }
+
+    public function slip(QueuePayment $payment)
+    {
+        abort_unless($payment->slip_path && Storage::disk('local')->exists($payment->slip_path), 404);
+
+        return response(Storage::disk('local')->get($payment->slip_path), 200, [
+            'Content-Type' => Storage::disk('local')->mimeType($payment->slip_path) ?: 'image/jpeg',
+        ]);
     }
 }

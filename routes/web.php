@@ -18,6 +18,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\PlansController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicQueueController;
+use App\Http\Controllers\QueueBillingController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
@@ -74,6 +75,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // customers pull tickets on the public /q/{token} page (registered below).
     Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
     Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+    // Billing routes use a static /queues/billing prefix and must stay above the
+    // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
+    Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
+    Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
+    Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
     Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
     Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
     Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
@@ -220,6 +226,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::delete('/queues/{queue}', [AdminQueueController::class, 'destroy'])->name('destroy');
                 Route::post('/settings', [AdminQueueController::class, 'updateSettings'])->name('settings');
                 Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
+                Route::post('/billing-settings', [AdminQueueController::class, 'updateBilling'])->name('billing-settings');
+                Route::get('/payments', [AdminQueueController::class, 'payments'])->name('payments');
+                Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
+                Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');
+                Route::post('/payments/{payment}/reject', [AdminQueueController::class, 'rejectPayment'])->name('payments.reject');
             });
 
             // Back-compat redirects for the old flat URLs.
