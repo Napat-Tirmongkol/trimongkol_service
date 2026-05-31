@@ -230,6 +230,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/slip-test', [AdminQueueController::class, 'testSlip'])->name('slip-test');
                 Route::post('/line-settings', [AdminQueueController::class, 'updateLine'])->name('line-settings');
                 Route::post('/line-test', [AdminQueueController::class, 'testLine'])->name('line-test');
+                Route::post('/discord-settings', [AdminQueueController::class, 'updateDiscord'])->name('discord-settings');
+                Route::post('/discord-test', [AdminQueueController::class, 'testDiscord'])->name('discord-test');
                 Route::get('/payments', [AdminQueueController::class, 'payments'])->name('payments');
                 Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
                 Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');

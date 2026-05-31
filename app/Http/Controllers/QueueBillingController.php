@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\QueuePayment;
 use App\Models\Workspace;
 use App\Services\CurrentWorkspace;
+use App\Services\DiscordNotifier;
 use App\Services\LineNotifier;
 use App\Services\QueuePlan;
 use App\Services\SlipVerifier;
@@ -183,25 +184,28 @@ class QueueBillingController extends Controller
         ]);
     }
 
-    /** LINE push: a payment was auto-verified and a plan activated. */
+    /** Notify (LINE + Discord): a payment was auto-verified and a plan activated. */
     public static function notifyVerified(QueuePayment $payment): void
     {
-        $plan = config("queue-plans.{$payment->plan_key}.name") ?? $payment->plan_key;
-        LineNotifier::notify(__('app.queue.billing.line_verified', [
-            'shop' => $payment->workspace?->name ?? '-',
-            'plan' => $plan,
-            'amount' => number_format((int) $payment->amount),
-        ]));
+        self::broadcast('app.queue.billing.line_verified', $payment);
     }
 
-    /** LINE push: a slip is waiting for manual admin review. */
+    /** Notify (LINE + Discord): a slip is waiting for manual admin review. */
     public static function notifyPending(QueuePayment $payment): void
     {
-        $plan = config("queue-plans.{$payment->plan_key}.name") ?? $payment->plan_key;
-        LineNotifier::notify(__('app.queue.billing.line_pending', [
+        self::broadcast('app.queue.billing.line_pending', $payment);
+    }
+
+    /** Build the channel-neutral message once and fan it out to each channel. */
+    private static function broadcast(string $key, QueuePayment $payment): void
+    {
+        $text = __($key, [
             'shop' => $payment->workspace?->name ?? '-',
-            'plan' => $plan,
+            'plan' => config("queue-plans.{$payment->plan_key}.name") ?? $payment->plan_key,
             'amount' => number_format((int) $payment->amount),
-        ]));
+        ]);
+
+        LineNotifier::notify($text);
+        DiscordNotifier::notify($text);
     }
 }

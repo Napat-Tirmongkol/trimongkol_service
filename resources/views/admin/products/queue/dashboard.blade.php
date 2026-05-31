@@ -290,6 +290,40 @@
                     <span class="text-xs text-slate-400">{{ __('app.admin.products.queue.line_test_hint') }}</span>
                 </div>
             </div>
+
+            {{-- Discord notifications (incoming webhook) --}}
+            @php
+                $discordWebhook = setting('discord.webhook') ?: config('services.discord.webhook');
+            @endphp
+            <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-200 px-6 py-3">
+                    <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.products.queue.discord_heading') }}</h3>
+                    <p class="mt-0.5 text-xs text-slate-500">{{ __('app.admin.products.queue.discord_desc') }}</p>
+                </div>
+
+                <form method="POST" action="{{ route('admin.queue.discord-settings') }}" class="space-y-4 px-6 py-5">
+                    @csrf
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">{{ __('app.admin.products.queue.discord_webhook') }}</label>
+                        <input type="url" name="discord_webhook" value="{{ $discordWebhook }}"
+                               placeholder="https://discord.com/api/webhooks/…"
+                               class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.products.queue.discord_hint') }}</p>
+                    </div>
+                    <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.admin.products.queue.discord_save') }}</button>
+                </form>
+
+                <div class="flex flex-wrap items-center gap-3 border-t border-slate-100 px-6 py-4">
+                    <form method="POST" action="{{ route('admin.queue.discord-test') }}">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            {{ __('app.admin.products.queue.discord_test') }}
+                        </button>
+                    </form>
+                    <span class="text-xs text-slate-400">{{ __('app.admin.products.queue.discord_test_hint') }}</span>
+                </div>
+            </div>
         </div>
     </div>
 </x-admin-layout>

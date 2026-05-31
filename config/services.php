@@ -57,4 +57,10 @@ return [
         'target_id' => env('LINE_TARGET_ID'),
     ],
 
+    // Discord incoming webhook — owner notifications. Normally set in /admin;
+    // env is an optional fallback.
+    'discord' => [
+        'webhook' => env('DISCORD_WEBHOOK_URL'),
+    ],
+
 ];
