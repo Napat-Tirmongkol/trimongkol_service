@@ -165,4 +165,12 @@ class AccountingUiTest extends TestCase
         $this->actingMember('owner');
         $this->get(route('accounting.invoices.show', $invoice))->assertNotFound();
     }
+
+    public function test_reports_page_renders_after_setup(): void
+    {
+        [, $workspace] = $this->actingMember('owner');
+        $this->seedAccounting($workspace);
+
+        $this->get(route('accounting.reports'))->assertOk();
+    }
 }

@@ -7,6 +7,10 @@
             </div>
             @if ($workspace && $isSetUp)
                 <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+                    <a href="{{ route('accounting.reports') }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        {{ __('app.accounting.reports') }}
+                    </a>
                     <a href="{{ route('accounting.partners.index') }}"
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         {{ __('app.accounting.partners') }}

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
+use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
@@ -103,6 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
         Route::post('/setup', [AccountingDashboardController::class, 'setup'])->name('setup');
+        Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
 
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
