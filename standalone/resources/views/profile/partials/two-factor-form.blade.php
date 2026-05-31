@@ -63,7 +63,7 @@
                 $uri = \App\Services\Totp::provisioningUri(
                     $user->two_factor_secret,
                     $user->email,
-                    config('app.name', 'Tirmongkol')
+                    config('app.name', 'Ledgerly')
                 );
             @endphp
 
