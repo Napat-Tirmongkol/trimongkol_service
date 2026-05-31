@@ -3,6 +3,7 @@
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
@@ -111,6 +112,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
         Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
+
+        Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
+        Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
 
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
