@@ -38,11 +38,6 @@ class Workspace extends Model
         return $this->hasMany(WorkspaceMember::class);
     }
 
-    public function classrooms(): HasMany
-    {
-        return $this->hasMany(Classroom::class);
-    }
-
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);

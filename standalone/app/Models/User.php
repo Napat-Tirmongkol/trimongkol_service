@@ -39,11 +39,6 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function classrooms(): HasMany
-    {
-        return $this->hasMany(Classroom::class);
-    }
-
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class, 'workspace_members')

@@ -54,16 +54,16 @@
 - [ ] หน้าแลนดิ้งสาธารณะ (ตอนนี้ `/` redirect เข้า login เลย)
 - [ ] หน้าราคา · ปุ่มสมัคร
 
-### 3. ลบ dead code (cleanup — ทำตอนไหนก็ได้ แต่ก่อน production)
-โมดูลอื่นยังติดมาเป็นไฟล์ (ไม่มี route แล้ว แต่กินที่/สับสน)
-- [ ] controllers: `Admin/`, `LeadController`, `QueueController`, `ClassroomController`, `AttendanceController`, `GradebookController`, `StudentController`, `SubmissionController`, `AssignmentController`, `PlansController`, `PageController`, `ContactController`, `FeedbackController`, `PublicQueueController`, `QueueBillingController`, `SiteSettingsController`
-- [ ] models ที่ไม่เกี่ยว: `Assignment`, `Attendance*`, `Classroom`, `Lead`, `Plan`, `Queue*`, `Student`, `Submission`, `AdminAction` (ระวัง `Subscription` ถ้าจะใช้ทำ billing)
-- [ ] migrations: 35/50 ไม่ใช่บัญชี — ตัดสินใจว่าจะลบ หรือเก็บไว้ (กระทบ schema ตอน fresh install)
-- [ ] views: `admin/`, `queues/`, `classrooms/`, `attendance/`, `gradebook/`, `students/`, `assignments/`, `pages/`, `plans/`, `partials/product-tour`, components `queue-control`/`scan-dashboard`/`trial-banner`/`impersonation-banner`
-- [ ] services: `Gradebook`, `ClassInsights`, `AttendanceSummary`, `Tts`, `QueuePlan`, `ProductGate`, `PlanGate`, `DemoWorkspaceSeeder`, `Notifications/`, `Payments/` (เก็บ `Payments/` ถ้าทำ billing)
-- [ ] middleware: `EnsureAdmin`, `EnsureProductEnabled`, `MaintenanceMode`, `BlockSuspendedUser` + `app/Support/Permissions`, `config/admin-products.php`, `config/permissions.php`, `config/plans.php`, `config/queue-plans.php`
+### 3. ลบ dead code (cleanup — ทำต่อก่อน production)
+ลบรอบแรกแล้ว (105 ไฟล์: controllers/views/services ที่ไม่มี route) — เหลือ cluster ที่ยังพันกับ service ที่เก็บไว้
+- [x] controllers: `Admin/`, `Queue*`, `Classroom`, `Attendance`, `Gradebook`, `Student`, `Submission`, `Assignment`, `Plans`, `Page`, `Contact`, `Feedback`, `PublicQueue`, `SiteSettings`
+- [x] views: `admin/`, `queues/`, `classrooms/`, `attendance/`, `gradebook/`, `students/`, `assignments/`, `pages/`, `plans/` + dead partials/components/layouts
+- [x] services: `Gradebook`, `ClassInsights`, `AttendanceSummary`, `Tts`, `QueuePlan`, `ProductGate`, `DemoWorkspaceSeeder`, `Notifications/`
+- [x] ตัด `classrooms()` relation ออกจาก `User`/`Workspace`
+- [ ] models cluster ที่ยังเหลือ: `Classroom/Student/Assignment/Submission/Attendance*/Queue*/Lead/AdminAction` — ยังพันกับ `PlanGate` (Classroom), `AuditLog` (AdminAction), `SlipVerifier` (Queue*) ที่เก็บไว้เผื่อ billing → ตัดสินใจตอนทำ billing ว่าจะ refactor service พวกนี้แล้วลบ model
+- [ ] migrations: 35/50 ไม่ใช่บัญชี — เก็บไว้ก่อน (กระทบ schema ตอน fresh install) ลบพร้อม model cluster
 - [ ] lang: บล็อกที่ไม่ใช่บัญชี (`queue`, `classrooms`, `admin`, `plans`, `feedback`, ...) ใน `lang/*/app.php` + `lang/*/site.php`
-- [ ] เทสต์: ตรวจ `tests/Feature/Auth/*` ว่ายังเขียวหลังลบ
+- [x] เทสต์ยังเขียว 110 หลังลบ
 
 ### 4. ย้ายเข้า repo จริง + deploy
 - [ ] สร้าง GitHub repo ใหม่สำหรับ Ledgerly (ผมสร้างจาก session นี้ไม่ได้ — ถูกล็อกที่ repo เดียว) แล้วย้าย `standalone/` ไปเป็น root
