@@ -9,7 +9,7 @@ use App\Models\QueuePayment;
 use App\Models\QueueTicket;
 use App\Models\Setting;
 use App\Services\AuditLog;
-use App\Services\SlipVerifier;
+use App\Services\Payments\SlipVerifier;
 use App\Services\Tts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;

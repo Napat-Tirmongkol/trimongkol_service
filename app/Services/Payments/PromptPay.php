@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Services\Payments;
 
 /**
  * Build an EMVCo PromptPay QR payload string (the text encoded into the QR

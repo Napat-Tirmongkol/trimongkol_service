@@ -6,9 +6,9 @@ use App\Models\QueuePayment;
 use App\Models\Workspace;
 use App\Services\CurrentWorkspace;
 use App\Services\Notifications\Notifier;
+use App\Services\Payments\PromptPay;
+use App\Services\Payments\SlipVerifier;
 use App\Services\QueuePlan;
-use App\Services\SlipVerifier;
-use App\Support\PromptPay;
 use Illuminate\Http\Request;
 
 class QueueBillingController extends Controller
