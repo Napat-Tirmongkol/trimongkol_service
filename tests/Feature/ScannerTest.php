@@ -338,6 +338,41 @@ class ScannerTest extends TestCase
         $this->assertEqualsWithDelta(100.0, $g['student_totals'][$s->id]['weighted_percent'], 0.01);
     }
 
+    public function test_attendance_mode_behaves_like_check_no_score_recorded(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('attendance');
+
+        $this->actingAs($user)
+            ->post(route('classrooms.assignments.submissions.store', [$classroom, $assignment]), [
+                'student_id' => $student->id,
+            ])
+            ->assertRedirect();
+
+        $sub = Submission::firstOrFail();
+        $this->assertNull($sub->score, 'attendance mode should not store a numeric score');
+
+        $g = (new \App\Services\Gradebook($classroom))->build();
+        $this->assertSame(1.0, $g['cells'][$student->id][$assignment->id]['score'], 'attendance submission counts as 1 point');
+        $this->assertSame(1.0, $g['cells'][$student->id][$assignment->id]['max_score']);
+    }
+
+    public function test_assignment_create_accepts_attendance_mode(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'C']);
+
+        $this->actingAs($user)
+            ->post(route('classrooms.assignments.store', $classroom), [
+                'name' => 'Morning roll',
+                'category' => 'other',
+                'scoring_mode' => 'attendance',
+            ])
+            ->assertRedirect();
+
+        $a = Assignment::firstOrFail();
+        $this->assertSame('attendance', $a->scoring_mode);
+    }
+
     public function test_gradebook_page_renders_with_inline_score_inputs(): void
     {
         [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('custom');
@@ -414,5 +449,205 @@ class ScannerTest extends TestCase
         $this->actingAs($user)
             ->get(route('classrooms.students.bulk', $classroom))
             ->assertOk();
+    }
+
+    public function test_class_insights_computes_average_submission_rate_and_top_students(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'Mix']);
+        $alice = $classroom->students()->create(['name' => 'Alice']);
+        $bob = $classroom->students()->create(['name' => 'Bob']);
+        $cara = $classroom->students()->create(['name' => 'Cara']);
+
+        $a1 = $classroom->assignments()->create([
+            'name' => 'HW1', 'scoring_mode' => 'custom', 'max_score' => 100, 'weight' => 1,
+        ]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $alice->id, 'submitted_at' => now(), 'score' => 90]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $bob->id, 'submitted_at' => now(), 'score' => 60]);
+        Submission::create(['assignment_id' => $a1->id, 'student_id' => $cara->id, 'submitted_at' => now(), 'score' => 30]);
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+
+        $this->assertTrue($insights['has_data']);
+        $this->assertEqualsWithDelta(60.0, $insights['class_average_percent'], 0.1);
+        $this->assertEqualsWithDelta(100.0, $insights['submission_rate_percent'], 0.1);
+        $this->assertSame(3, $insights['total_submissions']);
+        $this->assertSame('Alice', $insights['top_students'][0]['name']);
+        $this->assertSame('Cara', $insights['struggling_students'][0]['name']);
+    }
+
+    public function test_class_insights_attendance_rate_only_counts_attendance_assignments(): void
+    {
+        $user = User::factory()->create();
+        $classroom = \App\Models\Classroom::create(['user_id' => $user->id, 'name' => 'Mix']);
+        $alice = $classroom->students()->create(['name' => 'Alice']);
+        $bob = $classroom->students()->create(['name' => 'Bob']);
+
+        $att = $classroom->assignments()->create(['name' => 'Morning', 'scoring_mode' => 'attendance']);
+        Submission::create(['assignment_id' => $att->id, 'student_id' => $alice->id, 'submitted_at' => now()]);
+        // Bob absent — no submission row
+
+        $hw = $classroom->assignments()->create(['name' => 'HW', 'scoring_mode' => 'check']);
+        Submission::create(['assignment_id' => $hw->id, 'student_id' => $alice->id, 'submitted_at' => now()]);
+        Submission::create(['assignment_id' => $hw->id, 'student_id' => $bob->id, 'submitted_at' => now()]);
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+
+        $this->assertSame(1, $insights['attendance_assignments']);
+        $this->assertEqualsWithDelta(50.0, $insights['attendance_rate_percent'], 0.1, '1 of 2 students marked present');
+    }
+
+    public function test_classroom_show_renders_insights_when_submissions_exist(): void
+    {
+        [$user, $classroom, $assignment, $student] = $this->makeOwnerWithAssignment('fixed', 5);
+        Submission::create([
+            'assignment_id' => $assignment->id,
+            'student_id' => $student->id,
+            'submitted_at' => now(),
+            'score' => 5,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('classrooms.show', $classroom))
+            ->assertOk()
+            ->assertSee(__('app.insights.heading'));
+    }
+
+    public function test_demo_workspace_seeder_creates_populated_classroom(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'demo-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $classroom = (new \App\Services\DemoWorkspaceSeeder($workspace, $user))->seed();
+
+        $this->assertNotNull($classroom);
+        $this->assertSame($workspace->id, $classroom->workspace_id);
+        $this->assertGreaterThanOrEqual(5, $classroom->students()->count());
+        $this->assertSame(2, $classroom->assignments()->count());
+
+        $insights = (new \App\Services\ClassInsights($classroom))->build();
+        $this->assertTrue($insights['has_data'], 'demo data should populate the insights card');
+        $this->assertGreaterThan(0, $insights['total_submissions']);
+        $this->assertNotNull($insights['attendance_rate_percent']);
+    }
+
+    public function test_new_signup_gets_demo_classroom_via_registered_event(): void
+    {
+        $this->post('/register', [
+            'name' => 'Teacher',
+            'email' => 'teacher@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect();
+
+        $user = User::where('email', 'teacher@example.com')->firstOrFail();
+        $workspace = $user->ownedWorkspaces()->firstOrFail();
+
+        $this->assertSame(1, $workspace->classrooms()->count(), 'registration should seed a demo classroom');
+        $this->assertGreaterThan(0, \App\Models\Submission::count(), 'demo classroom should have sample submissions');
+    }
+
+    public function test_landing_renders_when_workspace_has_no_classrooms(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'landing-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee(__('app.landing.title'))
+            ->assertSee(__('app.landing.try_demo'))
+            ->assertSee(__('app.landing.free_plan_badge'));
+    }
+
+    public function test_demo_cta_creates_classroom_and_redirects_into_it(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'cta-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->post(route('classrooms.demo'));
+
+        $classroom = $workspace->classrooms()->firstOrFail();
+        $response->assertRedirect(route('classrooms.show', $classroom));
+        $this->assertGreaterThanOrEqual(5, $classroom->students()->count());
+        $this->assertSame(2, $classroom->assignments()->count());
+    }
+
+    public function test_demo_cta_blocked_when_classroom_quota_is_full(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'full-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        // Fill the room up to whichever cap applies (free-launch caps under
+        // billing.free_mode, otherwise the configured plan cap).
+        $cap = \App\Services\Billing::freeMode()
+            ? \App\Services\Billing::launchLimit('max_classrooms')
+            : $workspace->currentPlan()->limit('max_classrooms');
+        if ($cap === null) {
+            $this->markTestSkipped('Workspace has unlimited classrooms — paywall path not reachable.');
+        }
+        for ($i = 0; $i < $cap; $i++) {
+            \App\Models\Classroom::create([
+                'name' => "C$i",
+                'user_id' => $user->id,
+                'workspace_id' => $workspace->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->post(route('classrooms.demo'))
+            ->assertRedirect(route('plans.index'));
+    }
+
+    public function test_dashboard_shows_quota_meter_with_plan_badge(): void
+    {
+        $user = User::factory()->create();
+        $workspace = \App\Models\Workspace::create(['name' => 'WS', 'slug' => 'ws-' . uniqid()]);
+        \App\Models\WorkspaceMember::create([
+            'workspace_id' => $workspace->id,
+            'user_id' => $user->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+        \App\Models\Classroom::create([
+            'name' => 'C1',
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['current_workspace_id' => $workspace->id])
+            ->get(route('dashboard'));
+
+        $response->assertOk()
+            ->assertSee(__('app.dashboard.quota_view_plans'));
     }
 }

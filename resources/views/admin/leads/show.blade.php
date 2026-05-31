@@ -32,13 +32,64 @@
                 {{-- Lead info + message --}}
                 <div class="space-y-6 lg:col-span-2">
                     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <div class="flex items-baseline justify-between">
-                            <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.leads.section_message') }}</h3>
+                        <div class="flex items-baseline justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.leads.section_message') }}</h3>
+                                @if ($lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
+                                    <span class="inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 ring-1 ring-inset ring-amber-200">{{ __('app.feedback.nav') }}</span>
+                                @endif
+                            </div>
                             <span class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $badge[$lead->status] ?? '' }}">
                                 {{ __("app.admin.leads.status_{$lead->status}") }}
                             </span>
                         </div>
-                        <p class="mt-4 whitespace-pre-line text-sm text-slate-700">{{ $lead->message }}</p>
+                        @if ($lead->source === \App\Models\Lead::SOURCE_FEEDBACK && ! empty($lead->context['subject']))
+                            <p class="mt-4 text-base font-semibold text-slate-900">{{ $lead->context['subject'] }}</p>
+                            @if (! empty($lead->context['category']))
+                                <p class="mt-1 text-xs text-slate-500">{{ __("app.feedback.cat_{$lead->context['category']}") }}</p>
+                            @endif
+                            <p class="mt-3 whitespace-pre-line text-sm text-slate-700">{{ $lead->message }}</p>
+                        @else
+                            <p class="mt-4 whitespace-pre-line text-sm text-slate-700">{{ $lead->message }}</p>
+                        @endif
+
+                        @if (! empty($lead->context['attachment_path']) && $lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
+                            <div class="mt-4">
+                                <div class="text-xs font-semibold text-slate-700">{{ __('app.admin.leads.attachment') }}</div>
+                                <a href="{{ route('admin.leads.attachment', $lead) }}" target="_blank"
+                                   class="mt-2 inline-block overflow-hidden rounded-lg border border-slate-200 transition hover:border-brand-400">
+                                    <img src="{{ route('admin.leads.attachment', $lead) }}" alt=""
+                                         class="block max-h-72 max-w-full object-contain bg-slate-50">
+                                </a>
+                                <div class="mt-1 text-xs text-slate-500">
+                                    {{ $lead->context['attachment_original'] ?? '' }}
+                                    @if (! empty($lead->context['attachment_size']))
+                                        · {{ number_format($lead->context['attachment_size'] / 1024, 0) }} KB
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        @if (! empty($lead->context) && $lead->source === \App\Models\Lead::SOURCE_FEEDBACK)
+                            <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                                <div class="font-semibold text-slate-700">Debug context</div>
+                                <dl class="mt-2 grid gap-1 sm:grid-cols-2">
+                                    @if (! empty($lead->context['page_url']))
+                                        <div class="sm:col-span-2"><span class="text-slate-400">URL:</span> <code class="break-all">{{ $lead->context['page_url'] }}</code></div>
+                                    @endif
+                                    @if (! empty($lead->context['workspace_name']))
+                                        <div><span class="text-slate-400">Workspace:</span> {{ $lead->context['workspace_name'] }} <span class="text-slate-400">#{{ $lead->context['workspace_id'] ?? '—' }}</span></div>
+                                    @endif
+                                    @if (! empty($lead->context['user_id']))
+                                        <div><span class="text-slate-400">User ID:</span> {{ $lead->context['user_id'] }}</div>
+                                    @endif
+                                    @if (! empty($lead->context['locale']))
+                                        <div><span class="text-slate-400">Locale:</span> {{ $lead->context['locale'] }}</div>
+                                    @endif
+                                </dl>
+                            </div>
+                        @endif
+
                         <div class="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
                             <div>{{ __('app.admin.leads.received') }}: {{ $lead->created_at->format('d M Y, H:i') }}</div>
                             @if ($lead->replied_at)
@@ -46,6 +97,9 @@
                             @endif
                             @if ($lead->ip)
                                 <div>IP: <code>{{ $lead->ip }}</code></div>
+                            @endif
+                            @if ($lead->user_agent)
+                                <div class="break-all">UA: <code class="text-[10px]">{{ $lead->user_agent }}</code></div>
                             @endif
                         </div>
                     </div>

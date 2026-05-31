@@ -136,6 +136,8 @@ class AppServiceProvider extends ServiceProvider
                     'trial_ends_at' => now()->addDays(14),
                 ]);
             }
+
+            (new \App\Services\DemoWorkspaceSeeder($workspace, $event->user))->seed();
         });
 
         // RBAC: one gate per back-office permission. Super Admin holds the

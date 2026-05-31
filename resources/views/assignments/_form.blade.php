@@ -41,7 +41,7 @@
     <div x-data="{ mode: '{{ old('scoring_mode', $assignment?->scoring_mode ?? 'check') }}' }">
         <label class="block text-sm font-medium text-slate-700">{{ __('app.assignments.field_mode') }}</label>
         <div class="mt-2 space-y-2">
-            @foreach (['check', 'fixed', 'custom'] as $mode)
+            @foreach (['check', 'attendance', 'fixed', 'custom'] as $mode)
                 <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50">
                     <input type="radio" name="scoring_mode" value="{{ $mode }}" x-model="mode"
                            class="mt-1 border-slate-300 text-brand-600 focus:ring-brand-500">
