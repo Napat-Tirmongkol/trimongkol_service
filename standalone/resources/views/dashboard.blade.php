@@ -1,0 +1,438 @@
+<x-app-layout>
+    @php
+        $totalStudents = $classrooms->sum('students_count');
+        $totalAssignments = $classrooms->sum('assignments_count');
+        $firstName = trim(explode(' ', (string) auth()->user()->name)[0] ?? '');
+    @endphp
+
+    <div class="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-brand-50 to-white">
+        {{-- soft brand accents on the light hero --}}
+        <div class="pointer-events-none absolute inset-0 bg-grid opacity-50"></div>
+        <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl"></div>
+        <div class="pointer-events-none absolute -left-16 top-8 h-40 w-40 rounded-full bg-brand-100/50 blur-3xl"></div>
+
+        <div class="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+            <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-brand-600">{{ __('app.dashboard.greeting_label') }}</p>
+                    <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                        {{ __('app.dashboard.greeting', ['name' => $firstName]) }}
+                    </h1>
+                    <p class="mt-2 max-w-xl text-sm text-slate-500">{{ __('app.dashboard.subtitle') }}</p>
+                    <button type="button" id="tour-start"
+                            class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        {{ __('app.tour.help') }}
+                    </button>
+                </div>
+                @if ($classrooms->isNotEmpty())
+                    <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
+                       class="inline-flex items-center gap-2 self-start rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 transition hover:bg-brand-700 sm:self-auto">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        {{ __('app.classrooms.add') }}
+                    </a>
+                @endif
+            </div>
+
+            @if ($classrooms->isNotEmpty())
+                @php
+                    $classroomLimit = $quota['classroom_limit'] ?? null;
+                    $classroomUsed = $quota['classroom_used'] ?? $classrooms->count();
+                    $classroomPct = $classroomLimit ? min(100, round($classroomUsed / max(1, $classroomLimit) * 100)) : 0;
+                    $classroomNearCap = $classroomLimit && $classroomUsed >= $classroomLimit;
+                    $classroomWarn = $classroomLimit && $classroomPct >= 80;
+                @endphp
+
+                @if ($quota)
+                    <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-600 backdrop-blur sm:rounded-full sm:px-4 sm:py-1.5">
+                        @if ($quota['free_mode'])
+                            <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                {{ __('app.plans.free_launch_badge') }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 font-semibold text-brand-700">
+                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                                {{ $quota['plan_name'] }}
+                            </span>
+                        @endif
+                        <span class="hidden text-slate-300 sm:inline">·</span>
+                        <span class="tabular-nums">
+                            {{ __('app.dashboard.stat_classrooms') }}
+                            <strong class="font-semibold text-slate-900">{{ $classroomUsed }}</strong>{{ $classroomLimit !== null ? '/'.$classroomLimit : '' }}
+                        </span>
+                        @if ($quota['member_limit'] !== null && $quota['member_limit'] > 1)
+                            <span class="hidden text-slate-300 sm:inline">·</span>
+                            <span class="tabular-nums">
+                                {{ __('app.dashboard.stat_members') }}
+                                <strong class="font-semibold text-slate-900">{{ $quota['member_used'] }}</strong>/{{ $quota['member_limit'] }}
+                            </span>
+                        @endif
+                        <a href="{{ route('plans.index') }}" class="ml-auto font-medium text-brand-600 hover:text-brand-700 sm:ml-1">
+                            {{ __('app.dashboard.quota_view_plans') }} →
+                        </a>
+                    </div>
+                @endif
+
+                <div class="mt-4 grid grid-cols-3 gap-3 sm:max-w-xl">
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_classrooms') }}</div>
+                        <div class="mt-1 flex items-baseline gap-1 text-2xl font-bold tabular-nums text-slate-900">
+                            {{ $classroomUsed }}
+                            @if ($classroomLimit !== null)
+                                <span class="text-sm font-medium text-slate-400">/ {{ $classroomLimit }}</span>
+                            @endif
+                        </div>
+                        @if ($classroomLimit !== null)
+                            <div class="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
+                                <div class="h-full rounded-full transition-all {{ $classroomNearCap ? 'bg-rose-500' : ($classroomWarn ? 'bg-amber-500' : 'bg-brand-500') }}"
+                                     style="width: {{ $classroomPct }}%"></div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
+                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $totalStudents }}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
+                        <div class="mt-1 text-2xl font-bold tabular-nums text-slate-900">{{ $totalAssignments }}</div>
+                    </div>
+                </div>
+
+                @if ($classroomNearCap)
+                    <div class="mt-3 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 sm:max-w-xl">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span class="flex-1">{{ __('app.dashboard.quota_full', ['limit' => $classroomLimit]) }}</span>
+                        <a href="{{ route('plans.index') }}" class="font-semibold underline hover:text-rose-900">{{ __('app.dashboard.quota_upgrade') }}</a>
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <div class="mb-5 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                 x-data="{ show: true }" x-show="show" x-transition>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="mt-0.5 shrink-0 text-emerald-600">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <div class="flex-1">{{ session('status') }}</div>
+                <button @click="show = false" class="text-emerald-500 hover:text-emerald-700">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        @endif
+
+        @if ($classrooms->isEmpty())
+            @php
+                $features = [
+                    ['key' => 'scan', 'tone' => 'brand', 'svg' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"/>'],
+                    ['key' => 'grade', 'tone' => 'amber', 'svg' => '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'],
+                    ['key' => 'insights', 'tone' => 'emerald', 'svg' => '<path d="M3 17l4-4 4 3 6-7M14 6h7v7" stroke-linecap="round" stroke-linejoin="round"/>'],
+                    ['key' => 'attendance', 'tone' => 'sky', 'svg' => '<path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+                ];
+                $featureTone = [
+                    'brand' => 'bg-brand-50 text-brand-600',
+                    'amber' => 'bg-amber-50 text-amber-600',
+                    'emerald' => 'bg-emerald-50 text-emerald-600',
+                    'sky' => 'bg-sky-50 text-sky-600',
+                ];
+            @endphp
+
+            <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                {{-- Hero --}}
+                <div class="grid items-center gap-6 bg-gradient-to-br from-brand-50/40 via-white to-white p-8 sm:grid-cols-[1fr_auto] sm:gap-10 sm:p-12">
+                    <div>
+                        <div class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                            <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                            {{ __('app.dashboard.start_here') }}
+                        </div>
+                        <h2 class="mt-3 text-2xl font-bold leading-tight text-slate-900 sm:text-4xl">{{ __('app.landing.title') }}</h2>
+                        <p class="mt-3 max-w-xl text-sm text-slate-600 sm:text-base">{{ __('app.landing.subtitle') }}</p>
+
+                        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            <a href="{{ route('classrooms.create') }}" data-tour="add-classroom"
+                               class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700 sm:w-auto sm:py-2.5">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                {{ __('app.classrooms.add') }}
+                            </a>
+                            <form method="POST" action="{{ route('classrooms.demo') }}">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto sm:py-2.5">
+                                    <span>🌱</span>
+                                    {{ __('app.landing.try_demo') }}
+                                </button>
+                            </form>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">{{ __('app.landing.no_credit_card') }}</p>
+                    </div>
+                    <div class="hidden sm:block">
+                        <div class="relative grid h-44 w-44 place-items-center rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-white shadow-inner">
+                            <svg width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-600">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                                <rect x="7" y="7" width="10" height="10" rx="1"/>
+                            </svg>
+                            <span class="absolute -bottom-2 -right-2 grid h-10 w-10 place-items-center rounded-full bg-emerald-500 text-white shadow-lg">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Feature grid — gap-px shows the slate background as dividers in any grid layout --}}
+                <div class="grid grid-cols-2 gap-px border-t border-slate-200 bg-slate-200 lg:grid-cols-4">
+                    @foreach ($features as $f)
+                        <div class="bg-white p-5 sm:p-6">
+                            <span class="grid h-9 w-9 place-items-center rounded-xl {{ $featureTone[$f['tone']] }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{!! $f['svg'] !!}</svg>
+                            </span>
+                            <h3 class="mt-3 text-sm font-semibold text-slate-900">{{ __("app.landing.feature_{$f['key']}_title") }}</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-600">{{ __("app.landing.feature_{$f['key']}_desc") }}</p>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Steps + plan callout --}}
+                <div class="grid gap-6 border-t border-slate-200 p-8 sm:grid-cols-[1.6fr_1fr] sm:gap-10 sm:p-10">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-900">{{ __('app.landing.how_heading') }}</h3>
+                        <ul class="mt-3 grid gap-2.5 text-sm text-slate-600">
+                            @foreach (['step_1', 'step_2', 'step_3'] as $idx => $step)
+                                <li class="flex items-start gap-2.5">
+                                    <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-700">{{ $idx + 1 }}</span>
+                                    {{ __("app.dashboard.{$step}") }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                            {{ __('app.landing.free_plan_badge') }}
+                        </span>
+                        <h4 class="mt-2 text-sm font-semibold text-slate-900">{{ __('app.landing.free_plan_title') }}</h4>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-600">{{ __('app.landing.free_plan_desc') }}</p>
+                        <a href="{{ route('plans.index') }}" class="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800">
+                            {{ __('app.landing.see_plans') }} →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        @else
+            {{-- "Today" overview: what does the teacher need to do RIGHT NOW. --}}
+            @if ($today)
+                @php
+                    $attendanceDone = $today['classrooms_attended'];
+                    $attendanceTotal = $today['classrooms_total'];
+                    $attendancePct = $attendanceTotal > 0 ? round($attendanceDone / $attendanceTotal * 100) : 0;
+                    $attendanceTone = $attendanceDone === 0 ? 'rose' : ($attendanceDone < $attendanceTotal ? 'amber' : 'emerald');
+                    $attendanceToneClass = ['rose' => 'text-rose-700 bg-rose-50', 'amber' => 'text-amber-700 bg-amber-50', 'emerald' => 'text-emerald-700 bg-emerald-50'][$attendanceTone];
+                @endphp
+                <div class="mb-6">
+                    <div class="mb-3 flex items-baseline justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.today_heading') }}</h2>
+                        <span class="text-xs text-slate-500">{{ now()->translatedFormat('l d M Y') }}</span>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.today_attendance') }}</div>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $attendanceToneClass }}">
+                                    {{ $attendancePct }}%
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">
+                                {{ $attendanceDone }}<span class="text-base font-normal text-slate-500"> / {{ $attendanceTotal }} {{ __('app.dashboard.count_suffix') }}</span>
+                            </div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.today_attendance_hint') }}</div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.today_submissions') }}</div>
+                                <span class="grid h-6 w-6 place-items-center rounded-full bg-sky-50 text-sky-600">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">{{ $today['submissions_today'] }}</div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.today_submissions_hint') }}</div>
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.dashboard.upcoming_due') }}</div>
+                                <span class="grid h-6 w-6 place-items-center rounded-full bg-amber-50 text-amber-600">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </span>
+                            </div>
+                            <div class="mt-2 text-2xl font-bold tabular-nums text-slate-900">{{ $today['upcoming_due_count'] }}</div>
+                            <div class="mt-1 text-xs text-slate-500">{{ __('app.dashboard.upcoming_due_hint') }}</div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <div class="mb-3 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.your_classrooms') }}</h2>
+                <span class="text-xs text-slate-500">{{ $classrooms->count() }} {{ __('app.dashboard.count_suffix') }}</span>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($classrooms as $classroom)
+                    @php
+                        $latest = $classroom->assignments->first();
+                        $studentCap = $quota['student_limit_per_room'] ?? null;
+                        $studentsFull = $studentCap && $classroom->students_count >= $studentCap;
+                        $studentsWarn = $studentCap && ! $studentsFull && $classroom->students_count >= (int) ($studentCap * 0.8);
+                        $attToday = $todayAttendanceByClassroom[$classroom->id] ?? null;
+                    @endphp
+                    <div class="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg hover:shadow-brand-600/5">
+                        <span class="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-brand-50 opacity-0 transition group-hover:opacity-100"></span>
+
+                        <a href="{{ route('classrooms.show', $classroom) }}" class="relative flex flex-1 flex-col p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="truncate text-lg font-semibold text-slate-900 group-hover:text-brand-700">
+                                        {{ $classroom->name }}
+                                    </h3>
+                                    @if ($classroom->description)
+                                        <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $classroom->description }}</p>
+                                    @endif
+                                </div>
+                                @if ($classroom->grade_level)
+                                    <span class="shrink-0 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                                        {{ $classroom->grade_level }}
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="mt-5 grid grid-cols-2 gap-2">
+                                <div class="rounded-lg bg-slate-50 px-3 py-2">
+                                    <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_students') }}</div>
+                                    <div class="mt-0.5 flex items-baseline gap-1">
+                                        <span class="text-lg font-bold tabular-nums {{ $studentsFull ? 'text-rose-700' : ($studentsWarn ? 'text-amber-700' : 'text-slate-900') }}">{{ $classroom->students_count }}</span>
+                                        @if ($studentCap !== null)
+                                            <span class="text-xs font-medium text-slate-400">/ {{ $studentCap }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="rounded-lg bg-slate-50 px-3 py-2">
+                                    <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">{{ __('app.dashboard.stat_assignments') }}</div>
+                                    <div class="mt-0.5 text-lg font-bold tabular-nums text-slate-900">{{ $classroom->assignments_count }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                                @if ($latest)
+                                    <span class="truncate">
+                                        <span class="text-slate-400">{{ __('app.dashboard.latest') }}:</span>
+                                        <span class="font-medium text-slate-700">{{ $latest->name }}</span>
+                                    </span>
+                                @else
+                                    <span class="text-slate-400">{{ __('app.assignments.empty_short') }}</span>
+                                @endif
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     class="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </div>
+                        </a>
+
+                        {{-- Today's attendance status + CTA, kept outside the main link so it can be its own button. --}}
+                        <div class="relative flex items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 text-xs">
+                            @if ($attToday)
+                                <span class="inline-flex items-center gap-1.5 text-emerald-700">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <span class="font-medium">{{ __('app.dashboard.attendance_done') }}</span>
+                                </span>
+                                <a href="{{ route('classrooms.attendance.show', [$classroom, $attToday->id]) }}"
+                                   class="font-medium text-brand-600 hover:text-brand-700">
+                                    {{ __('app.dashboard.view_today') }} →
+                                </a>
+                            @else
+                                <span class="inline-flex items-center gap-1.5 text-slate-500">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    <span>{{ __('app.dashboard.attendance_pending') }}</span>
+                                </span>
+                                <form method="POST" action="{{ route('classrooms.attendance.today', $classroom) }}">
+                                    @csrf
+                                    <button type="submit" class="font-semibold text-brand-600 hover:text-brand-700">
+                                        {{ __('app.dashboard.take_attendance') }} →
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+
+                <a href="{{ route('classrooms.create') }}"
+                   class="group flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-5 text-center text-slate-500 transition hover:border-brand-400 hover:bg-brand-50/50 hover:text-brand-700">
+                    <span class="grid h-10 w-10 place-items-center rounded-full bg-white ring-1 ring-slate-200 transition group-hover:ring-brand-200">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </span>
+                    <span class="text-sm font-medium">{{ __('app.classrooms.add') }}</span>
+                </a>
+            </div>
+
+            {{-- Recent activity feed --}}
+            @if ($recentActivity->isNotEmpty())
+                <div class="mt-8">
+                    <div class="mb-3 flex items-baseline justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">{{ __('app.dashboard.recent_activity') }}</h2>
+                        <span class="text-xs text-slate-500">{{ __('app.dashboard.last_n', ['n' => $recentActivity->count()]) }}</span>
+                    </div>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <ul class="divide-y divide-slate-100">
+                            @foreach ($recentActivity as $sub)
+                                @php
+                                    $classroomForRow = $classrooms->firstWhere('id', $sub->student?->classroom_id);
+                                @endphp
+                                <li class="flex items-center justify-between gap-3 px-5 py-3">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <div class="truncate text-sm text-slate-900">
+                                                <span class="font-medium">{{ $sub->student?->name ?? '—' }}</span>
+                                                <span class="text-slate-500">{{ __('app.dashboard.activity_submitted') }}</span>
+                                                <span class="font-medium">{{ $sub->assignment?->name ?? '—' }}</span>
+                                            </div>
+                                            @if ($classroomForRow)
+                                                <div class="text-xs text-slate-500">{{ $classroomForRow->name }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-slate-500 tabular-nums" title="{{ $sub->submitted_at }}">
+                                        {{ $sub->submitted_at?->diffForHumans() }}
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            @endif
+        @endif
+    </div>
+
+    <script>
+        (() => {
+            const steps = [
+                { title: @json(__('app.tour.dash_welcome_title')), text: @json(__('app.tour.dash_welcome_text')) },
+                { el: '[data-tour=add-classroom]', title: @json(__('app.tour.dash_create_title')), text: @json(__('app.tour.dash_create_text')), side: 'bottom' },
+            ];
+            document.getElementById('tour-start')?.addEventListener('click', () => window.startTour(steps));
+            window.addEventListener('load', () => window.maybeAutoTour('scanner-dashboard', steps));
+        })();
+    </script>
+</x-app-layout>
