@@ -52,19 +52,94 @@
                     </form>
                 </div>
             @else
-                <div class="grid gap-4 sm:grid-cols-3">
+                @php $baht = fn ($v) => ((float) $v < 0 ? '-฿' : '฿').number_format(abs((float) $v), 2); @endphp
+
+                {{-- KPI row: cash, who owes us, who we owe, this month's profit --}}
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_cash') }}</div>
+                        <div class="mt-2 text-2xl font-bold text-brand-700 tabular-nums">{{ $baht($finance['cash']) }}</div>
+                    </div>
                     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_outstanding') }}</div>
-                        <div class="mt-2 text-3xl font-bold text-slate-900 tabular-nums">฿{{ number_format((float) $stats['outstanding'], 2) }}</div>
+                        <div class="mt-2 text-2xl font-bold text-emerald-700 tabular-nums">{{ $baht($finance['ar']) }}</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_invoices') }}</div>
-                        <div class="mt-2 text-3xl font-bold text-slate-900 tabular-nums">{{ number_format($stats['invoices']) }}</div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_payable') }}</div>
+                        <div class="mt-2 text-2xl font-bold text-amber-700 tabular-nums">{{ $baht($finance['ap']) }}</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_partners') }}</div>
-                        <div class="mt-2 text-3xl font-bold text-slate-900 tabular-nums">{{ number_format($stats['partners']) }}</div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.stat_profit_month') }}</div>
+                        <div class="mt-2 text-2xl font-bold tabular-nums {{ (float) $finance['net_profit'] < 0 ? 'text-rose-600' : 'text-emerald-700' }}">{{ $baht($finance['net_profit']) }}</div>
                     </div>
+                </div>
+
+                <div class="grid gap-6 lg:grid-cols-2">
+                    {{-- Taxes building up for this month's filing --}}
+                    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-3">
+                            <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.taxes_due') }} <span class="font-normal text-slate-400">· {{ $finance['month_label'] }}</span></h3>
+                            <a href="{{ route('accounting.reports.tax') }}" class="text-xs font-medium text-brand-700 hover:text-brand-800">{{ __('app.accounting.tax_reports') }} →</a>
+                        </div>
+                        <dl class="divide-y divide-slate-100 px-6 text-sm">
+                            <div class="flex items-center justify-between py-3">
+                                <dt class="text-slate-600">{{ __('app.accounting.vat_net') }}<span class="ml-1 text-xs text-slate-400">({{ __('app.accounting.vat_net_hint') }})</span></dt>
+                                <dd class="font-semibold tabular-nums {{ (float) $finance['vat_net'] < 0 ? 'text-emerald-700' : 'text-slate-900' }}">{{ $baht($finance['vat_net']) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between py-3">
+                                <dt class="text-slate-600">{{ __('app.accounting.wht_pnd3') }}</dt>
+                                <dd class="font-semibold tabular-nums text-slate-900">{{ $baht($finance['wht_pnd3']) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between py-3">
+                                <dt class="text-slate-600">{{ __('app.accounting.wht_pnd53') }}</dt>
+                                <dd class="font-semibold tabular-nums text-slate-900">{{ $baht($finance['wht_pnd53']) }}</dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    {{-- Documents still waiting to be dealt with --}}
+                    <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <div class="border-b border-slate-200 px-6 py-3">
+                            <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.action_items') }}</h3>
+                        </div>
+                        @php $hasTodos = $finance['overdue_count'] || $finance['draft_invoices'] || $finance['draft_bills']; @endphp
+                        @if (! $hasTodos)
+                            <div class="flex items-center gap-2 px-6 py-8 text-sm text-slate-500">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>
+                                {{ __('app.accounting.all_clear') }}
+                            </div>
+                        @else
+                            <ul class="divide-y divide-slate-100">
+                                @if ($finance['overdue_count'])
+                                    <li>
+                                        <a href="{{ route('accounting.invoices.index') }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                            <span class="text-sm text-slate-700">{{ __('app.accounting.overdue_invoices_n') }}</span>
+                                            <span class="flex items-center gap-2">
+                                                <span class="text-sm font-semibold tabular-nums text-rose-600">{{ $baht($finance['overdue_amount']) }}</span>
+                                                <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 text-xs font-semibold text-rose-700">{{ $finance['overdue_count'] }}</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if ($finance['draft_invoices'])
+                                    <li>
+                                        <a href="{{ route('accounting.invoices.index') }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                            <span class="text-sm text-slate-700">{{ __('app.accounting.draft_invoices_n') }}</span>
+                                            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-semibold text-slate-600">{{ $finance['draft_invoices'] }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if ($finance['draft_bills'])
+                                    <li>
+                                        <a href="{{ route('accounting.bills.index') }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                            <span class="text-sm text-slate-700">{{ __('app.accounting.draft_bills_n') }}</span>
+                                            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-semibold text-slate-600">{{ $finance['draft_bills'] }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                            </ul>
+                        @endif
+                    </section>
                 </div>
 
                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
