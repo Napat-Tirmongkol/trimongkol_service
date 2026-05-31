@@ -95,7 +95,14 @@
                                         <p class="text-xs text-slate-400 font-mono">{{ $key }}</p>
 
                                         @if ($cfg['type'] === 'shared')
-                                            @if (! empty($cfg['textarea']))
+                                            @if (! empty($cfg['toggle']))
+                                                @php $on = ($values[$key] ?? '') !== '0'; @endphp
+                                                <label class="relative mt-2 inline-flex cursor-pointer items-center">
+                                                    <input type="hidden" name="s[{{ $key }}]" value="0">
+                                                    <input type="checkbox" name="s[{{ $key }}]" value="1" @checked($on) class="peer sr-only">
+                                                    <div class="h-6 w-11 rounded-full bg-slate-300 transition-colors peer-checked:bg-brand-600 peer-focus:ring-2 peer-focus:ring-brand-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-full"></div>
+                                                </label>
+                                            @elseif (! empty($cfg['textarea']))
                                                 <textarea name="s[{{ $key }}]" rows="2"
                                                           class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">{{ $values[$key] ?? null ?? '' }}</textarea>
                                             @else
@@ -137,6 +144,10 @@
                                                 @endforeach
                                             </div>
                                             <p class="mt-1 text-xs text-slate-400">{{ __('app.cms.placeholderHint') }}</p>
+                                        @endif
+
+                                        @if (! empty($cfg['hint']))
+                                            <p class="mt-2 text-xs text-slate-500">{{ $cfg['hint'] }}</p>
                                         @endif
                                     </div>
                                 @endforeach
