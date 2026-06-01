@@ -9,7 +9,9 @@ use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboarding
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
+use App\Http\Controllers\Accounting\PayrollController as AccountingPayrollController;
 use App\Http\Controllers\Accounting\PeriodController as AccountingPeriodController;
+use App\Http\Controllers\Accounting\ProductController as AccountingProductController;
 use App\Http\Controllers\Accounting\RecurringJournalController as AccountingRecurringJournalController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
@@ -183,6 +185,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/fixed-assets/{fixedAsset}', [AccountingFixedAssetController::class, 'show'])->name('fixed-assets.show');
         Route::post('/fixed-assets/{fixedAsset}/depreciate', [AccountingFixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
         Route::post('/fixed-assets/{fixedAsset}/dispose', [AccountingFixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
+
+        // Inventory (products + stock movements)
+        Route::get('/products', [AccountingProductController::class, 'index'])->name('products.index');
+        Route::get('/products/create', [AccountingProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [AccountingProductController::class, 'store'])->name('products.store');
+        Route::get('/products/{product}', [AccountingProductController::class, 'show'])->name('products.show');
+        Route::post('/products/{product}/receive', [AccountingProductController::class, 'receive'])->name('products.receive');
+        Route::post('/products/{product}/issue', [AccountingProductController::class, 'issue'])->name('products.issue');
+        Route::post('/products/{product}/adjust', [AccountingProductController::class, 'adjust'])->name('products.adjust');
+
+        // Payroll
+        Route::get('/payroll/employees', [AccountingPayrollController::class, 'employees'])->name('payroll.employees');
+        Route::post('/payroll/employees', [AccountingPayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
+        Route::post('/payroll/employees/{employee}/toggle', [AccountingPayrollController::class, 'toggleEmployee'])->name('payroll.employees.toggle');
+        Route::get('/payroll/runs', [AccountingPayrollController::class, 'runs'])->name('payroll.runs.index');
+        Route::get('/payroll/runs/create', [AccountingPayrollController::class, 'createRun'])->name('payroll.runs.create');
+        Route::post('/payroll/runs', [AccountingPayrollController::class, 'storeRun'])->name('payroll.runs.store');
+        Route::get('/payroll/runs/{payrollRun}', [AccountingPayrollController::class, 'showRun'])->name('payroll.runs.show');
+        Route::patch('/payroll/items/{payrollItem}', [AccountingPayrollController::class, 'updateItem'])->name('payroll.items.update');
+        Route::post('/payroll/runs/{payrollRun}/post', [AccountingPayrollController::class, 'postRun'])->name('payroll.runs.post');
+        Route::get('/payroll/items/{payrollItem}/payslip', [AccountingPayrollController::class, 'payslip'])->name('payroll.items.payslip');
     });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
