@@ -1,12 +1,16 @@
 <?php
 
 use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\FixedAssetController as AccountingFixedAssetController;
 use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
+use App\Http\Controllers\Accounting\PeriodController as AccountingPeriodController;
+use App\Http\Controllers\Accounting\RecurringJournalController as AccountingRecurringJournalController;
 use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
 use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
@@ -148,6 +152,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/bills/{bill}/print', [AccountingBillController::class, 'print'])->name('bills.print');
         Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
         Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
+
+        // Accounting periods + year-end close
+        Route::get('/periods', [AccountingPeriodController::class, 'index'])->name('periods.index');
+        Route::post('/periods', [AccountingPeriodController::class, 'store'])->name('periods.store');
+        Route::post('/periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('periods.close');
+        Route::post('/periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen');
+        Route::post('/periods/year-end-close', [AccountingPeriodController::class, 'yearEndClose'])->name('periods.year-end-close');
+
+        // Bank reconciliation
+        Route::get('/bank-reconciliation', [AccountingBankReconciliationController::class, 'index'])->name('bank-reconciliation.index');
+        Route::post('/bank-reconciliation/lines', [AccountingBankReconciliationController::class, 'storeLine'])->name('bank-reconciliation.lines.store');
+        Route::post('/bank-reconciliation/import', [AccountingBankReconciliationController::class, 'importCsv'])->name('bank-reconciliation.import');
+        Route::post('/bank-reconciliation/{statement}/match', [AccountingBankReconciliationController::class, 'match'])->name('bank-reconciliation.match');
+        Route::post('/bank-reconciliation/{statement}/unmatch', [AccountingBankReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
+        Route::delete('/bank-reconciliation/{statement}', [AccountingBankReconciliationController::class, 'destroy'])->name('bank-reconciliation.destroy');
+
+        // Recurring journals
+        Route::get('/recurring-journals', [AccountingRecurringJournalController::class, 'index'])->name('recurring-journals.index');
+        Route::get('/recurring-journals/create', [AccountingRecurringJournalController::class, 'create'])->name('recurring-journals.create');
+        Route::post('/recurring-journals', [AccountingRecurringJournalController::class, 'store'])->name('recurring-journals.store');
+        Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
+        Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
+        Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');
+
+        // Fixed assets
+        Route::get('/fixed-assets', [AccountingFixedAssetController::class, 'index'])->name('fixed-assets.index');
+        Route::get('/fixed-assets/create', [AccountingFixedAssetController::class, 'create'])->name('fixed-assets.create');
+        Route::post('/fixed-assets', [AccountingFixedAssetController::class, 'store'])->name('fixed-assets.store');
+        Route::get('/fixed-assets/{fixedAsset}', [AccountingFixedAssetController::class, 'show'])->name('fixed-assets.show');
+        Route::post('/fixed-assets/{fixedAsset}/depreciate', [AccountingFixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
+        Route::post('/fixed-assets/{fixedAsset}/dispose', [AccountingFixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
     });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
