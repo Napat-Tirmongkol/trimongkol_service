@@ -1,7 +1,17 @@
 <?php
 
+use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Accounting\BillController as AccountingBillController;
+use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
+use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
+use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
+use App\Http\Controllers\Accounting\ReportController as AccountingReportController;
+use App\Http\Controllers\Accounting\WhtCertificateController as AccountingWhtCertificateController;
 use App\Http\Controllers\Admin\LeadController as AdminLeadController;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
 use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
@@ -76,23 +86,69 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Queue System product — workspace-scoped. Counter staff operate here;
     // customers pull tickets on the public /q/{token} page (registered below).
-    Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
-    Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
-    // Billing routes use a static /queues/billing prefix and must stay above the
-    // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
-    Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
-    Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
-    Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
-    Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
-    Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
-    Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
-    Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
-    Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
-    Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
-    Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
-    Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
-    Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
-    Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+    Route::middleware('product:queue')->group(function () {
+        Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
+        Route::get('/queues/create', [QueueController::class, 'create'])->name('queues.create');
+        // Billing routes use a static /queues/billing prefix and must stay above the
+        // /queues/{queue} wildcard so "billing" isn't captured as a queue id.
+        Route::get('/queues/billing', [QueueBillingController::class, 'show'])->name('queues.billing');
+        Route::get('/queues/billing/{plan}', [QueueBillingController::class, 'pay'])->name('queues.billing.pay');
+        Route::post('/queues/billing/{plan}', [QueueBillingController::class, 'submit'])->name('queues.billing.submit');
+        Route::post('/queues', [QueueController::class, 'store'])->name('queues.store');
+        Route::get('/queues/{queue}', [QueueController::class, 'show'])->name('queues.show');
+        Route::get('/queues/{queue}/edit', [QueueController::class, 'edit'])->name('queues.edit');
+        Route::patch('/queues/{queue}', [QueueController::class, 'update'])->name('queues.update');
+        Route::delete('/queues/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
+        Route::post('/queues/{queue}/counters', [QueueController::class, 'addCounter'])->name('queues.counters.store');
+        Route::delete('/queues/{queue}/counters/{counter}', [QueueController::class, 'removeCounter'])->name('queues.counters.destroy');
+        Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
+        Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
+        Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+    });
+
+    // Accounting product — workspace-scoped front-office (partners, invoices,
+    // receipts). Posting to the ledger is gated to owners/admins in the controllers.
+    Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/onboarding', [AccountingOnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
+        Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
+        Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
+        Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
+
+        Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
+        Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
+
+        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/create', [AccountingAccountController::class, 'create'])->name('accounts.create');
+        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
+        Route::get('/accounts/{account}/edit', [AccountingAccountController::class, 'edit'])->name('accounts.edit');
+        Route::patch('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
+
+        Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
+        Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
+        Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
+
+        Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
+        Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
+        Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
+
+        Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
+        Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
+        Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
+        Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
+        Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
+        Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
+
+        Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');
+        Route::get('/bills/{bill}/print', [AccountingBillController::class, 'print'])->name('bills.print');
+        Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
+        Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
+    });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -179,6 +235,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('can:workspaces.manage')->group(function () {
             Route::patch('/workspaces/{workspace}/plan', [AdminWorkspaceController::class, 'updatePlan'])->name('workspaces.update-plan');
             Route::patch('/workspaces/{workspace}/queue-plan', [AdminWorkspaceController::class, 'updateQueuePlan'])->name('workspaces.update-queue-plan');
+            Route::patch('/workspaces/{workspace}/accounting-plan', [AdminWorkspaceController::class, 'updateAccountingPlan'])->name('workspaces.update-accounting-plan');
             Route::post('/billing', [AdminController::class, 'updateBilling'])->name('billing.update');
             Route::delete('/workspaces/{workspace}', [AdminWorkspaceController::class, 'destroy'])->name('workspaces.destroy');
         });
@@ -259,6 +316,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/payments/{payment}/slip', [AdminQueueController::class, 'slip'])->name('payments.slip');
                 Route::post('/payments/{payment}/approve', [AdminQueueController::class, 'approvePayment'])->name('payments.approve');
                 Route::post('/payments/{payment}/reject', [AdminQueueController::class, 'rejectPayment'])->name('payments.reject');
+            });
+
+            Route::prefix('products/accounting')->name('accounting.')->group(function () {
+                Route::get('/', [AdminAccountingController::class, 'dashboard'])->name('dashboard');
             });
 
             // Back-compat redirects for the old flat URLs.

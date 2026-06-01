@@ -9,11 +9,24 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Workspace extends Model
 {
-    protected $fillable = ['name', 'slug', 'queue_plan', 'queue_plan_until'];
+    protected $fillable = [
+        'name', 'slug', 'queue_plan', 'queue_plan_until',
+        'accounting_plan', 'accounting_plan_until',
+        'company_name', 'tax_id', 'branch', 'phone', 'company_address',
+        'chart_template', 'onboarded_at',
+    ];
 
     protected $casts = [
         'queue_plan_until' => 'datetime',
+        'accounting_plan_until' => 'datetime',
+        'onboarded_at' => 'datetime',
     ];
+
+    /** Has the first-run accounting setup wizard been completed? */
+    public function isOnboarded(): bool
+    {
+        return $this->onboarded_at !== null;
+    }
 
     public function members(): BelongsToMany
     {
