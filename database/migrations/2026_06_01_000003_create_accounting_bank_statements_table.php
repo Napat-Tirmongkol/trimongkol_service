@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->string('reference', 120)->nullable();
             // Matched to a journal line once reconciled
-            $table->foreignId('journal_line_id')->nullable()->after('reference')
+            $table->foreignId('journal_line_id')->nullable()
                 ->constrained('accounting_journal_lines')->nullOnDelete();
             $table->timestamps();
 
