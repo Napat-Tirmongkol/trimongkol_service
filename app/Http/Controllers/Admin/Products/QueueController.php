@@ -83,6 +83,7 @@ class QueueController extends Controller
         foreach ($planKeys as $key) {
             $plans[$key] = [
                 'name'   => config("queue-plans.{$key}.name"),
+                'price'  => QueuePlan::price($key),
                 'limits' => QueuePlan::limitsForKey($key),
             ];
         }
@@ -95,8 +96,11 @@ class QueueController extends Controller
         $planKeys = ['free', 'starter', 'pro'];
         $limitNames = ['max_queues', 'max_counters', 'max_tickets_per_day'];
 
-        $rules = [];
+        $rules = ['plans.free.price' => 'nullable|integer|min:0|max:0'];
         foreach ($planKeys as $key) {
+            if ($key !== 'free') {
+                $rules["plans.{$key}.price"] = 'nullable|integer|min:1|max:999999';
+            }
             foreach ($limitNames as $name) {
                 $rules["plans.{$key}.{$name}"] = 'nullable|integer|min:1|max:99999';
             }
@@ -104,6 +108,13 @@ class QueueController extends Controller
         $data = $request->validate($rules);
 
         foreach ($planKeys as $key) {
+            $rawPrice = $data['plans'][$key]['price'] ?? null;
+            $priceValue = ($rawPrice === null || $rawPrice === '') ? '' : (string)(int)$rawPrice;
+            Setting::updateOrCreate(
+                ['key' => "queue_plan.{$key}.price"],
+                ['value' => $priceValue]
+            );
+
             foreach ($limitNames as $name) {
                 $raw = $data['plans'][$key][$name] ?? null;
                 $value = ($raw === null || $raw === '') ? '' : (string)(int)$raw;
@@ -114,7 +125,7 @@ class QueueController extends Controller
             }
         }
 
-        AuditLog::record('queue.plans.update', null, 'Queue plan limits updated', $data['plans'] ?? []);
+        AuditLog::record('queue.plans.update', null, 'Queue plan limits & prices updated', $data['plans'] ?? []);
 
         return back()->with('status', __('app.admin.products.queue.plans_saved'));
     }

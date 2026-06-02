@@ -27,7 +27,7 @@
                         <table class="w-full text-sm">
                             <thead>
                                 <tr class="border-b border-slate-100 bg-slate-50">
-                                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-1/3">
+                                    <th class="w-1/3 px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                                         {{ __('app.admin.products.queue.plans_limit_name') }}
                                     </th>
                                     @foreach ($plans as $key => $plan)
@@ -38,6 +38,37 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
+
+                                {{-- ราคา --}}
+                                <tr class="bg-amber-50/40 hover:bg-amber-50/60">
+                                    <td class="px-6 py-4">
+                                        <div class="font-semibold text-slate-900">{{ __('app.admin.products.queue.plans_price') }}</div>
+                                        <div class="text-xs text-slate-400">{{ __('app.admin.products.queue.plans_price_hint') }}</div>
+                                    </td>
+                                    @foreach ($plans as $key => $plan)
+                                        <td class="px-4 py-4 text-center">
+                                            @if ($key === 'free')
+                                                <span class="text-sm font-semibold text-emerald-600">{{ __('app.admin.products.queue.plans_free_label') }}</span>
+                                                <input type="hidden" name="plans[free][price]" value="0">
+                                            @else
+                                                <div class="relative inline-block">
+                                                    <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-slate-400 text-sm">฿</span>
+                                                    <input
+                                                        type="number"
+                                                        name="plans[{{ $key }}][price]"
+                                                        value="{{ $plan['price'] ?? '' }}"
+                                                        min="1"
+                                                        max="999999"
+                                                        placeholder="—"
+                                                        class="w-28 rounded-md border-slate-300 pl-6 text-center text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                                                    >
+                                                </div>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+
+                                {{-- ขีดจำกัด --}}
                                 @php
                                     $rows = [
                                         'max_queues'          => __('app.admin.products.queue.plans_limit_queues'),
@@ -66,6 +97,7 @@
                                         @endforeach
                                     </tr>
                                 @endforeach
+
                             </tbody>
                         </table>
                     </div>
@@ -80,8 +112,8 @@
                 </div>
 
                 @if ($errors->any())
-                    <div class="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-                        <ul class="list-disc list-inside space-y-0.5">
+                    <div class="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <ul class="list-inside list-disc space-y-0.5">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach

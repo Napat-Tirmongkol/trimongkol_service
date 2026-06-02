@@ -42,6 +42,10 @@ class QueuePlan
 
     public static function price(string $key): ?int
     {
+        $override = Setting::get("queue_plan.{$key}.price");
+        if ($override !== null) {
+            return $override === '' ? null : (int) $override;
+        }
         $p = config("queue-plans.{$key}.price");
         return $p === null ? null : (int) $p;
     }
@@ -101,6 +105,12 @@ class QueuePlan
             }
         }
         return $result;
+    }
+
+    /** Effective price for a plan key, merging DB override on top of config default. */
+    public static function priceForKey(string $key): ?int
+    {
+        return self::price($key);
     }
 
     public static function can(?Workspace $workspace, string $flag): bool

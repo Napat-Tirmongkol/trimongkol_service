@@ -12,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\AuditLog;
+use App\Services\QueuePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
@@ -28,10 +29,9 @@ class AdminController extends Controller
             ->pluck('c', 'queue_plan')
             ->all();
 
-        $queuePlans = config('queue-plans', []);
         $queueMrr = 0;
         foreach ($queueByPlan as $key => $count) {
-            $queueMrr += (int) ($queuePlans[$key]['price'] ?? 0) * (int) $count;
+            $queueMrr += (int) (QueuePlan::price($key) ?? 0) * (int) $count;
         }
 
         $scannerByPlan = Subscription::query()
