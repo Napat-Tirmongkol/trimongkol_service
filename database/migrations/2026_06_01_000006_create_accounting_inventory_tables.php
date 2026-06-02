@@ -44,7 +44,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['workspace_id', 'product_id', 'movement_date']);
+            $table->index(['workspace_id', 'product_id', 'movement_date'], 'stock_mvmt_ws_prod_date_idx');
         });
     }
 

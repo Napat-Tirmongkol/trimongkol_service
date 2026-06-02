@@ -22,8 +22,8 @@ return new class extends Migration
                 ->constrained('accounting_journal_lines')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['workspace_id', 'account_id', 'statement_date']);
-            $table->index(['workspace_id', 'journal_line_id']);
+            $table->index(['workspace_id', 'account_id', 'statement_date'], 'bank_stmt_ws_acct_date_idx');
+            $table->index(['workspace_id', 'journal_line_id'], 'bank_stmt_ws_jline_idx');
         });
     }
 
