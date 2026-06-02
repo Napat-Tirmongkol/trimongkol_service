@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('accounting_payroll_items');
+        Schema::dropIfExists('accounting_payroll_runs');
+        Schema::dropIfExists('accounting_employees');
+
         Schema::create('accounting_employees', function (Blueprint $table) {
             $table->id();
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();

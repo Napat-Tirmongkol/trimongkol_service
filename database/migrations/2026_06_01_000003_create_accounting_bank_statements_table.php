@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Drop orphan table that may have been left by a previously failed run
+        // (MySQL DDL auto-commits, so a partial migration can leave the table
+        // behind without a migrations row).
+        Schema::dropIfExists('accounting_bank_statements');
+
         Schema::create('accounting_bank_statements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();

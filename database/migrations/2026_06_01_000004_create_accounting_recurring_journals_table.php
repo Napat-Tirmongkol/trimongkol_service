@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('accounting_recurring_journal_lines');
+        Schema::dropIfExists('accounting_recurring_journals');
+
         Schema::create('accounting_recurring_journals', function (Blueprint $table) {
             $table->id();
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();

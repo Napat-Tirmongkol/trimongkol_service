@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('accounting_stock_movements');
+        Schema::dropIfExists('accounting_products');
+
         Schema::create('accounting_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('workspace_id')->constrained()->cascadeOnDelete();
