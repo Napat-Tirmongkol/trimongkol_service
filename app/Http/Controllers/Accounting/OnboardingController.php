@@ -7,7 +7,6 @@ use App\Services\Accounting\ChartOfAccounts;
 use App\Services\Accounting\TaxCodes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 /**
  * First-run setup wizard. A new workspace lands here to enter its company
@@ -28,7 +27,6 @@ class OnboardingController extends AccountingController
 
         return view('accounting.onboarding', [
             'workspace' => $workspace,
-            'templates' => ChartOfAccounts::templates(),
         ]);
     }
 
@@ -41,18 +39,18 @@ class OnboardingController extends AccountingController
             return redirect()->route('accounting.dashboard');
         }
 
-        $templates = ChartOfAccounts::templates();
         $data = $request->validate([
-            'company_name' => ['required', 'string', 'max:255'],
-            'tax_id' => ['nullable', 'string', 'size:13'],
-            'branch' => ['nullable', 'string', 'max:30'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'business_type'   => ['required', 'in:company,individual'],
+            'company_name'    => ['required', 'string', 'max:255'],
+            'tax_id'          => ['nullable', 'string', 'max:13'],
+            'branch'          => ['nullable', 'string', 'max:30'],
+            'phone'           => ['nullable', 'string', 'max:30'],
             'company_address' => ['nullable', 'string', 'max:500'],
-            'chart_template' => ['required', 'string', Rule::in(array_keys($templates))],
+            'is_vat'          => ['boolean'],
         ]);
 
-        DB::transaction(function () use ($workspace, $data, $templates) {
-            ChartOfAccounts::seed($workspace, $templates[$data['chart_template']]['accounts']);
+        DB::transaction(function () use ($workspace, $data) {
+            ChartOfAccounts::seed($workspace, ChartOfAccounts::template());
             TaxCodes::seedDefault($workspace);
 
             $year = now()->year;
@@ -62,13 +60,13 @@ class OnboardingController extends AccountingController
             );
 
             $workspace->update([
-                'company_name' => $data['company_name'],
-                'tax_id' => $data['tax_id'] ?? null,
-                'branch' => $data['branch'] ?: 'สำนักงานใหญ่',
-                'phone' => $data['phone'] ?? null,
+                'company_name'    => $data['company_name'],
+                'tax_id'          => $data['tax_id'] ?? null,
+                'branch'          => $data['branch'] ?: 'สำนักงานใหญ่',
+                'phone'           => $data['phone'] ?? null,
                 'company_address' => $data['company_address'] ?? null,
-                'chart_template' => $data['chart_template'],
-                'onboarded_at' => now(),
+                'chart_template'  => 'standard_th',
+                'onboarded_at'    => now(),
             ]);
         });
 
