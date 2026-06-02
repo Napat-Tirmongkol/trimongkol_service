@@ -102,14 +102,59 @@ class FeedbackTest extends TestCase
 
     public function test_marketing_contact_form_still_defaults_to_contact_source(): void
     {
-        $this->post(route('contact.submit'), [
-            'name' => 'Visitor',
-            'email' => 'v@test.com',
-            'message' => 'Pricing question',
-        ])->assertRedirect();
+        $this->withSession(['contact_captcha_answer' => 8])
+            ->post(route('contact.submit'), [
+                'name' => 'Visitor',
+                'email' => 'v@test.com',
+                'message' => 'Pricing question',
+                'captcha' => 8,
+            ])->assertRedirect();
 
         $lead = Lead::firstOrFail();
         $this->assertSame(Lead::SOURCE_CONTACT, $lead->source);
+    }
+
+    public function test_marketing_contact_form_rejects_missing_captcha(): void
+    {
+        $this->withSession(['contact_captcha_answer' => 8])
+            ->post(route('contact.submit'), [
+                'name' => 'Visitor',
+                'email' => 'v@test.com',
+                'message' => 'Pricing question',
+            ])->assertSessionHasErrors('captcha');
+
+        $this->assertSame(0, Lead::count());
+    }
+
+    public function test_marketing_contact_form_rejects_incorrect_captcha(): void
+    {
+        $this->withSession(['contact_captcha_answer' => 8])
+            ->post(route('contact.submit'), [
+                'name' => 'Visitor',
+                'email' => 'v@test.com',
+                'message' => 'Pricing question',
+                'captcha' => 9, // incorrect answer
+            ])->assertSessionHasErrors('captcha');
+
+        $this->assertSame(0, Lead::count());
+    }
+
+    public function test_marketing_contact_form_accepts_correct_captcha(): void
+    {
+        $this->withSession(['contact_captcha_answer' => 12])
+            ->post(route('contact.submit'), [
+                'name' => 'Visitor',
+                'email' => 'v@test.com',
+                'message' => 'Pricing question',
+                'captcha' => 12,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $lead = Lead::firstOrFail();
+        $this->assertSame('Visitor', $lead->name);
+        $this->assertSame('v@test.com', $lead->email);
+        $this->assertSame('Pricing question', $lead->message);
     }
 
     public function test_feedback_accepts_an_image_attachment_and_stores_it_privately(): void

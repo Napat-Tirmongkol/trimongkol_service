@@ -78,6 +78,39 @@
                         @enderror
                     </div>
 
+                    {{-- Math CAPTCHA to prevent spam --}}
+                    @php
+                        $question = session('contact_captcha_question');
+                        if (!$question) {
+                            $num1 = rand(1, 9);
+                            $num2 = rand(1, 9);
+                            $question = "{$num1} + {$num2}";
+                            session(['contact_captcha_answer' => $num1 + $num2]);
+                            session(['contact_captcha_question' => $question]);
+                        }
+                    @endphp
+                    <div class="mt-5 border-t border-slate-100 pt-5">
+                        <label for="captcha" class="block text-sm font-medium text-slate-700">
+                            {{ t('contact.captchaLabel', ['question' => $question]) }}
+                        </label>
+                        <div class="mt-2 flex max-w-xs items-center gap-3">
+                            <span class="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-600 ring-1 ring-inset ring-slate-200">
+                                <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                {{ $question }} = 
+                            </span>
+                            <div class="relative flex-1">
+                                <input id="captcha" type="text" name="captcha" required autocomplete="off"
+                                       placeholder="{{ t('contact.captchaPlaceholder') }}"
+                                       class="block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                            </div>
+                        </div>
+                        @error('captcha')
+                            <p class="mt-1.5 text-xs text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <button type="submit"
                             class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:bg-slate-800 sm:w-auto">
                         {{ t('contact.formSubmit') }}

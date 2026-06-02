@@ -15,7 +15,21 @@ class ContactController extends Controller
             'phone' => 'nullable|string|max:40',
             'company' => 'nullable|string|max:160',
             'message' => 'required|string|max:2000',
+            'captcha' => [
+                'required',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    $expected = session('contact_captcha_answer');
+                    if ($expected === null || (int)$value !== (int)$expected) {
+                        $fail(trans('site.contact.captchaInvalid'));
+                    }
+                },
+            ],
         ]);
+
+        session()->forget(['contact_captcha_answer', 'contact_captcha_question']);
+
+        unset($data['captcha']);
 
         Lead::create([
             ...$data,
