@@ -84,7 +84,9 @@ class LedgerPosting
                 throw new UnbalancedJournalException('Journal total must be greater than zero.');
             }
 
-            $actor = $attributes['created_by'] ?? auth()->id();
+            // created_by / posted_by reference platform users.id — null when
+            // accessed via the separate accounting guard (no platform user).
+            $actor = $attributes['created_by'] ?? null;
 
             // Build as a draft first so the immutability guard never trips on
             // the very transition that posts it.
@@ -147,7 +149,7 @@ class LedgerPosting
             'date' => $attributes['date'] ?? now(),
             'type' => 'reversal',
             'memo' => $attributes['memo'] ?? "กลับรายการ {$original->no}",
-            'created_by' => $attributes['created_by'] ?? auth()->id(),
+            'created_by' => $attributes['created_by'] ?? null,
             'reverses_journal_id' => $original->id,
         ], $lines);
     }
@@ -219,15 +221,16 @@ class LedgerPosting
     private static function log(Workspace $workspace, string $action, Journal $journal, array $meta): void
     {
         ActivityLog::create([
-            'workspace_id' => $workspace->id,
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'subject_type' => $journal->getMorphClass(),
-            'subject_id' => $journal->id,
-            'subject_label' => $journal->no,
-            'metadata' => $meta,
-            'ip' => request()?->ip(),
-            'created_at' => now(),
+            'workspace_id'       => $workspace->id,
+            'user_id'            => null,
+            'accounting_user_id' => auth('accounting')->id(),
+            'action'             => $action,
+            'subject_type'       => $journal->getMorphClass(),
+            'subject_id'         => $journal->id,
+            'subject_label'      => $journal->no,
+            'metadata'           => $meta,
+            'ip'                 => request()?->ip(),
+            'created_at'         => now(),
         ]);
     }
 }

@@ -186,7 +186,7 @@ class PeriodClose
                 'date' => $endDate,
                 'type' => 'year_end_close',
                 'memo' => "ปิดบัญชีประจำปี พ.ศ. {$buddhistYear}",
-                'created_by' => $userId ?? auth()->id(),
+                'created_by' => null,
             ], $lines);
 
             // Lock every period in this fiscal year permanently
@@ -197,15 +197,16 @@ class PeriodClose
                 ->update(['status' => Period::STATUS_LOCKED]);
 
             ActivityLog::create([
-                'workspace_id' => $workspace->id,
-                'user_id' => $userId ?? auth()->id(),
-                'action' => 'period.year_end_close',
-                'subject_type' => $journal->getMorphClass(),
-                'subject_id' => $journal->id,
-                'subject_label' => "ปิดบัญชีปี {$buddhistYear}",
-                'metadata' => ['year' => $buddhistYear, 'journal_no' => $journal->no],
-                'ip' => request()?->ip(),
-                'created_at' => now(),
+                'workspace_id'       => $workspace->id,
+                'user_id'            => null,
+                'accounting_user_id' => auth('accounting')->id(),
+                'action'             => 'period.year_end_close',
+                'subject_type'       => $journal->getMorphClass(),
+                'subject_id'         => $journal->id,
+                'subject_label'      => "ปิดบัญชีปี {$buddhistYear}",
+                'metadata'           => ['year' => $buddhistYear, 'journal_no' => $journal->no],
+                'ip'                 => request()?->ip(),
+                'created_at'         => now(),
             ]);
 
             return $journal;
@@ -215,15 +216,16 @@ class PeriodClose
     private static function log(Workspace $workspace, string $action, Period $period, ?int $userId): void
     {
         ActivityLog::create([
-            'workspace_id' => $workspace->id,
-            'user_id' => $userId ?? auth()->id(),
-            'action' => $action,
-            'subject_type' => $period->getMorphClass(),
-            'subject_id' => $period->id,
-            'subject_label' => $period->name,
-            'metadata' => ['period' => $period->name, 'status' => $period->status],
-            'ip' => request()?->ip(),
-            'created_at' => now(),
+            'workspace_id'       => $workspace->id,
+            'user_id'            => null,
+            'accounting_user_id' => auth('accounting')->id(),
+            'action'             => $action,
+            'subject_type'       => $period->getMorphClass(),
+            'subject_id'         => $period->id,
+            'subject_label'      => $period->name,
+            'metadata'           => ['period' => $period->name, 'status' => $period->status],
+            'ip'                 => request()?->ip(),
+            'created_at'         => now(),
         ]);
     }
 }

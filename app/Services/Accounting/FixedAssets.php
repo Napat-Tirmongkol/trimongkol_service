@@ -40,7 +40,7 @@ class FixedAssets
             'accumulated_account_id' => $attributes['accumulated_account_id'],
             'depreciation_expense_account_id' => $attributes['depreciation_expense_account_id'],
             'status' => FixedAsset::STATUS_ACTIVE,
-            'created_by' => $attributes['created_by'] ?? auth()->id(),
+            'created_by' => $attributes['created_by'] ?? null,
         ]);
     }
 
@@ -96,7 +96,7 @@ class FixedAssets
             'date' => $postDate,
             'type' => 'depreciation',
             'memo' => "ค่าเสื่อมราคา {$asset->name} เดือน {$forMonth}",
-            'created_by' => auth()->id(),
+            'created_by' => null,
             'source_type' => $asset->getMorphClass(),
             'source_id' => $asset->id,
         ], [

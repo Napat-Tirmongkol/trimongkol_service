@@ -85,7 +85,7 @@ class Payroll
                 'ss_payable_account_id' => $attributes['ss_payable_account_id'],
                 'wht_payable_account_id' => $attributes['wht_payable_account_id'],
                 'cash_account_id' => $attributes['cash_account_id'],
-                'created_by' => auth()->id(),
+                'created_by' => null,
             ]);
 
             $employees = Employee::query()->forWorkspace($workspace)->where('is_active', true)->get();
@@ -183,7 +183,7 @@ class Payroll
                 'date' => $run->payment_date,
                 'type' => 'payroll',
                 'memo' => "เงินเดือนงวด {$run->period}",
-                'created_by' => auth()->id(),
+                'created_by' => null,
                 'source_type' => $run->getMorphClass(),
                 'source_id' => $run->id,
             ], $lines);

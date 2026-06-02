@@ -16,7 +16,7 @@ class ActivityLog extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'workspace_id', 'user_id', 'action',
+        'workspace_id', 'user_id', 'accounting_user_id', 'action',
         'subject_type', 'subject_id', 'subject_label', 'metadata', 'ip', 'created_at',
     ];
 

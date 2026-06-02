@@ -32,7 +32,7 @@ class RecurringJournals
                 'next_run_date' => $attributes['next_run_date'],
                 'end_date' => $attributes['end_date'] ?? null,
                 'is_active' => true,
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
             ]);
 
             foreach ($lines as $i => $line) {
@@ -80,7 +80,7 @@ class RecurringJournals
                 'date' => $postDate->toDateString(),
                 'type' => 'recurring',
                 'memo' => $template->name,
-                'created_by' => auth()->id(),
+                'created_by' => null,
                 'source_type' => $template->getMorphClass(),
                 'source_id' => $template->id,
             ], $lines);

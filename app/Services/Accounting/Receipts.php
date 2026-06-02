@@ -122,7 +122,7 @@ class Receipts
                 'slip_path' => $attributes['slip_path'] ?? null,
                 'slip_ref' => $slipRef,
                 'note' => $attributes['note'] ?? null,
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
             ]);
             $payment->save();
 
@@ -150,7 +150,7 @@ class Receipts
                 'date' => $date,
                 'type' => 'receipt',
                 'memo' => $attributes['memo'] ?? "รับชำระ {$payment->no} — {$partner->name}",
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
                 'source_type' => $payment->getMorphClass(),
                 'source_id' => $payment->id,
             ], $lines);

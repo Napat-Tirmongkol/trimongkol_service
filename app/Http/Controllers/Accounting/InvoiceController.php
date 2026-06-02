@@ -103,7 +103,7 @@ class InvoiceController extends AccountingController
             'cashDefault' => Money::fromMinor($outstandingMinor - $whtDefaultMinor),
             'whtDefault' => Money::fromMinor($whtDefaultMinor),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
-            'canPost' => in_array($workspace->roleFor(auth()->user()), ['owner', 'admin'], true),
+            'canPost' => auth('accounting')->user()?->canPost() ?? false,
         ]);
     }
 

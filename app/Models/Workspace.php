@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Accounting\AccountingUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -78,5 +79,10 @@ class Workspace extends Model
     public function hasMember(?User $user): bool
     {
         return $this->roleFor($user) !== null;
+    }
+
+    public function accountingUsers(): HasMany
+    {
+        return $this->hasMany(AccountingUser::class);
     }
 }

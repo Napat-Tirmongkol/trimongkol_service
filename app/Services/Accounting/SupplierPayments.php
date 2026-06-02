@@ -118,7 +118,7 @@ class SupplierPayments
                 'wht_account_id' => $whtCode?->account_id,
                 'status' => Payment::STATUS_DRAFT,
                 'note' => $attributes['note'] ?? null,
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
             ]);
             $payment->save();
 
@@ -144,7 +144,7 @@ class SupplierPayments
                 'date' => $date,
                 'type' => 'payment',
                 'memo' => $attributes['memo'] ?? "จ่ายชำระ {$payment->no} — {$partner->name}",
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
                 'source_type' => $payment->getMorphClass(),
                 'source_id' => $payment->id,
             ], $lines);

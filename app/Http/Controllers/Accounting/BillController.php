@@ -86,7 +86,7 @@ class BillController extends AccountingController
             'outstanding' => SupplierPayments::outstanding($bill),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
             'whtCodes' => TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get(),
-            'canPost' => in_array($workspace->roleFor(auth()->user()), ['owner', 'admin'], true),
+            'canPost' => auth('accounting')->user()?->canPost() ?? false,
         ]);
     }
 

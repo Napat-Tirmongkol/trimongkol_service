@@ -107,7 +107,7 @@ class SalesInvoicing
                 'total' => Money::fromMinor($subtotal + $vat),
                 'tax_invoice_no' => $attributes['tax_invoice_no'] ?? null,
                 'memo' => $attributes['memo'] ?? null,
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
             ]);
             $invoice->save();
             $invoice->lines()->createMany($rows);
@@ -171,7 +171,7 @@ class SalesInvoicing
                 'date' => $invoice->issue_date,
                 'type' => 'sales',
                 'memo' => $attributes['memo'] ?? "ขายเชื่อ {$invoice->no} — {$invoice->partner->name}",
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
                 'source_type' => $invoice->getMorphClass(),
                 'source_id' => $invoice->id,
             ], $journalLines);

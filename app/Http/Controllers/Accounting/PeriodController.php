@@ -53,7 +53,7 @@ class PeriodController extends AccountingController
         $this->assertPoster($workspace);
 
         try {
-            PeriodClose::close($period, auth()->id());
+            PeriodClose::close($period, auth('accounting')->id());
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -68,7 +68,7 @@ class PeriodController extends AccountingController
         $this->assertPoster($workspace);
 
         try {
-            PeriodClose::reopen($period, auth()->id());
+            PeriodClose::reopen($period, auth('accounting')->id());
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -86,7 +86,7 @@ class PeriodController extends AccountingController
         ]);
 
         try {
-            PeriodClose::yearEndClose($workspace, (int) $data['buddhist_year'], auth()->id());
+            PeriodClose::yearEndClose($workspace, (int) $data['buddhist_year'], auth('accounting')->id());
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }

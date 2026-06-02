@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Accounting\AccountingUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'accounting' => [
+            'driver' => 'session',
+            'provider' => 'accounting_users',
+        ],
     ],
 
     /*
@@ -65,6 +70,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+        'accounting_users' => [
+            'driver' => 'eloquent',
+            'model' => AccountingUser::class,
         ],
 
         // 'users' => [

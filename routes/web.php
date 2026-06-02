@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Accounting\AccountingUserController as AccountingUserController;
+use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
@@ -112,101 +114,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
     });
 
-    // Accounting product — workspace-scoped front-office (partners, invoices,
-    // receipts). Posting to the ledger is gated to owners/admins in the controllers.
-    Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/onboarding', [AccountingOnboardingController::class, 'show'])->name('onboarding');
-        Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
-        Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
-        Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
-        Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
-
-        Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
-        Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
-
-        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
-        Route::get('/accounts/create', [AccountingAccountController::class, 'create'])->name('accounts.create');
-        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
-        Route::get('/accounts/{account}/edit', [AccountingAccountController::class, 'edit'])->name('accounts.edit');
-        Route::patch('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
-        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
-
-        Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
-        Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
-        Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
-
-        Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
-        Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
-        Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
-        Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
-        Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
-        Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
-
-        Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
-        Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
-        Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
-        Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
-        Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
-        Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
-
-        Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');
-        Route::get('/bills/{bill}/print', [AccountingBillController::class, 'print'])->name('bills.print');
-        Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
-        Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
-
-        // Accounting periods + year-end close
-        Route::get('/periods', [AccountingPeriodController::class, 'index'])->name('periods.index');
-        Route::post('/periods', [AccountingPeriodController::class, 'store'])->name('periods.store');
-        Route::post('/periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('periods.close');
-        Route::post('/periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen');
-        Route::post('/periods/year-end-close', [AccountingPeriodController::class, 'yearEndClose'])->name('periods.year-end-close');
-
-        // Bank reconciliation
-        Route::get('/bank-reconciliation', [AccountingBankReconciliationController::class, 'index'])->name('bank-reconciliation.index');
-        Route::post('/bank-reconciliation/lines', [AccountingBankReconciliationController::class, 'storeLine'])->name('bank-reconciliation.lines.store');
-        Route::post('/bank-reconciliation/import', [AccountingBankReconciliationController::class, 'importCsv'])->name('bank-reconciliation.import');
-        Route::post('/bank-reconciliation/{statement}/match', [AccountingBankReconciliationController::class, 'match'])->name('bank-reconciliation.match');
-        Route::post('/bank-reconciliation/{statement}/unmatch', [AccountingBankReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
-        Route::delete('/bank-reconciliation/{statement}', [AccountingBankReconciliationController::class, 'destroy'])->name('bank-reconciliation.destroy');
-
-        // Recurring journals
-        Route::get('/recurring-journals', [AccountingRecurringJournalController::class, 'index'])->name('recurring-journals.index');
-        Route::get('/recurring-journals/create', [AccountingRecurringJournalController::class, 'create'])->name('recurring-journals.create');
-        Route::post('/recurring-journals', [AccountingRecurringJournalController::class, 'store'])->name('recurring-journals.store');
-        Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
-        Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
-        Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');
-
-        // Fixed assets
-        Route::get('/fixed-assets', [AccountingFixedAssetController::class, 'index'])->name('fixed-assets.index');
-        Route::get('/fixed-assets/create', [AccountingFixedAssetController::class, 'create'])->name('fixed-assets.create');
-        Route::post('/fixed-assets', [AccountingFixedAssetController::class, 'store'])->name('fixed-assets.store');
-        Route::get('/fixed-assets/{fixedAsset}', [AccountingFixedAssetController::class, 'show'])->name('fixed-assets.show');
-        Route::post('/fixed-assets/{fixedAsset}/depreciate', [AccountingFixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
-        Route::post('/fixed-assets/{fixedAsset}/dispose', [AccountingFixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
-
-        // Inventory (products + stock movements)
-        Route::get('/products', [AccountingProductController::class, 'index'])->name('products.index');
-        Route::get('/products/create', [AccountingProductController::class, 'create'])->name('products.create');
-        Route::post('/products', [AccountingProductController::class, 'store'])->name('products.store');
-        Route::get('/products/{product}', [AccountingProductController::class, 'show'])->name('products.show');
-        Route::post('/products/{product}/receive', [AccountingProductController::class, 'receive'])->name('products.receive');
-        Route::post('/products/{product}/issue', [AccountingProductController::class, 'issue'])->name('products.issue');
-        Route::post('/products/{product}/adjust', [AccountingProductController::class, 'adjust'])->name('products.adjust');
-
-        // Payroll
-        Route::get('/payroll/employees', [AccountingPayrollController::class, 'employees'])->name('payroll.employees');
-        Route::post('/payroll/employees', [AccountingPayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
-        Route::post('/payroll/employees/{employee}/toggle', [AccountingPayrollController::class, 'toggleEmployee'])->name('payroll.employees.toggle');
-        Route::get('/payroll/runs', [AccountingPayrollController::class, 'runs'])->name('payroll.runs.index');
-        Route::get('/payroll/runs/create', [AccountingPayrollController::class, 'createRun'])->name('payroll.runs.create');
-        Route::post('/payroll/runs', [AccountingPayrollController::class, 'storeRun'])->name('payroll.runs.store');
-        Route::get('/payroll/runs/{payrollRun}', [AccountingPayrollController::class, 'showRun'])->name('payroll.runs.show');
-        Route::patch('/payroll/items/{payrollItem}', [AccountingPayrollController::class, 'updateItem'])->name('payroll.items.update');
-        Route::post('/payroll/runs/{payrollRun}/post', [AccountingPayrollController::class, 'postRun'])->name('payroll.runs.post');
-        Route::get('/payroll/items/{payrollItem}/payslip', [AccountingPayrollController::class, 'payslip'])->name('payroll.items.payslip');
-    });
 
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
@@ -378,6 +285,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::prefix('products/accounting')->name('accounting.')->group(function () {
                 Route::get('/', [AdminAccountingController::class, 'dashboard'])->name('dashboard');
+                Route::get('/users', [AdminAccountingController::class, 'users'])->name('users');
+                Route::post('/users', [AdminAccountingController::class, 'storeUser'])->name('users.store');
+                Route::delete('/users/{accountingUser}', [AdminAccountingController::class, 'destroyUser'])->name('users.destroy');
             });
 
             // Back-compat redirects for the old flat URLs.
@@ -405,6 +315,123 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/two-factor/confirm', [TwoFactorAuthController::class, 'confirm'])->name('two-factor.confirm');
     Route::delete('/user/two-factor', [TwoFactorAuthController::class, 'disable'])->name('two-factor.disable');
     Route::post('/user/two-factor/recovery-codes', [TwoFactorAuthController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes');
+});
+
+// Accounting portal — completely separate auth from the main platform.
+// Guest routes (login/logout) come first so they are reachable before auth.
+Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
+    // Public — no accounting auth required
+    Route::middleware('web')->group(function () {
+        Route::get('/login', [AccountingAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AccountingAuthController::class, 'login'])->name('login.store');
+        Route::post('/logout', [AccountingAuthController::class, 'logout'])->name('logout');
+    });
+
+    // Protected — must be authenticated via the accounting guard
+    Route::middleware('auth.accounting')->group(function () {
+        Route::get('/', [AccountingDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/onboarding', [AccountingOnboardingController::class, 'show'])->name('onboarding');
+        Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
+        Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
+        Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
+        Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
+
+        Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
+        Route::post('/opening-balances', [AccountingOpeningBalanceController::class, 'store'])->name('opening-balances.store');
+
+        Route::get('/accounts', [AccountingAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/create', [AccountingAccountController::class, 'create'])->name('accounts.create');
+        Route::post('/accounts', [AccountingAccountController::class, 'store'])->name('accounts.store');
+        Route::get('/accounts/{account}/edit', [AccountingAccountController::class, 'edit'])->name('accounts.edit');
+        Route::patch('/accounts/{account}', [AccountingAccountController::class, 'update'])->name('accounts.update');
+        Route::delete('/accounts/{account}', [AccountingAccountController::class, 'destroy'])->name('accounts.destroy');
+
+        Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
+        Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
+        Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
+
+        Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
+        Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
+        Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
+
+        Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
+        Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
+        Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
+        Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
+        Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
+        Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
+
+        Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');
+        Route::get('/bills/{bill}/print', [AccountingBillController::class, 'print'])->name('bills.print');
+        Route::get('/wht-certificates', [AccountingWhtCertificateController::class, 'index'])->name('wht-certificates.index');
+        Route::get('/wht-certificates/{certificate}/print', [AccountingWhtCertificateController::class, 'print'])->name('wht-certificates.print');
+
+        // Accounting periods + year-end close
+        Route::get('/periods', [AccountingPeriodController::class, 'index'])->name('periods.index');
+        Route::post('/periods', [AccountingPeriodController::class, 'store'])->name('periods.store');
+        Route::post('/periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('periods.close');
+        Route::post('/periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('periods.reopen');
+        Route::post('/periods/year-end-close', [AccountingPeriodController::class, 'yearEndClose'])->name('periods.year-end-close');
+
+        // Bank reconciliation
+        Route::get('/bank-reconciliation', [AccountingBankReconciliationController::class, 'index'])->name('bank-reconciliation.index');
+        Route::post('/bank-reconciliation/lines', [AccountingBankReconciliationController::class, 'storeLine'])->name('bank-reconciliation.lines.store');
+        Route::post('/bank-reconciliation/import', [AccountingBankReconciliationController::class, 'importCsv'])->name('bank-reconciliation.import');
+        Route::post('/bank-reconciliation/{statement}/match', [AccountingBankReconciliationController::class, 'match'])->name('bank-reconciliation.match');
+        Route::post('/bank-reconciliation/{statement}/unmatch', [AccountingBankReconciliationController::class, 'unmatch'])->name('bank-reconciliation.unmatch');
+        Route::delete('/bank-reconciliation/{statement}', [AccountingBankReconciliationController::class, 'destroy'])->name('bank-reconciliation.destroy');
+
+        // Recurring journals
+        Route::get('/recurring-journals', [AccountingRecurringJournalController::class, 'index'])->name('recurring-journals.index');
+        Route::get('/recurring-journals/create', [AccountingRecurringJournalController::class, 'create'])->name('recurring-journals.create');
+        Route::post('/recurring-journals', [AccountingRecurringJournalController::class, 'store'])->name('recurring-journals.store');
+        Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
+        Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
+        Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');
+
+        // Fixed assets
+        Route::get('/fixed-assets', [AccountingFixedAssetController::class, 'index'])->name('fixed-assets.index');
+        Route::get('/fixed-assets/create', [AccountingFixedAssetController::class, 'create'])->name('fixed-assets.create');
+        Route::post('/fixed-assets', [AccountingFixedAssetController::class, 'store'])->name('fixed-assets.store');
+        Route::get('/fixed-assets/{fixedAsset}', [AccountingFixedAssetController::class, 'show'])->name('fixed-assets.show');
+        Route::post('/fixed-assets/{fixedAsset}/depreciate', [AccountingFixedAssetController::class, 'depreciate'])->name('fixed-assets.depreciate');
+        Route::post('/fixed-assets/{fixedAsset}/dispose', [AccountingFixedAssetController::class, 'dispose'])->name('fixed-assets.dispose');
+
+        // Inventory (products + stock movements)
+        Route::get('/products', [AccountingProductController::class, 'index'])->name('products.index');
+        Route::get('/products/create', [AccountingProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [AccountingProductController::class, 'store'])->name('products.store');
+        Route::get('/products/{product}', [AccountingProductController::class, 'show'])->name('products.show');
+        Route::post('/products/{product}/receive', [AccountingProductController::class, 'receive'])->name('products.receive');
+        Route::post('/products/{product}/issue', [AccountingProductController::class, 'issue'])->name('products.issue');
+        Route::post('/products/{product}/adjust', [AccountingProductController::class, 'adjust'])->name('products.adjust');
+
+        // Payroll
+        Route::get('/payroll/employees', [AccountingPayrollController::class, 'employees'])->name('payroll.employees');
+        Route::post('/payroll/employees', [AccountingPayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
+        Route::post('/payroll/employees/{employee}/toggle', [AccountingPayrollController::class, 'toggleEmployee'])->name('payroll.employees.toggle');
+        Route::get('/payroll/runs', [AccountingPayrollController::class, 'runs'])->name('payroll.runs.index');
+        Route::get('/payroll/runs/create', [AccountingPayrollController::class, 'createRun'])->name('payroll.runs.create');
+        Route::post('/payroll/runs', [AccountingPayrollController::class, 'storeRun'])->name('payroll.runs.store');
+        Route::get('/payroll/runs/{payrollRun}', [AccountingPayrollController::class, 'showRun'])->name('payroll.runs.show');
+        Route::patch('/payroll/items/{payrollItem}', [AccountingPayrollController::class, 'updateItem'])->name('payroll.items.update');
+        Route::post('/payroll/runs/{payrollRun}/post', [AccountingPayrollController::class, 'postRun'])->name('payroll.runs.post');
+        Route::get('/payroll/items/{payrollItem}/payslip', [AccountingPayrollController::class, 'payslip'])->name('payroll.items.payslip');
+
+        // Accounting user management
+        Route::get('/users', [AccountingUserController::class, 'index'])->name('users.index');
+        Route::post('/users', [AccountingUserController::class, 'store'])->name('users.store');
+        Route::patch('/users/{accountingUser}', [AccountingUserController::class, 'update'])->name('users.update');
+        Route::post('/users/{accountingUser}/reset-password', [AccountingUserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::delete('/users/{accountingUser}', [AccountingUserController::class, 'destroy'])->name('users.destroy');
+
+        // Change own password
+        Route::get('/password', [AccountingAuthController::class, 'showChangePassword'])->name('password.edit');
+        Route::post('/password', [AccountingAuthController::class, 'changePassword'])->name('password.update');
+    });
 });
 
 require __DIR__.'/auth.php';

@@ -98,7 +98,7 @@ class Purchasing
                 'vat_amount' => Money::fromMinor($vat),
                 'total' => Money::fromMinor($subtotal + $vat),
                 'memo' => $attributes['memo'] ?? null,
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
             ]);
             $bill->save();
             $bill->lines()->createMany($rows);
@@ -154,7 +154,7 @@ class Purchasing
                 'date' => $bill->issue_date,
                 'type' => 'purchase',
                 'memo' => $attributes['memo'] ?? "ซื้อเชื่อ {$bill->no} — {$bill->partner->name}",
-                'created_by' => $attributes['created_by'] ?? auth()->id(),
+                'created_by' => $attributes['created_by'] ?? null,
                 'source_type' => $bill->getMorphClass(),
                 'source_id' => $bill->id,
             ], $journalLines);

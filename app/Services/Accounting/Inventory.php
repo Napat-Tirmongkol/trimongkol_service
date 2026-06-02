@@ -73,7 +73,7 @@ class Inventory
                 'date' => $attributes['movement_date'],
                 'type' => 'inventory_in',
                 'memo' => "รับเข้าสินค้า {$product->sku} {$product->name}",
-                'created_by' => auth()->id(),
+                'created_by' => null,
                 'source_type' => $product->getMorphClass(),
                 'source_id' => $product->id,
             ], [
@@ -102,7 +102,7 @@ class Inventory
                 'reference' => $attributes['reference'] ?? null,
                 'note' => $attributes['note'] ?? null,
                 'journal_id' => $journal->id,
-                'created_by' => auth()->id(),
+                'created_by' => null,
             ]);
 
             $product->update(['on_hand' => $newQty, 'unit_cost' => round($newAvg, 2)]);
@@ -137,7 +137,7 @@ class Inventory
                 'date' => $attributes['movement_date'],
                 'type' => 'inventory_out',
                 'memo' => "ตัดสต็อก {$product->sku} {$product->name}",
-                'created_by' => auth()->id(),
+                'created_by' => null,
                 'source_type' => $product->getMorphClass(),
                 'source_id' => $product->id,
             ], [
@@ -166,7 +166,7 @@ class Inventory
                 'reference' => $attributes['reference'] ?? null,
                 'note' => $attributes['note'] ?? null,
                 'journal_id' => $journal->id,
-                'created_by' => auth()->id(),
+                'created_by' => null,
             ]);
 
             $product->update(['on_hand' => (float) $product->on_hand - $quantity]);
@@ -206,7 +206,7 @@ class Inventory
                 'date' => $attributes['movement_date'],
                 'type' => 'inventory_adjust',
                 'memo' => "ปรับปรุงสต็อก {$product->sku}",
-                'created_by' => auth()->id(),
+                'created_by' => null,
                 'source_type' => $product->getMorphClass(),
                 'source_id' => $product->id,
             ], $lines);
@@ -222,7 +222,7 @@ class Inventory
                 'reference' => $attributes['reference'] ?? null,
                 'note' => $attributes['note'] ?? null,
                 'journal_id' => $journal->id,
-                'created_by' => auth()->id(),
+                'created_by' => null,
             ]);
 
             $product->update(['on_hand' => (float) $product->on_hand + $delta]);
