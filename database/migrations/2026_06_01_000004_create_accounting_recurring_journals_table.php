@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['workspace_id', 'is_active', 'next_run_date']);
+            $table->index(['workspace_id', 'is_active', 'next_run_date'], 'recur_jrn_ws_active_due_idx');
         });
 
         Schema::create('accounting_recurring_journal_lines', function (Blueprint $table) {
@@ -40,7 +40,7 @@ return new class extends Migration
                 ->constrained('accounting_departments')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['workspace_id', 'recurring_journal_id']);
+            $table->index(['workspace_id', 'recurring_journal_id'], 'recur_jrn_lines_ws_jrn_idx');
         });
     }
 
