@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-02T02:25:00Z",
+  "title": "Design System: Tirmongkol Service",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Vibrant Brand Blue", "canonical": "hex #3366ff", "tonalRamp": ["#141d47", "#1c2e74", "#1a3093", "#1936b8", "#1f47e6", "#3366ff", "#598dff", "#8eb6ff", "#bcd3ff", "#d9e6ff", "#eef4ff"] },
+      "neutral-bg": { "role": "neutral", "displayName": "White", "canonical": "hex #ffffff", "tonalRamp": ["#020617", "#0f172a", "#1e293b", "#334155", "#475569", "#64748b", "#94a3b8", "#cbd5e1", "#e2e8f0", "#f1f5f9", "#f8fafc", "#ffffff"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Large hero headings." },
+      "headline": { "displayName": "Headline", "purpose": "Main section titles." },
+      "title": { "displayName": "Title", "purpose": "Card and sub-section headers." },
+      "body": { "displayName": "Body", "purpose": "Standard copy text." },
+      "label": { "displayName": "Label", "purpose": "Eyebrows, badges, and tiny labels." }
+    },
+    "shadows": [
+      { "name": "tactile-glow", "value": "0 10px 15px -3px rgba(51, 102, 255, 0.30)", "purpose": "Tactile hover glow under accent buttons." },
+      { "name": "card-rest", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Subtle border-based elevation for white cards at rest." },
+      { "name": "hero-floating", "value": "0 25px 50px -12px rgba(15, 23, 42, 0.10)", "purpose": "Strong shadow used for elements overlapping hero sections." }
+    ],
+    "motion": [
+      { "name": "fade-in-up", "value": "fadeInUp 0.6s ease-out", "purpose": "Entrance animation for hero elements." },
+      { "name": "fade-in", "value": "fadeIn 0.8s ease-out", "purpose": "Entrance animation for generic content." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Friendly, rounded-full CTA button for actions.",
+      "html": "<button class=\"ds-btn-primary\">GET STARTED</button>",
+      "css": ".ds-btn-primary { background: #1f47e6; color: #ffffff; padding: 14px 28px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; border: none; border-radius: 9999px; cursor: pointer; transition: background 0.2s, box-shadow 0.2s; } .ds-btn-primary:hover { background: #1936b8; box-shadow: 0 10px 15px -3px rgba(51,102,255,0.30); }"
+    },
+    {
+      "name": "Service Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Friendly, soft card with interactive translation and lift.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Card Title</h3><p class=\"ds-card-body\">This is a friendly card content describing a service.</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; cursor: pointer; } .ds-card:hover { transform: translateY(-2px); border-color: #bcd3ff; box-shadow: 0 10px 15px -3px rgba(15,23,42,0.05); } .ds-card-title { font-family: 'Inter', sans-serif; font-size: 1.125rem; font-weight: 600; color: #0f172a; margin: 0 0 8px 0; } .ds-card-body { font-family: 'Inter', sans-serif; font-size: 0.875rem; color: #475569; margin: 0; line-height: 1.6; }"
+    },
+    {
+      "name": "Section Eyebrow",
+      "kind": "custom",
+      "refersTo": "label",
+      "description": "Bold, wide-tracked uppercase section eyebrow.",
+      "html": "<span class=\"ds-eyebrow\">OUR SERVICES</span>",
+      "css": ".ds-eyebrow { font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: #1936b8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The SME Playground",
+    "overview": "The SME Playground aesthetic brings a playful, friendly, and highly vibrant experience to Thai SME owners evaluating custom software solutions. Rather than the cold, mechanical, or overly serious look typical of corporate SaaS platforms, the interface balances professionalism with high-energy visuals, approachable typography, and friendly, tactile component interactions.",
+    "keyCharacteristics": [
+      "Friendly, rounded geometries (rounded-full pills and rounded-2xl cards).",
+      "Vibrant, focused accentuation (brand blue #3366ff action elements).",
+      "Intuitive and responsive micro-animations that make actions feel satisfying.",
+      "High-contrast readability with robust typography scaling."
+    ],
+    "rules": [
+      { "name": "The Focused Accent Rule", "body": "The primary brand blue accent is reserved for interactive actions and selective focus highlights. It should cover no more than 10% of any screen surface to maintain its impact.", "section": "colors" },
+      { "name": "The No-Jargon Casing Rule", "body": "Heading titles use Title Case in English and natural, jargon-free spacing in Thai. Eyebrows must always be UPPERCASE with tracking-[0.18em] (wide tracking) to act as clear kickers.", "section": "typography" },
+      { "name": "The Interaction Lift Rule", "body": "Elements that can be clicked (like cards) must lift slightly (-translate-y-0.5) and experience a shadow deepening on hover, returning to flat at rest.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use rounded-full (pill shapes) for primary action buttons to reinforce the playful register.",
+      "Do pair Noto Sans Thai with Inter to maintain typographic consistency across translations.",
+      "Do verify text contrast against its background, ensuring >=4.5:1 ratio.",
+      "Do use desaturated, human-focused background photos in hero sections with dark overlays."
+    ],
+    "donts": [
+      "Don't use SaaS-cream, paper, or sand backgrounds.",
+      "Don't use gradient text or text-clipping tricks for headings.",
+      "Don't use glassmorphic blur effects on regular cards or default UI screens.",
+      "Don't add side-stripe borders (borders > 1px) to alert or feature boxes.",
+      "Don't place tiny wide-tracked uppercase eyebrows on every single section."
+    ]
+  }
+}

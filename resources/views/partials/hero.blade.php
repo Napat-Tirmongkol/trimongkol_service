@@ -23,7 +23,7 @@
         <h1 class="mt-6 text-4xl font-extrabold leading-[1.1] tracking-tight text-white drop-shadow-md md:text-6xl lg:text-7xl">
             {{ $title }}
             @if ($titleHighlight)
-                <span class="bg-gradient-to-r from-brand-300 via-brand-200 to-white bg-clip-text text-transparent">
+                <span class="text-brand-300">
                     {{ $titleHighlight }}
                 </span>
             @endif
@@ -37,7 +37,7 @@
             <div class="mt-10 flex flex-col items-center gap-3 sm:flex-row">
                 @if ($primaryAction)
                     <a href="{{ $primaryAction['href'] }}"
-                       class="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-base font-semibold text-slate-900 shadow-lg shadow-black/20 transition hover:bg-slate-100">
+                       class="group inline-flex items-center gap-2 rounded-full bg-brand-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition duration-200 hover:bg-brand-700 hover:shadow-brand-500/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]">
                         {{ $primaryAction['label'] }}
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition group-hover:translate-x-0.5">
                             <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -46,7 +46,7 @@
                 @endif
                 @if ($secondaryAction)
                     <a href="{{ $secondaryAction['href'] }}"
-                       class="rounded-full border border-white/40 bg-white/10 px-7 py-3.5 text-base font-medium text-white backdrop-blur transition hover:bg-white/20">
+                       class="rounded-full border border-white/30 bg-white/5 px-7 py-3.5 text-base font-medium text-white backdrop-blur transition duration-200 hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]">
                         {{ $secondaryAction['label'] }}
                     </a>
                 @endif
