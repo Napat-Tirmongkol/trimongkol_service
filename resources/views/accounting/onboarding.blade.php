@@ -33,23 +33,23 @@
 
             {{-- Business type --}}
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">
+                <label class="block text-sm font-medium text-slate-700 mb-2.5">
                     {{ __('app.accounting.biz_type_label') }} <span class="text-rose-500">*</span>
                 </label>
-                <div class="space-y-2">
-                    <label class="flex items-center gap-3 cursor-pointer">
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="relative flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition select-none has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
                         <input type="radio" name="business_type" value="company" x-model="type"
-                               class="border-slate-300 text-brand-600 focus:ring-brand-500">
-                        <span class="text-sm text-slate-700">{{ __('app.accounting.biz_type_company') }}</span>
+                               class="sr-only">
+                        <span class="text-sm font-semibold text-slate-900">{{ __('app.accounting.biz_type_company') }}</span>
                     </label>
-                    <label class="flex items-center gap-3 cursor-pointer">
+                    <label class="relative flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-slate-300 bg-white cursor-pointer transition select-none has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
                         <input type="radio" name="business_type" value="individual" x-model="type"
-                               class="border-slate-300 text-brand-600 focus:ring-brand-500">
-                        <span class="text-sm text-slate-700">{{ __('app.accounting.biz_type_individual') }}</span>
+                               class="sr-only">
+                        <span class="text-sm font-semibold text-slate-900">{{ __('app.accounting.biz_type_individual') }}</span>
                     </label>
                 </div>
                 @error('business_type')
-                    <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs text-rose-600">{{ $message }}</p>
                 @enderror
             </div>
 
