@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Queue;
 use App\Models\QueueTicket;
+use App\Models\Setting;
 use App\Models\Workspace;
 
 /**
@@ -76,8 +77,30 @@ class QueuePlan
 
     public static function limit(?Workspace $workspace, string $name): ?int
     {
+        $key = self::key($workspace);
+        $override = Setting::get("queue_plan.{$key}.{$name}");
+        if ($override !== null) {
+            return $override === '' ? null : (int) $override;
+        }
         $value = self::config($workspace)['limits'][$name] ?? null;
         return $value === null ? null : (int) $value;
+    }
+
+    /** All effective limits for a plan key, merging DB overrides on top of config defaults. */
+    public static function limitsForKey(string $key): array
+    {
+        $defaults = config("queue-plans.{$key}.limits") ?? [];
+        $limitNames = ['max_queues', 'max_counters', 'max_tickets_per_day'];
+        $result = [];
+        foreach ($limitNames as $name) {
+            $override = Setting::get("queue_plan.{$key}.{$name}");
+            if ($override !== null) {
+                $result[$name] = $override === '' ? null : (int) $override;
+            } else {
+                $result[$name] = isset($defaults[$name]) ? ($defaults[$name] === null ? null : (int) $defaults[$name]) : null;
+            }
+        }
+        return $result;
     }
 
     public static function can(?Workspace $workspace, string $flag): bool

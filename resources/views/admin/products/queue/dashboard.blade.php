@@ -10,6 +10,21 @@
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
 
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.queue.index') }}"
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                    {{ __('app.admin.products.queue.tab_queues') }}
+                </a>
+                <a href="{{ route('admin.queue.payments') }}"
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                    {{ __('app.admin.products.queue.tab_payments') }}
+                </a>
+                <a href="{{ route('admin.queue.plans') }}"
+                   class="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 shadow-sm hover:bg-brand-100">
+                    {{ __('app.admin.products.queue.tab_plans') }}
+                </a>
+            </div>
+
             @if (session('status'))
                 <div class="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
             @endif

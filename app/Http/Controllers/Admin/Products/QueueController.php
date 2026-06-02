@@ -9,6 +9,7 @@ use App\Models\QueuePayment;
 use App\Models\QueueTicket;
 use App\Models\Setting;
 use App\Services\AuditLog;
+use App\Services\QueuePlan;
 use App\Services\Payments\SlipVerifier;
 use App\Services\Tts;
 use Illuminate\Http\Request;
@@ -73,6 +74,49 @@ class QueueController extends Controller
 
         return redirect()->route('admin.queue.index')
             ->with('status', __('app.admin.products.queue.deleted'));
+    }
+
+    public function plans()
+    {
+        $planKeys = ['free', 'starter', 'pro'];
+        $plans = [];
+        foreach ($planKeys as $key) {
+            $plans[$key] = [
+                'name'   => config("queue-plans.{$key}.name"),
+                'limits' => QueuePlan::limitsForKey($key),
+            ];
+        }
+
+        return view('admin.products.queue.plans', compact('plans'));
+    }
+
+    public function updatePlans(Request $request)
+    {
+        $planKeys = ['free', 'starter', 'pro'];
+        $limitNames = ['max_queues', 'max_counters', 'max_tickets_per_day'];
+
+        $rules = [];
+        foreach ($planKeys as $key) {
+            foreach ($limitNames as $name) {
+                $rules["plans.{$key}.{$name}"] = 'nullable|integer|min:1|max:99999';
+            }
+        }
+        $data = $request->validate($rules);
+
+        foreach ($planKeys as $key) {
+            foreach ($limitNames as $name) {
+                $raw = $data['plans'][$key][$name] ?? null;
+                $value = ($raw === null || $raw === '') ? '' : (string)(int)$raw;
+                Setting::updateOrCreate(
+                    ['key' => "queue_plan.{$key}.{$name}"],
+                    ['value' => $value]
+                );
+            }
+        }
+
+        AuditLog::record('queue.plans.update', null, 'Queue plan limits updated', $data['plans'] ?? []);
+
+        return back()->with('status', __('app.admin.products.queue.plans_saved'));
     }
 
     public function updateSettings(Request $request)

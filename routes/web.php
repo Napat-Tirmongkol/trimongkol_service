@@ -273,6 +273,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/', [AdminQueueController::class, 'dashboard'])->name('dashboard');
                 Route::get('/queues', [AdminQueueController::class, 'index'])->name('index');
                 Route::delete('/queues/{queue}', [AdminQueueController::class, 'destroy'])->name('destroy');
+                Route::get('/plans', [AdminQueueController::class, 'plans'])->name('plans');
+                Route::post('/plans', [AdminQueueController::class, 'updatePlans'])->name('plans.update');
                 Route::post('/settings', [AdminQueueController::class, 'updateSettings'])->name('settings');
                 Route::post('/tts-test', [AdminQueueController::class, 'testTts'])->name('tts-test');
                 Route::post('/billing-settings', [AdminQueueController::class, 'updateBilling'])->name('billing-settings');
