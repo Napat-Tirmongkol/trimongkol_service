@@ -321,11 +321,9 @@ Route::middleware('auth')->group(function () {
 // Guest routes (login/logout) come first so they are reachable before auth.
 Route::middleware('product:accounting')->prefix('accounting')->name('accounting.')->group(function () {
     // Public — no accounting auth required
-    Route::middleware('web')->group(function () {
-        Route::get('/login', [AccountingAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AccountingAuthController::class, 'login'])->name('login.store');
-        Route::post('/logout', [AccountingAuthController::class, 'logout'])->name('logout');
-    });
+    Route::get('/login', [AccountingAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AccountingAuthController::class, 'login'])->name('login.store');
+    Route::post('/logout', [AccountingAuthController::class, 'logout'])->name('logout');
 
     // Protected — must be authenticated via the accounting guard
     Route::middleware('auth.accounting')->group(function () {
