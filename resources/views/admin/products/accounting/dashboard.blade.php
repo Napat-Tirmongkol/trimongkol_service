@@ -1,9 +1,15 @@
 <x-admin-layout>
     <x-slot name="header">
-        <div>
-            <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.admin.nav_products') }}</div>
-            <h2 class="mt-0.5 text-xl font-semibold leading-tight text-gray-800">{{ __('app.admin.products.accounting.label') }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ __('app.admin.products.accounting.desc') }}</p>
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.admin.nav_products') }}</div>
+                <h2 class="mt-0.5 text-xl font-semibold leading-tight text-gray-800">{{ __('app.admin.products.accounting.label') }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ __('app.admin.products.accounting.desc') }}</p>
+            </div>
+            <a href="{{ route('admin.accounting.users') }}"
+               class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
+                {{ __('app.accounting.accounting_users') }}
+            </a>
         </div>
     </x-slot>
 
