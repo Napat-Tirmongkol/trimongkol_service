@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Product;
+use App\Models\Accounting\StockMovement;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\Inventory;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductController extends AccountingController
 {
@@ -70,6 +73,85 @@ class ProductController extends AccountingController
             ->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
 
         return view('accounting.products.show', compact('workspace', 'product', 'bankAccounts', 'expenseAccounts'));
+    }
+
+    public function edit(Product $product)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($product->workspace_id === $workspace->id, 404);
+
+        $assetAccounts = Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get();
+        $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
+        $hasMovements = $product->movements()->exists();
+
+        return view('accounting.products.edit', compact('product', 'assetAccounts', 'expenseAccounts', 'hasMovements'));
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($product->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        $hasMovements = $product->movements()->exists();
+
+        $rules = [
+            'sku' => ['required', 'string', 'max:40',
+                Rule::unique('accounting_products', 'sku')
+                    ->where('workspace_id', $workspace->id)
+                    ->ignore($product->id),
+            ],
+            'name' => 'required|string|max:160',
+            'unit' => 'required|string|max:20',
+        ];
+        // Account mappings are locked once stock has moved — changing them would
+        // misalign the ledger with future postings.
+        if (! $hasMovements) {
+            $rules['inventory_account_id'] = 'required|integer';
+            $rules['cogs_account_id'] = 'required|integer';
+        }
+
+        $data = $request->validate($rules);
+
+        $updates = [
+            'sku' => $data['sku'],
+            'name' => $data['name'],
+            'unit' => $data['unit'],
+        ];
+        if (! $hasMovements) {
+            foreach (['inventory_account_id', 'cogs_account_id'] as $field) {
+                $account = Account::forWorkspace($workspace)->find($data[$field]);
+                if (! $account) {
+                    return back()->withInput()->with('error', __('app.accounting.account_not_in_workspace'));
+                }
+                $updates[$field] = $data[$field];
+            }
+        }
+        $product->update($updates);
+
+        AccountingAuditLog::record($workspace, 'product.updated', $product, "{$product->sku} {$product->name}");
+
+        return redirect()->route('accounting.products.show', $product)
+            ->with('status', __('app.accounting.product_updated'));
+    }
+
+    public function destroy(Product $product)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($product->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        if (StockMovement::where('product_id', $product->id)->exists()) {
+            return back()->with('error', __('app.accounting.product_in_use'));
+        }
+
+        $label = "{$product->sku} {$product->name}";
+        $product->delete();
+
+        AccountingAuditLog::record($workspace, 'product.deleted', null, $label);
+
+        return redirect()->route('accounting.products.index')
+            ->with('status', __('app.accounting.product_deleted'));
     }
 
     public function receive(Request $request, Product $product)

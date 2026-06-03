@@ -352,6 +352,9 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
         Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
+        Route::get('/partners/{partner}/edit', [AccountingPartnerController::class, 'edit'])->name('partners.edit');
+        Route::put('/partners/{partner}', [AccountingPartnerController::class, 'update'])->name('partners.update');
+        Route::delete('/partners/{partner}', [AccountingPartnerController::class, 'destroy'])->name('partners.destroy');
 
         Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
@@ -414,6 +417,9 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/products/create', [AccountingProductController::class, 'create'])->name('products.create');
         Route::post('/products', [AccountingProductController::class, 'store'])->name('products.store');
         Route::get('/products/{product}', [AccountingProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{product}/edit', [AccountingProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{product}', [AccountingProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{product}', [AccountingProductController::class, 'destroy'])->name('products.destroy');
         Route::post('/products/{product}/receive', [AccountingProductController::class, 'receive'])->name('products.receive');
         Route::post('/products/{product}/issue', [AccountingProductController::class, 'issue'])->name('products.issue');
         Route::post('/products/{product}/adjust', [AccountingProductController::class, 'adjust'])->name('products.adjust');

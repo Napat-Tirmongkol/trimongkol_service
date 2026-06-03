@@ -36,6 +36,7 @@
                                 <th class="px-6 py-2.5 font-medium">{{ __('app.accounting.partner_tax_id') }}</th>
                                 <th class="px-6 py-2.5 font-medium">{{ __('app.accounting.partner_type') }}</th>
                                 <th class="px-6 py-2.5 text-right font-medium">{{ __('app.accounting.partner_credit_days') }}</th>
+                                <th class="px-6 py-2.5"></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -53,6 +54,16 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-3 text-right tabular-nums text-slate-600">{{ $partner->credit_days }}</td>
+                                    <td class="px-6 py-3 text-right">
+                                        <div class="inline-flex items-center gap-3">
+                                            <a href="{{ route('accounting.partners.edit', $partner) }}" class="text-xs text-slate-500 hover:text-slate-800">{{ __('app.common.edit') }}</a>
+                                            <form method="POST" action="{{ route('accounting.partners.destroy', $partner) }}"
+                                                  data-confirm="{{ __('app.accounting.partner_delete_confirm') }}" data-confirm-danger="1">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-xs text-rose-500 hover:text-rose-700">{{ __('app.common.delete') }}</button>
+                                            </form>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
