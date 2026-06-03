@@ -11,6 +11,13 @@
     <div class="py-8">
         <div class="mx-auto max-w-md space-y-6 px-4 sm:px-6">
 
+            @if (session('error'))
+                <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
+                    <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div class="flex-1 font-medium">{{ session('error') }}</div>
+                </div>
+            @endif
+
             {{-- Amount --}}
             <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
                 <div class="text-xs uppercase tracking-wider text-slate-500">{{ $planConfig['name'] }} · {{ __('app.queue.billing.one_month') }}</div>
