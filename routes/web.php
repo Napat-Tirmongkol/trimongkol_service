@@ -339,6 +339,8 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
         Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
+        Route::get('/reports/aged-ar', [AccountingReportController::class, 'agedReceivables'])->name('reports.aged-ar');
+        Route::get('/reports/aged-ap', [AccountingReportController::class, 'agedPayables'])->name('reports.aged-ap');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
 
         Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');

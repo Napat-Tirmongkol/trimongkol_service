@@ -31,6 +31,36 @@ class ReportController extends AccountingController
         ]);
     }
 
+    public function agedReceivables(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $asOf = ($request->date('as_of') ?? now())->toDateString();
+
+        return view('accounting.reports.aged-ar', [
+            'asOf' => $asOf,
+            'report' => Reporting::agedReceivables($workspace, $asOf),
+        ]);
+    }
+
+    public function agedPayables(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $asOf = ($request->date('as_of') ?? now())->toDateString();
+
+        return view('accounting.reports.aged-ap', [
+            'asOf' => $asOf,
+            'report' => Reporting::agedPayables($workspace, $asOf),
+        ]);
+    }
+
     public function tax(Request $request)
     {
         $workspace = $this->requireWorkspace();

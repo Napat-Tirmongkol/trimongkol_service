@@ -3,9 +3,13 @@
 namespace App\Services\Accounting;
 
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Bill;
+use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
+use App\Models\Accounting\PaymentAllocation;
 use App\Models\Workspace;
+use Illuminate\Support\Carbon;
 
 /**
  * Financial statements, derived entirely from posted journal lines (the
@@ -138,6 +142,164 @@ class Reporting
             'net_income' => Money::fromMinor($netIncome),                         // current period, not yet closed
             'liabilities_and_equity' => Money::fromMinor($liabilityTotal + $equityTotal + $netIncome),
             'balanced' => $assetTotal === ($liabilityTotal + $equityTotal + $netIncome),
+        ];
+    }
+
+    public const AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', '90_plus'];
+
+    /**
+     * Aged receivables: outstanding amount on every open invoice, grouped by
+     * partner and bucketed by days past due as of $asOf (default today).
+     * "Open" = issued or partial; void/draft/paid are excluded.
+     */
+    public static function agedReceivables(Workspace $workspace, ?string $asOf = null): array
+    {
+        $asOfDate = Carbon::parse($asOf ?: now()->toDateString());
+
+        $invoices = Invoice::query()->forWorkspace($workspace)
+            ->whereIn('status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
+            ->whereDate('issue_date', '<=', $asOfDate->toDateString())
+            ->with('partner')
+            ->get();
+
+        $allocated = self::allocatedByDocument($workspace, Invoice::class, $invoices->pluck('id'));
+
+        $byPartner = [];
+        foreach ($invoices as $invoice) {
+            $outstandingMinor = Money::toMinor($invoice->total) - ($allocated[$invoice->id] ?? 0);
+            if ($outstandingMinor <= 0) {
+                continue;
+            }
+
+            $dueDate = $invoice->due_date ?: $invoice->issue_date;
+            $bucket = self::ageBucket($dueDate, $asOfDate);
+
+            $partnerId = $invoice->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $invoice->partner,
+                    'amounts' => array_fill_keys(self::AGING_BUCKETS, 0),
+                    'total' => 0,
+                ];
+            }
+            $byPartner[$partnerId]['amounts'][$bucket] += $outstandingMinor;
+            $byPartner[$partnerId]['total'] += $outstandingMinor;
+        }
+
+        return self::buildAgingResult($byPartner, $asOfDate);
+    }
+
+    /**
+     * Aged payables: outstanding on every open bill, grouped by vendor and
+     * bucketed by days past due as of $asOf.
+     */
+    public static function agedPayables(Workspace $workspace, ?string $asOf = null): array
+    {
+        $asOfDate = Carbon::parse($asOf ?: now()->toDateString());
+
+        $bills = Bill::query()->forWorkspace($workspace)
+            ->whereIn('status', [Bill::STATUS_ISSUED, Bill::STATUS_PARTIAL])
+            ->whereDate('issue_date', '<=', $asOfDate->toDateString())
+            ->with('partner')
+            ->get();
+
+        $allocated = self::allocatedByDocument($workspace, Bill::class, $bills->pluck('id'));
+
+        $byPartner = [];
+        foreach ($bills as $bill) {
+            $outstandingMinor = Money::toMinor($bill->total) - ($allocated[$bill->id] ?? 0);
+            if ($outstandingMinor <= 0) {
+                continue;
+            }
+
+            $dueDate = $bill->due_date ?: $bill->issue_date;
+            $bucket = self::ageBucket($dueDate, $asOfDate);
+
+            $partnerId = $bill->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $bill->partner,
+                    'amounts' => array_fill_keys(self::AGING_BUCKETS, 0),
+                    'total' => 0,
+                ];
+            }
+            $byPartner[$partnerId]['amounts'][$bucket] += $outstandingMinor;
+            $byPartner[$partnerId]['total'] += $outstandingMinor;
+        }
+
+        return self::buildAgingResult($byPartner, $asOfDate);
+    }
+
+    /** Days-past-due → bucket key. Future/today → 'current'. */
+    private static function ageBucket($dueDate, Carbon $asOf): string
+    {
+        $due = Carbon::parse($dueDate);
+        $days = $due->diffInDays($asOf, false);  // positive when asOf is after due
+
+        return match (true) {
+            $days <= 0 => 'current',
+            $days <= 30 => '1_30',
+            $days <= 60 => '31_60',
+            $days <= 90 => '61_90',
+            default => '90_plus',
+        };
+    }
+
+    /**
+     * Sum allocated amounts per document, in minor units.
+     *
+     * @return array<int, int> document_id => allocatedMinor
+     */
+    private static function allocatedByDocument(Workspace $workspace, string $modelClass, $documentIds): array
+    {
+        if (count($documentIds) === 0) {
+            return [];
+        }
+
+        $instance = new $modelClass;
+        $morphClass = $instance->getMorphClass();
+
+        return PaymentAllocation::query()
+            ->forWorkspace($workspace)
+            ->where('allocatable_type', $morphClass)
+            ->whereIn('allocatable_id', $documentIds)
+            ->selectRaw('allocatable_id, SUM(amount) as total')
+            ->groupBy('allocatable_id')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->allocatable_id => Money::toMinor((string) $row->total)])
+            ->all();
+    }
+
+    /** Convert internal minor-unit aging map into the view-friendly shape. */
+    private static function buildAgingResult(array $byPartner, Carbon $asOf): array
+    {
+        $rows = [];
+        $totals = array_fill_keys(self::AGING_BUCKETS, 0);
+        $grandTotal = 0;
+
+        // Sort by total descending so the biggest debtors/creditors lead.
+        usort($byPartner, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        foreach ($byPartner as $entry) {
+            $row = [
+                'partner' => $entry['partner'],
+                'amounts' => [],
+                'total' => Money::fromMinor($entry['total']),
+            ];
+            foreach (self::AGING_BUCKETS as $bucket) {
+                $minor = $entry['amounts'][$bucket];
+                $row['amounts'][$bucket] = Money::fromMinor($minor);
+                $totals[$bucket] += $minor;
+            }
+            $grandTotal += $entry['total'];
+            $rows[] = $row;
+        }
+
+        return [
+            'as_of' => $asOf->toDateString(),
+            'rows' => $rows,
+            'totals' => array_map(fn ($v) => Money::fromMinor($v), $totals),
+            'grand_total' => Money::fromMinor($grandTotal),
         ];
     }
 

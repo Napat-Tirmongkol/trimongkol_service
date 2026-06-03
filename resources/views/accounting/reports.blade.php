@@ -5,8 +5,12 @@
                 <a href="{{ route('accounting.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.heading') }}</a>
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.reports') }}</h2>
                 <p class="mt-0.5 text-sm text-slate-500">{{ __('app.accounting.reports_sub') }}</p>
-                <div class="mt-1 flex items-center gap-3 text-xs font-medium">
+                <div class="mt-1 flex flex-wrap items-center gap-3 text-xs font-medium">
                     <a href="{{ route('accounting.reports.tax') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.tax_reports') }} →</a>
+                    <span class="text-slate-300">·</span>
+                    <a href="{{ route('accounting.reports.aged-ar') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.aged_ar') }} →</a>
+                    <span class="text-slate-300">·</span>
+                    <a href="{{ route('accounting.reports.aged-ap') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.aged_ap') }} →</a>
                     <span class="text-slate-300">·</span>
                     <a href="{{ route('accounting.opening-balances.edit') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.opening_balances') }} →</a>
                 </div>
