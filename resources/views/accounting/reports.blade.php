@@ -12,6 +12,10 @@
                     <span class="text-slate-300">·</span>
                     <a href="{{ route('accounting.reports.aged-ap') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.aged_ap') }} →</a>
                     <span class="text-slate-300">·</span>
+                    <a href="{{ route('accounting.reports.sales-by-partner') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.sales_by_partner') }} →</a>
+                    <span class="text-slate-300">·</span>
+                    <a href="{{ route('accounting.reports.purchases-by-partner') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.purchases_by_partner') }} →</a>
+                    <span class="text-slate-300">·</span>
                     <a href="{{ route('accounting.opening-balances.edit') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.opening_balances') }} →</a>
                 </div>
             </div>

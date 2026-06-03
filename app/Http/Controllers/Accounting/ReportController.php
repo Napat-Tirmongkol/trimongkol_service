@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
+use App\Models\Accounting\Partner;
 use App\Services\Accounting\Reporting;
 use App\Services\Accounting\TaxReporting;
 use App\Services\AccountingPlan;
@@ -28,6 +29,56 @@ class ReportController extends AccountingController
             'trialBalance' => Reporting::trialBalance($workspace, $to),
             'pnl' => Reporting::profitAndLoss($workspace, $from, $to),
             'balanceSheet' => Reporting::balanceSheet($workspace, $to),
+        ]);
+    }
+
+    public function salesByPartner(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $from = ($request->date('from') ?? now()->startOfYear())->toDateString();
+        $to = ($request->date('to') ?? now()->endOfYear())->toDateString();
+
+        return view('accounting.reports.sales-by-partner', [
+            'from' => $from,
+            'to' => $to,
+            'report' => Reporting::salesByPartner($workspace, $from, $to),
+        ]);
+    }
+
+    public function purchasesByPartner(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $from = ($request->date('from') ?? now()->startOfYear())->toDateString();
+        $to = ($request->date('to') ?? now()->endOfYear())->toDateString();
+
+        return view('accounting.reports.purchases-by-partner', [
+            'from' => $from,
+            'to' => $to,
+            'report' => Reporting::purchasesByPartner($workspace, $from, $to),
+        ]);
+    }
+
+    public function partnerStatement(Request $request, Partner $partner)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($partner->workspace_id === $workspace->id, 404);
+
+        $from = ($request->date('from') ?? now()->startOfYear())->toDateString();
+        $to = ($request->date('to') ?? now()->endOfYear())->toDateString();
+
+        return view('accounting.reports.partner-statement', [
+            'partner' => $partner,
+            'from' => $from,
+            'to' => $to,
+            'report' => Reporting::partnerStatement($workspace, $partner, $from, $to),
         ]);
     }
 

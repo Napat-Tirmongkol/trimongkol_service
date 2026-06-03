@@ -86,6 +86,7 @@
                                     <td class="px-6 py-3 text-right tabular-nums text-slate-600">{{ $partner->credit_days }}</td>
                                     <td class="px-6 py-3 text-right">
                                         <div class="inline-flex items-center gap-3">
+                                            <a href="{{ route('accounting.reports.partner-statement', $partner) }}" class="text-xs text-brand-700 hover:text-brand-900">{{ __('app.accounting.partner_statement') }}</a>
                                             <a href="{{ route('accounting.partners.edit', $partner) }}" class="text-xs text-slate-500 hover:text-slate-800">{{ __('app.common.edit') }}</a>
                                             <form method="POST" action="{{ route('accounting.partners.destroy', $partner) }}"
                                                   data-confirm="{{ __('app.accounting.partner_delete_confirm') }}" data-confirm-danger="1">

@@ -148,6 +148,164 @@ class Reporting
     public const AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', '90_plus'];
 
     /**
+     * Sales aggregated by customer over [$from, $to]. Excludes drafts and
+     * voided invoices — only what actually hit the ledger counts.
+     */
+    public static function salesByPartner(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        return self::documentsByPartner($workspace, Invoice::class, $from, $to);
+    }
+
+    /** Purchases aggregated by vendor over [$from, $to]. */
+    public static function purchasesByPartner(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        return self::documentsByPartner($workspace, Bill::class, $from, $to);
+    }
+
+    /**
+     * Per-partner statement: every issued document for this partner in the
+     * window, with outstanding per document and totals at the bottom.
+     */
+    public static function partnerStatement(Workspace $workspace, \App\Models\Accounting\Partner $partner, ?string $from, ?string $to): array
+    {
+        $isVendor = (bool) $partner->is_vendor;
+        $modelClass = $isVendor ? Bill::class : Invoice::class;
+
+        $query = $modelClass::query()->forWorkspace($workspace)
+            ->where('partner_id', $partner->id)
+            ->whereIn('status', ['issued', 'partial', 'paid'])
+            ->orderBy('issue_date')->orderBy('id');
+
+        if ($from) {
+            $query->whereDate('issue_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('issue_date', '<=', $to);
+        }
+
+        $docs = $query->get();
+        $allocated = self::allocatedByDocument($workspace, $modelClass, $docs->pluck('id'));
+
+        $entries = [];
+        $totalAmount = 0;
+        $totalPaid = 0;
+        $totalOutstanding = 0;
+
+        foreach ($docs as $doc) {
+            $totalMinor = Money::toMinor($doc->total);
+            $paidMinor = $allocated[$doc->id] ?? 0;
+            $outstandingMinor = $totalMinor - $paidMinor;
+
+            $entries[] = [
+                'date' => $doc->issue_date,
+                'due_date' => $doc->due_date,
+                'no' => $doc->no,
+                'ref' => $isVendor ? $doc->bill_ref : $doc->tax_invoice_no,
+                'status' => $doc->status,
+                'total' => Money::fromMinor($totalMinor),
+                'paid' => Money::fromMinor($paidMinor),
+                'outstanding' => Money::fromMinor($outstandingMinor),
+            ];
+
+            $totalAmount += $totalMinor;
+            $totalPaid += $paidMinor;
+            $totalOutstanding += $outstandingMinor;
+        }
+
+        return [
+            'partner' => $partner,
+            'role' => $isVendor ? 'vendor' : 'customer',
+            'from' => $from,
+            'to' => $to,
+            'entries' => $entries,
+            'total' => Money::fromMinor($totalAmount),
+            'paid' => Money::fromMinor($totalPaid),
+            'outstanding' => Money::fromMinor($totalOutstanding),
+        ];
+    }
+
+    /**
+     * Aggregate invoices or bills by partner inside [$from, $to].
+     * Returns rows sorted by total descending and grand totals.
+     */
+    private static function documentsByPartner(Workspace $workspace, string $modelClass, ?string $from, ?string $to): array
+    {
+        $query = $modelClass::query()->forWorkspace($workspace)
+            ->whereIn('status', ['issued', 'partial', 'paid'])
+            ->with('partner');
+
+        if ($from) {
+            $query->whereDate('issue_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('issue_date', '<=', $to);
+        }
+
+        $docs = $query->get();
+        $allocated = self::allocatedByDocument($workspace, $modelClass, $docs->pluck('id'));
+
+        $byPartner = [];
+        foreach ($docs as $doc) {
+            $partnerId = $doc->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $doc->partner,
+                    'count' => 0,
+                    'subtotal' => 0,
+                    'vat' => 0,
+                    'total' => 0,
+                    'paid' => 0,
+                    'outstanding' => 0,
+                ];
+            }
+            $totalMinor = Money::toMinor($doc->total);
+            $paidMinor = $allocated[$doc->id] ?? 0;
+
+            $byPartner[$partnerId]['count']++;
+            $byPartner[$partnerId]['subtotal'] += Money::toMinor($doc->subtotal);
+            $byPartner[$partnerId]['vat'] += Money::toMinor($doc->vat_amount);
+            $byPartner[$partnerId]['total'] += $totalMinor;
+            $byPartner[$partnerId]['paid'] += $paidMinor;
+            $byPartner[$partnerId]['outstanding'] += $totalMinor - $paidMinor;
+        }
+
+        usort($byPartner, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        $rows = [];
+        $totals = ['subtotal' => 0, 'vat' => 0, 'total' => 0, 'paid' => 0, 'outstanding' => 0, 'count' => 0];
+        foreach ($byPartner as $entry) {
+            foreach (['subtotal', 'vat', 'total', 'paid', 'outstanding'] as $field) {
+                $totals[$field] += $entry[$field];
+            }
+            $totals['count'] += $entry['count'];
+
+            $rows[] = [
+                'partner' => $entry['partner'],
+                'count' => $entry['count'],
+                'subtotal' => Money::fromMinor($entry['subtotal']),
+                'vat' => Money::fromMinor($entry['vat']),
+                'total' => Money::fromMinor($entry['total']),
+                'paid' => Money::fromMinor($entry['paid']),
+                'outstanding' => Money::fromMinor($entry['outstanding']),
+            ];
+        }
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows,
+            'totals' => [
+                'count' => $totals['count'],
+                'subtotal' => Money::fromMinor($totals['subtotal']),
+                'vat' => Money::fromMinor($totals['vat']),
+                'total' => Money::fromMinor($totals['total']),
+                'paid' => Money::fromMinor($totals['paid']),
+                'outstanding' => Money::fromMinor($totals['outstanding']),
+            ],
+        ];
+    }
+
+    /**
      * Aged receivables: outstanding amount on every open invoice, grouped by
      * partner and bucketed by days past due as of $asOf (default today).
      * "Open" = issued or partial; void/draft/paid are excluded.
