@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
@@ -45,8 +46,9 @@ class InvoiceController extends AccountingController
         $revenueAccounts = Account::forWorkspace($workspace)->where('type', 'income')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_output')->where('is_active', true)->get();
         $whtCodes = TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.invoices.create', compact('partners', 'revenueAccounts', 'vatCodes', 'whtCodes'));
+        return view('accounting.invoices.create', compact('partners', 'revenueAccounts', 'vatCodes', 'whtCodes', 'departments'));
     }
 
     public function store(Request $request)
@@ -68,6 +70,7 @@ class InvoiceController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {
@@ -101,8 +104,9 @@ class InvoiceController extends AccountingController
         $revenueAccounts = Account::forWorkspace($workspace)->where('type', 'income')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_output')->where('is_active', true)->get();
         $whtCodes = TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.invoices.edit', compact('invoice', 'partners', 'revenueAccounts', 'vatCodes', 'whtCodes'));
+        return view('accounting.invoices.edit', compact('invoice', 'partners', 'revenueAccounts', 'vatCodes', 'whtCodes', 'departments'));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -125,6 +129,7 @@ class InvoiceController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {

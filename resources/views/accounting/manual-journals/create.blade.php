@@ -63,11 +63,23 @@
                                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                     </button>
                                 </div>
-                                <div class="col-span-12">
+                                <div class="col-span-12 sm:col-span-{{ $departments->isNotEmpty() ? '8' : '12' }}">
                                     <input type="text" x-model="line.description" :name="`lines[${i}][description]`" maxlength="255"
                                            placeholder="{{ __('app.accounting.line_desc') }}"
                                            class="block w-full rounded-md border-slate-300 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
+                                @if ($departments->isNotEmpty())
+                                    <div class="col-span-12 sm:col-span-4">
+                                        <select x-model="line.department_id" :name="`lines[${i}][department_id]`"
+                                                aria-label="{{ __('app.accounting.department') }}"
+                                                class="block w-full rounded-md border-slate-300 text-xs shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <option value="">{{ __('app.accounting.no_department') }}</option>
+                                            @foreach ($departments as $dept)
+                                                <option value="{{ $dept->id }}">{{ $dept->code }} {{ $dept->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
                             </div>
                         </template>
                     </div>
@@ -107,10 +119,10 @@
             return {
                 submitting: false,
                 lines: [
-                    { account_id: '', debit: '', credit: '', description: '' },
-                    { account_id: '', debit: '', credit: '', description: '' },
+                    { account_id: '', debit: '', credit: '', description: '', department_id: '' },
+                    { account_id: '', debit: '', credit: '', description: '', department_id: '' },
                 ],
-                addLine() { this.lines.push({ account_id: '', debit: '', credit: '', description: '' }); },
+                addLine() { this.lines.push({ account_id: '', debit: '', credit: '', description: '', department_id: '' }); },
                 removeLine(i) { if (this.lines.length > 2) this.lines.splice(i, 1); },
                 get totalDebit() { return this.lines.reduce((s, l) => s + (parseFloat(l.debit) || 0), 0); },
                 get totalCredit() { return this.lines.reduce((s, l) => s + (parseFloat(l.credit) || 0), 0); },

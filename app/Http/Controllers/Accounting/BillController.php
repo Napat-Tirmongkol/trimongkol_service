@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
 use App\Services\Accounting\AccountingAuditLog;
@@ -39,8 +40,9 @@ class BillController extends AccountingController
 
         $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_input')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.bills.create', compact('vendors', 'expenseAccounts', 'vatCodes'));
+        return view('accounting.bills.create', compact('vendors', 'expenseAccounts', 'vatCodes', 'departments'));
     }
 
     public function store(Request $request)
@@ -59,6 +61,7 @@ class BillController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {
@@ -91,8 +94,9 @@ class BillController extends AccountingController
         $vendors = Partner::forWorkspace($workspace)->where('is_vendor', true)->orderBy('name')->get();
         $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_input')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.bills.edit', compact('bill', 'vendors', 'expenseAccounts', 'vatCodes'));
+        return view('accounting.bills.edit', compact('bill', 'vendors', 'expenseAccounts', 'vatCodes', 'departments'));
     }
 
     public function update(Request $request, Bill $bill)
@@ -116,6 +120,7 @@ class BillController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {

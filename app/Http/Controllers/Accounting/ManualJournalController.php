@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Journal;
 use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\LedgerPosting;
@@ -38,8 +39,9 @@ class ManualJournalController extends AccountingController
         }
 
         $accounts = Account::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.manual-journals.create', compact('accounts'));
+        return view('accounting.manual-journals.create', compact('accounts', 'departments'));
     }
 
     public function store(Request $request)
@@ -55,6 +57,7 @@ class ManualJournalController extends AccountingController
             'lines.*.debit' => 'required|numeric|min:0',
             'lines.*.credit' => 'required|numeric|min:0',
             'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {

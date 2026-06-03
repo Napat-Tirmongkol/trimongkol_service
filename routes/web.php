@@ -9,6 +9,7 @@ use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\DepartmentController as AccountingDepartmentController;
 use App\Http\Controllers\Accounting\FixedAssetController as AccountingFixedAssetController;
 use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
@@ -356,6 +357,13 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/partners/{partner}/edit', [AccountingPartnerController::class, 'edit'])->name('partners.edit');
         Route::put('/partners/{partner}', [AccountingPartnerController::class, 'update'])->name('partners.update');
         Route::delete('/partners/{partner}', [AccountingPartnerController::class, 'destroy'])->name('partners.destroy');
+
+        Route::get('/departments', [AccountingDepartmentController::class, 'index'])->name('departments.index');
+        Route::get('/departments/create', [AccountingDepartmentController::class, 'create'])->name('departments.create');
+        Route::post('/departments', [AccountingDepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}/edit', [AccountingDepartmentController::class, 'edit'])->name('departments.edit');
+        Route::put('/departments/{department}', [AccountingDepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [AccountingDepartmentController::class, 'destroy'])->name('departments.destroy');
 
         Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
