@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\Accounting\DemoSeeder;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -169,6 +170,31 @@ class SystemController extends Controller
                 'output' => $output,
                 'exit_code' => $exitCode,
             ]);
+    }
+
+    /**
+     * Build a fully populated demo accounting workspace — chart of accounts,
+     * tax codes, periods, partners, products, invoices, bills, receipts,
+     * payments, manual journals, recurring journals, and budgets. Returns
+     * the new workspace plus accounting-user credentials for sign-in.
+     */
+    public function seedAccountingDemo(Request $request)
+    {
+        try {
+            $result = DemoSeeder::seed();
+        } catch (\Throwable $e) {
+            Log::error('Demo seeder failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->route('admin.system')->with('error', 'Demo seeder failed: '.$e->getMessage());
+        }
+
+        AuditLog::record('system.demo_seed', $result['workspace'], $result['workspace']->name);
+
+        return redirect()->route('admin.system')->with('demo_credentials', [
+            'workspace_name' => $result['workspace']->name,
+            'workspace_slug' => $result['workspace']->slug,
+            'login_email' => $result['login_email'],
+            'login_password' => $result['login_password'],
+        ]);
     }
 
     public function clearCache(Request $request)

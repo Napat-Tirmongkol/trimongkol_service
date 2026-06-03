@@ -262,6 +262,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
             Route::post('/system/build-assets', [AdminSystemController::class, 'buildAssets'])->name('system.build-assets');
+            Route::post('/system/seed-accounting-demo', [AdminSystemController::class, 'seedAccountingDemo'])->name('system.seed-accounting-demo');
             Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
         });
 
