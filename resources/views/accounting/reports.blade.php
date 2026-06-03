@@ -18,6 +18,8 @@
                     <span class="text-slate-300">·</span>
                     <a href="{{ route('accounting.reports.pnl-by-department') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.pnl_by_department') }} →</a>
                     <span class="text-slate-300">·</span>
+                    <a href="{{ route('accounting.reports.budget-vs-actual') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.budget_vs_actual') }} →</a>
+                    <span class="text-slate-300">·</span>
                     <a href="{{ route('accounting.opening-balances.edit') }}" class="text-brand-700 hover:text-brand-800">{{ __('app.accounting.opening_balances') }} →</a>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
 use App\Models\Accounting\Partner;
@@ -29,6 +30,36 @@ class ReportController extends AccountingController
             'trialBalance' => Reporting::trialBalance($workspace, $to),
             'pnl' => Reporting::profitAndLoss($workspace, $from, $to),
             'balanceSheet' => Reporting::balanceSheet($workspace, $to),
+        ]);
+    }
+
+    public function budgetVsActual(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $year = (int) ($request->query('year') ?: now()->year);
+        $monthRaw = $request->query('month');
+        $month = ($monthRaw === null || $monthRaw === '') ? null : (int) $monthRaw;
+        if ($month !== null && ($month < 1 || $month > 12)) {
+            $month = null;
+        }
+
+        $deptRaw = $request->query('department');
+        $deptId = match (true) {
+            $deptRaw === null || $deptRaw === '' || $deptRaw === 'all' => null,
+            $deptRaw === 'unassigned' => 'unassigned',
+            default => (int) $deptRaw,
+        };
+
+        return view('accounting.reports.budget-vs-actual', [
+            'year' => $year,
+            'month' => $month,
+            'departmentSelection' => $deptRaw === null || $deptRaw === '' ? 'all' : $deptRaw,
+            'departments' => Department::forWorkspace($workspace)->orderBy('code')->get(),
+            'report' => Reporting::budgetVsActual($workspace, $year, $month, $deptId),
         ]);
     }
 

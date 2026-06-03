@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Budget;
 use App\Models\Accounting\Department;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
@@ -147,6 +148,173 @@ class Reporting
     }
 
     public const AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', '90_plus'];
+
+    /**
+     * Budget vs Actual for a fiscal year, optionally narrowed to a single
+     * month and/or a department. The result includes every (account × dept)
+     * combo that has either a budget or an actual — surprise spending shows
+     * up even when no budget was set. Variance is plain Actual − Budget; the
+     * view decides the colour from account type.
+     *
+     * @param  int|string|null  $deptId  null = no filter, int id = specific dept, "unassigned" = department_id IS NULL
+     */
+    public static function budgetVsActual(Workspace $workspace, int $year, ?int $month = null, int|string|null $deptId = null): array
+    {
+        // 1. Budgets for this year, optionally narrowed to a single dept.
+        $budgetQuery = Budget::query()->forWorkspace($workspace)->where('fiscal_year', $year);
+        if ($deptId === 'unassigned') {
+            $budgetQuery->whereNull('department_id');
+        } elseif (is_int($deptId)) {
+            $budgetQuery->where('department_id', $deptId);
+        }
+        $budgets = $budgetQuery->get();
+
+        // 2. Bucket budgets into ($accountId, $deptKey) — annual entries spread
+        //    across 12 months when the user asked for a single month.
+        $budgetMap = [];
+        foreach ($budgets as $b) {
+            $deptKey = $b->department_id ?? 0;
+            $key = $b->account_id.'_'.$deptKey;
+
+            if ($month !== null) {
+                if ($b->fiscal_month === $month) {
+                    $contribution = Money::toMinor($b->amount);
+                } elseif ($b->fiscal_month === null) {
+                    $contribution = intdiv(Money::toMinor($b->amount), 12);
+                } else {
+                    continue;
+                }
+            } else {
+                $contribution = Money::toMinor($b->amount);
+            }
+            $budgetMap[$key] = ($budgetMap[$key] ?? 0) + $contribution;
+        }
+
+        // 3. Actuals from posted ledger lines on income/expense accounts.
+        $accounts = Account::query()->forWorkspace($workspace)
+            ->whereIn('type', ['income', 'expense'])
+            ->get()->keyBy('id');
+
+        if ($accounts->isEmpty()) {
+            return self::buildBvaResult([], $year, $month, $deptId);
+        }
+
+        $from = $month !== null
+            ? Carbon::create($year, $month, 1)->startOfMonth()
+            : Carbon::create($year, 1, 1)->startOfYear();
+        $to = $month !== null
+            ? Carbon::create($year, $month, 1)->endOfMonth()
+            : Carbon::create($year, 12, 31)->endOfYear();
+
+        $actualLines = JournalLine::query()
+            ->forWorkspace($workspace)
+            ->whereHas('journal', fn ($q) => $q->where('status', Journal::STATUS_POSTED)
+                ->whereDate('date', '>=', $from->toDateString())
+                ->whereDate('date', '<=', $to->toDateString()))
+            ->whereIn('account_id', $accounts->keys())
+            ->when($deptId === 'unassigned', fn ($q) => $q->whereNull('department_id'))
+            ->when(is_int($deptId), fn ($q) => $q->where('department_id', $deptId))
+            ->selectRaw('account_id, department_id, SUM(debit) as d, SUM(credit) as c')
+            ->groupBy('account_id', 'department_id')
+            ->get();
+
+        $actualMap = [];
+        foreach ($actualLines as $row) {
+            $account = $accounts->get($row->account_id);
+            $deptKey = $row->department_id ?? 0;
+            $key = $row->account_id.'_'.$deptKey;
+
+            $debit = Money::toMinor((string) $row->d);
+            $credit = Money::toMinor((string) $row->c);
+            $signed = $account->type === 'income' ? ($credit - $debit) : ($debit - $credit);
+
+            $actualMap[$key] = ($actualMap[$key] ?? 0) + $signed;
+        }
+
+        // 4. Union of budget and actual keys — so unbudgeted spend surfaces.
+        $departments = Department::query()->forWorkspace($workspace)->get()->keyBy('id');
+        $allKeys = array_unique(array_merge(array_keys($budgetMap), array_keys($actualMap)));
+
+        $rows = [];
+        $totals = [
+            'income' => ['budget' => 0, 'actual' => 0],
+            'expense' => ['budget' => 0, 'actual' => 0],
+        ];
+
+        foreach ($allKeys as $key) {
+            [$accountId, $deptKey] = explode('_', $key);
+            $accountId = (int) $accountId;
+            $deptKey = (int) $deptKey;
+            $account = $accounts->get($accountId);
+            if (! $account) {
+                continue;
+            }
+
+            $budget = $budgetMap[$key] ?? 0;
+            $actual = $actualMap[$key] ?? 0;
+
+            $rows[] = [
+                'account' => $account,
+                'department' => $deptKey === 0 ? null : $departments->get($deptKey),
+                'budget' => Money::fromMinor($budget),
+                'actual' => Money::fromMinor($actual),
+                'variance' => Money::fromMinor($actual - $budget),
+            ];
+
+            $totals[$account->type]['budget'] += $budget;
+            $totals[$account->type]['actual'] += $actual;
+        }
+
+        // Income first, then expense; within each, by account code.
+        usort($rows, function ($a, $b) {
+            $order = ['income' => 0, 'expense' => 1];
+            $cmp = ($order[$a['account']->type] ?? 9) <=> ($order[$b['account']->type] ?? 9);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strcmp((string) $a['account']->code, (string) $b['account']->code);
+        });
+
+        return self::buildBvaResult([
+            'rows' => $rows,
+            'totals_raw' => $totals,
+        ], $year, $month, $deptId);
+    }
+
+    private static function buildBvaResult(array $partial, int $year, ?int $month, $deptId): array
+    {
+        $rows = $partial['rows'] ?? [];
+        $totals = $partial['totals_raw'] ?? ['income' => ['budget' => 0, 'actual' => 0], 'expense' => ['budget' => 0, 'actual' => 0]];
+
+        $incBudget = $totals['income']['budget'];
+        $incActual = $totals['income']['actual'];
+        $expBudget = $totals['expense']['budget'];
+        $expActual = $totals['expense']['actual'];
+
+        return [
+            'year' => $year,
+            'month' => $month,
+            'department_id' => $deptId,
+            'rows' => $rows,
+            'totals' => [
+                'income' => [
+                    'budget' => Money::fromMinor($incBudget),
+                    'actual' => Money::fromMinor($incActual),
+                    'variance' => Money::fromMinor($incActual - $incBudget),
+                ],
+                'expense' => [
+                    'budget' => Money::fromMinor($expBudget),
+                    'actual' => Money::fromMinor($expActual),
+                    'variance' => Money::fromMinor($expActual - $expBudget),
+                ],
+                'profit' => [
+                    'budget' => Money::fromMinor($incBudget - $expBudget),
+                    'actual' => Money::fromMinor($incActual - $expActual),
+                    'variance' => Money::fromMinor(($incActual - $expActual) - ($incBudget - $expBudget)),
+                ],
+            ],
+        ];
+    }
 
     /**
      * Profit & Loss split by department. Lines without a department_id roll
