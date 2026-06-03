@@ -364,6 +364,8 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
         Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
         Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
+        Route::get('/bills/{bill}/edit', [AccountingBillController::class, 'edit'])->name('bills.edit');
+        Route::put('/bills/{bill}', [AccountingBillController::class, 'update'])->name('bills.update');
         Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
         Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
 

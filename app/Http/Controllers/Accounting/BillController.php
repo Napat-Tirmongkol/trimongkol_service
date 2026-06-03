@@ -78,6 +78,63 @@ class BillController extends AccountingController
         return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.bill_created'));
     }
 
+    public function edit(Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+
+        if (! $bill->isDraft()) {
+            return redirect()->route('accounting.bills.show', $bill)->with('error', __('app.accounting.bill_edit_only_draft'));
+        }
+
+        $bill->load('lines');
+        $vendors = Partner::forWorkspace($workspace)->where('is_vendor', true)->orderBy('name')->get();
+        $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
+        $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_input')->where('is_active', true)->get();
+
+        return view('accounting.bills.edit', compact('bill', 'vendors', 'expenseAccounts', 'vatCodes'));
+    }
+
+    public function update(Request $request, Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+
+        if (! $bill->isDraft()) {
+            return redirect()->route('accounting.bills.show', $bill)->with('error', __('app.accounting.bill_edit_only_draft'));
+        }
+
+        $data = $request->validate([
+            'partner_id' => 'required|integer',
+            'issue_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'bill_ref' => 'nullable|string|max:120',
+            'memo' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.account_id' => 'required|integer',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.quantity' => 'required|numeric|min:0',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.tax_code_id' => 'nullable|integer',
+        ]);
+
+        try {
+            Purchasing::update($bill, [
+                'partner_id' => $data['partner_id'],
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'] ?? null,
+                'bill_ref' => $data['bill_ref'] ?? null,
+                'memo' => $data['memo'] ?? null,
+            ], $data['lines']);
+        } catch (LedgerException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'bill.updated', $bill, $bill->no);
+
+        return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.bill_updated'));
+    }
+
     public function show(Bill $bill)
     {
         $workspace = $this->requireWorkspace();
