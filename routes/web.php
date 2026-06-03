@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Accounting\AuditLogController as AccountingAuditLogController;
 use App\Http\Controllers\Accounting\AccountingUserController as AccountingUserController;
 use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
@@ -427,6 +428,9 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::patch('/users/{accountingUser}', [AccountingUserController::class, 'update'])->name('users.update');
         Route::post('/users/{accountingUser}/reset-password', [AccountingUserController::class, 'resetPassword'])->name('users.reset-password');
         Route::delete('/users/{accountingUser}', [AccountingUserController::class, 'destroy'])->name('users.destroy');
+
+        // Audit log
+        Route::get('/audit-log', [AccountingAuditLogController::class, 'index'])->name('audit-log.index');
 
         // Change own password
         Route::get('/password', [AccountingAuthController::class, 'showChangePassword'])->name('password.edit');

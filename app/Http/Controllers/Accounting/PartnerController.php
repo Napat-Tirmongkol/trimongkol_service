@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Models\Accounting\Partner;
+use App\Services\Accounting\AccountingAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -53,6 +54,8 @@ class PartnerController extends AccountingController
             'email' => $data['email'] ?? null,
             'address' => $data['address'] ?? null,
         ]);
+
+        AccountingAuditLog::record($workspace, 'partner.created', null, $data['name']);
 
         return redirect()->route('accounting.partners.index')
             ->with('status', __('app.accounting.partner_saved'));

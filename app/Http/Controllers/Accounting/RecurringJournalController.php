@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\RecurringJournal;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\RecurringJournals;
 use Illuminate\Http\Request;
 
@@ -62,6 +63,8 @@ class RecurringJournalController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'recurring.created', null, $data['name']);
+
         return redirect()->route('accounting.recurring-journals.index')
             ->with('status', __('app.accounting.recurring_created'));
     }
@@ -82,6 +85,8 @@ class RecurringJournalController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'recurring.run', $recurringJournal, $recurringJournal->name);
+
         return back()->with('status', __('app.accounting.recurring_run'));
     }
 
@@ -95,6 +100,9 @@ class RecurringJournalController extends AccountingController
 
         $key = $recurringJournal->is_active ? 'recurring_activated' : 'recurring_deactivated';
 
+        AccountingAuditLog::record($workspace, 'recurring.toggled', $recurringJournal, $recurringJournal->name,
+            ['is_active' => $recurringJournal->is_active]);
+
         return back()->with('status', __("app.accounting.{$key}"));
     }
 
@@ -104,7 +112,10 @@ class RecurringJournalController extends AccountingController
         abort_unless($recurringJournal->workspace_id === $workspace->id, 404);
         $this->assertPoster($workspace);
 
+        $label = $recurringJournal->name;
         $recurringJournal->delete();
+
+        AccountingAuditLog::record($workspace, 'recurring.deleted', null, $label);
 
         return redirect()->route('accounting.recurring-journals.index')
             ->with('status', __('app.accounting.recurring_deleted'));

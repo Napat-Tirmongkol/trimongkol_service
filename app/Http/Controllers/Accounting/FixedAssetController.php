@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\FixedAsset;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\FixedAssets;
 use Illuminate\Http\Request;
 
@@ -65,6 +66,8 @@ class FixedAssetController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'asset.registered', null, "{$data['code']} {$data['name']}");
+
         return redirect()->route('accounting.fixed-assets.index')
             ->with('status', __('app.accounting.asset_registered'));
     }
@@ -113,6 +116,9 @@ class FixedAssetController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'asset.depreciated', $fixedAsset,
+            "{$fixedAsset->code} {$fixedAsset->name}", ['for_month' => $data['for_month']]);
+
         return back()->with('status', __('app.accounting.depreciation_posted'));
     }
 
@@ -131,6 +137,9 @@ class FixedAssetController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'asset.disposed', $fixedAsset,
+            "{$fixedAsset->code} {$fixedAsset->name}", ['disposed_on' => $data['disposed_on']]);
 
         return back()->with('status', __('app.accounting.asset_disposed'));
     }

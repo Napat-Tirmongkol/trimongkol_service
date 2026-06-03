@@ -7,6 +7,7 @@ use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\Money;
 use App\Services\Accounting\Purchasing;
 use App\Services\Accounting\SupplierPayments;
@@ -72,6 +73,8 @@ class BillController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'bill.created', $bill, $bill->no);
+
         return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.bill_created'));
     }
 
@@ -111,6 +114,8 @@ class BillController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'bill.posted', $bill, $bill->no);
+
         return back()->with('status', __('app.accounting.bill_posted'));
     }
 
@@ -142,6 +147,8 @@ class BillController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'bill.payment_recorded', $bill, $bill->no);
 
         return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.payment_recorded'));
     }

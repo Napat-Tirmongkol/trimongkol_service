@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Employee;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Models\Accounting\PayrollItem;
 use App\Models\Accounting\PayrollRun;
 use App\Services\Accounting\Payroll;
@@ -42,6 +43,8 @@ class PayrollController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'employee.added', null, $data['name']);
+
         return back()->with('status', __('app.accounting.employee_added'));
     }
 
@@ -52,6 +55,9 @@ class PayrollController extends AccountingController
         $this->assertPoster($workspace);
 
         $employee->update(['is_active' => ! $employee->is_active]);
+
+        AccountingAuditLog::record($workspace, 'employee.toggled', $employee, $employee->name,
+            ['is_active' => $employee->is_active]);
 
         return back()->with('status', __('app.accounting.employee_updated'));
     }
@@ -95,6 +101,8 @@ class PayrollController extends AccountingController
         } catch (LedgerException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'payroll_run.created', $run, $run->period);
 
         return redirect()->route('accounting.payroll.runs.show', $run)
             ->with('status', __('app.accounting.payroll_run_created'));
@@ -141,6 +149,8 @@ class PayrollController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'payroll_run.posted', $payrollRun, $payrollRun->period);
 
         return back()->with('status', __('app.accounting.payroll_posted'));
     }

@@ -5,6 +5,7 @@ namespace App\Models\Accounting;
 use App\Exceptions\Accounting\ImmutableLedgerException;
 use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ActivityLog extends Model
 {
@@ -29,5 +30,10 @@ class ActivityLog extends Model
     {
         static::updating(fn () => throw new ImmutableLedgerException('Accounting activity log is append-only.'));
         static::deleting(fn () => throw new ImmutableLedgerException('Accounting activity log is append-only.'));
+    }
+
+    public function accountingUser(): BelongsTo
+    {
+        return $this->belongsTo(AccountingUser::class, 'accounting_user_id');
     }
 }

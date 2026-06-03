@@ -8,6 +8,7 @@ use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
 use App\Services\Accounting\Money;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\Receipts;
 use App\Services\Accounting\SalesInvoicing;
 use App\Services\AccountingPlan;
@@ -81,6 +82,8 @@ class InvoiceController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'invoice.created', $invoice, $invoice->no);
+
         return redirect()->route('accounting.invoices.show', $invoice)
             ->with('status', __('app.accounting.invoice_created'));
     }
@@ -126,6 +129,8 @@ class InvoiceController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'invoice.issued', $invoice, $invoice->no);
+
         return back()->with('status', __('app.accounting.invoice_issued'));
     }
 
@@ -158,6 +163,9 @@ class InvoiceController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'invoice.receipt_recorded', $invoice, $invoice->no,
+            ['amount' => $data['amount']]);
 
         return redirect()->route('accounting.invoices.show', $invoice)
             ->with('status', __('app.accounting.receipt_recorded'));
