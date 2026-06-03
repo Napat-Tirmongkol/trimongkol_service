@@ -1569,6 +1569,36 @@ return [
         'audit_action.journal.posted'          => 'Post รายการ',
         'audit_action.period.closed'           => 'ปิดงวดบัญชี',
         'audit_action.period.reopened'         => 'เปิดงวดบัญชีใหม่',
+
+        // ── Attachments ──────────────────────────────────────────────────
+        'attachments_heading'      => 'เอกสารแนบ',
+        'attachment_upload_btn'    => 'แนบไฟล์',
+        'attachment_uploaded'      => 'แนบเอกสารแล้ว',
+        'attachment_deleted'       => 'ลบเอกสารแนบแล้ว',
+        'attachment_none'          => 'ยังไม่มีเอกสารแนบ',
+        'attachment_delete_confirm' => 'ลบเอกสารแนบนี้?',
+
+        // ── Approval workflow ────────────────────────────────────────────
+        'approval_requested'       => 'ส่งคำขออนุมัติแล้ว',
+        'approval_approved'        => 'อนุมัติและลงบัญชีแล้ว',
+        'approval_rejected'        => 'ปฏิเสธคำขออนุมัติแล้ว',
+        'request_approval'         => 'ขออนุมัติ',
+        'awaiting_approval'        => 'รออนุมัติ',
+        'approve'                  => 'อนุมัติ',
+        'reject'                   => 'ปฏิเสธ',
+        'approval_note'            => 'เหตุผล',
+        'approvals_heading'        => 'รายการรออนุมัติ',
+        'approvals_none'           => 'ไม่มีรายการรออนุมัติ',
+        'approval_pending_count'   => 'รายการรออนุมัติ',
+        'approval_for'             => 'ขอโดย',
+        'approval_not_draft'       => 'อนุมัติได้เฉพาะเอกสารฉบับร่างเท่านั้น',
+        'approval_already_pending' => 'มีคำขออนุมัติรออยู่แล้ว',
+
+        // ── Audit action labels (new features) ──────────────────────────
+        'audit_action.attachment.uploaded' => 'แนบเอกสาร',
+        'audit_action.approval.requested'  => 'ขออนุมัติ',
+        'audit_action.approval.approved'   => 'อนุมัติ',
+        'audit_action.approval.rejected'   => 'ปฏิเสธ',
     ],
 
     'queue' => [

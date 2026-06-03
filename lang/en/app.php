@@ -1569,6 +1569,36 @@ return [
         'audit_action.journal.posted'          => 'Posted journal',
         'audit_action.period.closed'           => 'Closed period',
         'audit_action.period.reopened'         => 'Reopened period',
+
+        // ── Attachments ──────────────────────────────────────────────────
+        'attachments_heading'      => 'Attachments',
+        'attachment_upload_btn'    => 'Attach file',
+        'attachment_uploaded'      => 'File attached.',
+        'attachment_deleted'       => 'Attachment deleted.',
+        'attachment_none'          => 'No attachments yet.',
+        'attachment_delete_confirm' => 'Delete this attachment?',
+
+        // ── Approval workflow ────────────────────────────────────────────
+        'approval_requested'       => 'Approval requested.',
+        'approval_approved'        => 'Approved and posted.',
+        'approval_rejected'        => 'Approval rejected.',
+        'request_approval'         => 'Request approval',
+        'awaiting_approval'        => 'Awaiting approval',
+        'approve'                  => 'Approve',
+        'reject'                   => 'Reject',
+        'approval_note'            => 'Reason',
+        'approvals_heading'        => 'Pending approvals',
+        'approvals_none'           => 'No pending approvals.',
+        'approval_pending_count'   => 'Pending approvals',
+        'approval_for'             => 'Requested by',
+        'approval_not_draft'       => 'Only draft documents can be submitted for approval.',
+        'approval_already_pending' => 'An approval request is already pending.',
+
+        // ── Audit action labels (new features) ──────────────────────────
+        'audit_action.attachment.uploaded' => 'Attached document',
+        'audit_action.approval.requested'  => 'Requested approval',
+        'audit_action.approval.approved'   => 'Approved',
+        'audit_action.approval.rejected'   => 'Rejected',
     ],
 
     'queue' => [

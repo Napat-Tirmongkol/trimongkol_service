@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Bill extends Model
 {
@@ -53,6 +54,21 @@ class Bill extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Attachment::class, 'attachable_id')
+            ->where('attachable_type', class_basename($this))
+            ->latest('created_at');
+    }
+
+    public function pendingApproval(): HasOne
+    {
+        return $this->hasOne(Approval::class, 'subject_id')
+            ->where('subject_type', class_basename($this))
+            ->where('status', 'pending')
+            ->latest();
     }
 
     public function isDraft(): bool

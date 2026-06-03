@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Models\Accounting\Approval;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
@@ -30,15 +31,21 @@ class DashboardController extends AccountingController
         $isSetUp = $this->isSetUp($workspace);
         $finance = null;
         $recent = collect();
+        $pendingApprovalsCount = 0;
+        $canPost = auth('accounting')->user()?->canPost() ?? false;
 
         if ($isSetUp) {
             $recent = Invoice::forWorkspace($workspace)->with('partner')
                 ->latest('issue_date')->latest('id')->limit(8)->get();
 
             $finance = $this->finance($workspace);
+
+            if ($canPost) {
+                $pendingApprovalsCount = Approval::forWorkspace($workspace)->pending()->count();
+            }
         }
 
-        return view('accounting.dashboard', compact('workspace', 'isSetUp', 'finance', 'recent'));
+        return view('accounting.dashboard', compact('workspace', 'isSetUp', 'finance', 'recent', 'canPost', 'pendingApprovalsCount'));
     }
 
     /**

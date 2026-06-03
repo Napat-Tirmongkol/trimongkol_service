@@ -82,14 +82,17 @@ class BillController extends AccountingController
     {
         $workspace = $this->requireWorkspace();
         abort_unless($bill->workspace_id === $workspace->id, 404);
-        $bill->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account');
+        $bill->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account', 'attachments.accountingUser');
+
+        $canPost = auth('accounting')->user()?->canPost() ?? false;
 
         return view('accounting.bills.show', [
             'bill' => $bill,
             'outstanding' => SupplierPayments::outstanding($bill),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
             'whtCodes' => TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get(),
-            'canPost' => auth('accounting')->user()?->canPost() ?? false,
+            'canPost' => $canPost,
+            'pendingApproval' => $bill->pendingApproval,
         ]);
     }
 

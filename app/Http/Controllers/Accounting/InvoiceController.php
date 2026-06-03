@@ -91,7 +91,7 @@ class InvoiceController extends AccountingController
     public function show(Invoice $invoice)
     {
         $workspace = $this->scopedInvoice($invoice);
-        $invoice->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account');
+        $invoice->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account', 'attachments.accountingUser');
 
         $outstandingMinor = Money::toMinor(Receipts::outstanding($invoice));
         // Pre-fill the receipt form: default WHT to the expected amount on a
@@ -100,13 +100,16 @@ class InvoiceController extends AccountingController
             ? Money::toMinor($invoice->wht_amount)
             : 0;
 
+        $canPost = auth('accounting')->user()?->canPost() ?? false;
+
         return view('accounting.invoices.show', [
             'invoice' => $invoice,
             'outstanding' => Money::fromMinor($outstandingMinor),
             'cashDefault' => Money::fromMinor($outstandingMinor - $whtDefaultMinor),
             'whtDefault' => Money::fromMinor($whtDefaultMinor),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
-            'canPost' => auth('accounting')->user()?->canPost() ?? false,
+            'canPost' => $canPost,
+            'pendingApproval' => $invoice->pendingApproval,
         ]);
     }
 

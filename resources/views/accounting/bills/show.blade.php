@@ -85,8 +85,18 @@
                             @csrf
                             <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.accounting.post_bill') }}</button>
                         </form>
+                    @elseif ($pendingApproval)
+                        <p class="mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800 ring-1 ring-sky-200">
+                            &#9203; {{ __('app.accounting.awaiting_approval') }} — {{ __('app.accounting.approval_for') }}: {{ $pendingApproval->requestedBy->name }}
+                            {{ $pendingApproval->created_at->diffForHumans() }}
+                        </p>
                     @else
-                        <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-200">{{ __('app.accounting.awaiting_poster') }}</p>
+                        <form method="POST" action="{{ route('accounting.approvals.request', ['type' => 'bill', 'id' => $bill->id]) }}" class="mt-3">
+                            @csrf
+                            <button type="submit" class="rounded-md border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+                                {{ __('app.accounting.request_approval') }}
+                            </button>
+                        </form>
                     @endif
                 </div>
             @elseif (in_array($bill->status, ['issued', 'partial'], true) && $canPost)
@@ -140,6 +150,14 @@
             @elseif ($bill->status === 'paid')
                 <div class="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200">{{ __('app.accounting.paid_full') }}</div>
             @endif
+
+            {{-- Attachments --}}
+            @include('accounting.partials.attachments', [
+                'attachments'  => $bill->attachments,
+                'uploadRoute'  => 'accounting.attachments.store',
+                'uploadParams' => ['type' => 'bill', 'id' => $bill->id],
+                'canDelete'    => $canPost,
+            ])
 
             @if ($bill->journal)
                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">

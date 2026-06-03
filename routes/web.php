@@ -3,6 +3,8 @@
 use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
 use App\Http\Controllers\Accounting\AuditLogController as AccountingAuditLogController;
 use App\Http\Controllers\Accounting\AccountingUserController as AccountingUserController;
+use App\Http\Controllers\Accounting\ApprovalController as AccountingApprovalController;
+use App\Http\Controllers\Accounting\AttachmentController as AccountingAttachmentController;
 use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
@@ -435,6 +437,17 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         // Change own password
         Route::get('/password', [AccountingAuthController::class, 'showChangePassword'])->name('password.edit');
         Route::post('/password', [AccountingAuthController::class, 'changePassword'])->name('password.update');
+
+        // Document attachments
+        Route::post('/attachments/{type}/{id}', [AccountingAttachmentController::class, 'store'])->name('attachments.store');
+        Route::get('/attachments/{attachment}/download', [AccountingAttachmentController::class, 'download'])->name('attachments.download');
+        Route::delete('/attachments/{attachment}', [AccountingAttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+        // Approval workflow
+        Route::get('/approvals', [AccountingApprovalController::class, 'index'])->name('approvals.index');
+        Route::post('/approvals/{type}/{id}/request', [AccountingApprovalController::class, 'request'])->name('approvals.request');
+        Route::post('/approvals/{approval}/approve', [AccountingApprovalController::class, 'approve'])->name('approvals.approve');
+        Route::post('/approvals/{approval}/reject', [AccountingApprovalController::class, 'reject'])->name('approvals.reject');
     });
 });
 
