@@ -73,6 +73,8 @@
                                 </form>
                             @endif
                             <div class="flex gap-2">
+                                <a href="{{ route('accounting.recurring-journals.edit', $t) }}"
+                                   class="text-xs text-slate-500 hover:text-slate-800">{{ __('app.common.edit') }}</a>
                                 <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $t) }}">
                                     @csrf
                                     <button type="submit" class="text-xs text-slate-500 hover:text-slate-800">

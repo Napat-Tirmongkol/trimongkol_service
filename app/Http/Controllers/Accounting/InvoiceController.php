@@ -88,6 +88,62 @@ class InvoiceController extends AccountingController
             ->with('status', __('app.accounting.invoice_created'));
     }
 
+    public function edit(Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+
+        if (! $invoice->isDraft()) {
+            return redirect()->route('accounting.invoices.show', $invoice)->with('error', __('app.accounting.invoice_edit_only_draft'));
+        }
+
+        $invoice->load('lines');
+        $partners = Partner::forWorkspace($workspace)->where('is_customer', true)->orderBy('name')->get();
+        $revenueAccounts = Account::forWorkspace($workspace)->where('type', 'income')->where('is_active', true)->orderBy('code')->get();
+        $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_output')->where('is_active', true)->get();
+        $whtCodes = TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get();
+
+        return view('accounting.invoices.edit', compact('invoice', 'partners', 'revenueAccounts', 'vatCodes', 'whtCodes'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+
+        if (! $invoice->isDraft()) {
+            return redirect()->route('accounting.invoices.show', $invoice)->with('error', __('app.accounting.invoice_edit_only_draft'));
+        }
+
+        $data = $request->validate([
+            'partner_id' => 'required|integer',
+            'issue_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'wht_tax_code_id' => 'nullable|integer',
+            'memo' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.account_id' => 'required|integer',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.quantity' => 'required|numeric|min:0',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.tax_code_id' => 'nullable|integer',
+        ]);
+
+        try {
+            SalesInvoicing::update($invoice, [
+                'partner_id' => $data['partner_id'],
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'] ?? null,
+                'wht_tax_code_id' => $data['wht_tax_code_id'] ?? null,
+                'memo' => $data['memo'] ?? null,
+            ], $data['lines']);
+        } catch (LedgerException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'invoice.updated', $invoice, $invoice->no);
+
+        return redirect()->route('accounting.invoices.show', $invoice)->with('status', __('app.accounting.invoice_updated'));
+    }
+
     public function show(Invoice $invoice)
     {
         $workspace = $this->scopedInvoice($invoice);

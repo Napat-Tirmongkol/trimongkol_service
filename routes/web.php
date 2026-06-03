@@ -357,6 +357,8 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('/invoices/{invoice}/edit', [AccountingInvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('/invoices/{invoice}', [AccountingInvoiceController::class, 'update'])->name('invoices.update');
         Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
         Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
 
@@ -393,6 +395,8 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/recurring-journals', [AccountingRecurringJournalController::class, 'index'])->name('recurring-journals.index');
         Route::get('/recurring-journals/create', [AccountingRecurringJournalController::class, 'create'])->name('recurring-journals.create');
         Route::post('/recurring-journals', [AccountingRecurringJournalController::class, 'store'])->name('recurring-journals.store');
+        Route::get('/recurring-journals/{recurringJournal}/edit', [AccountingRecurringJournalController::class, 'edit'])->name('recurring-journals.edit');
+        Route::put('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'update'])->name('recurring-journals.update');
         Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
         Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
         Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');

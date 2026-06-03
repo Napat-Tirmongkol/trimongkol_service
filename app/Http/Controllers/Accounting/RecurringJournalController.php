@@ -69,6 +69,56 @@ class RecurringJournalController extends AccountingController
             ->with('status', __('app.accounting.recurring_created'));
     }
 
+    public function edit(RecurringJournal $recurringJournal)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($recurringJournal->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        $recurringJournal->load('lines');
+        $accounts = Account::forWorkspace($workspace)
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
+        return view('accounting.recurring-journals.edit', compact('recurringJournal', 'accounts'));
+    }
+
+    public function update(Request $request, RecurringJournal $recurringJournal)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($recurringJournal->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        $data = $request->validate([
+            'name' => 'required|string|max:120',
+            'frequency' => 'required|in:monthly,quarterly,weekly',
+            'next_run_date' => 'required|date',
+            'end_date' => 'nullable|date|after:next_run_date',
+            'lines' => 'required|array|min:2',
+            'lines.*.account_id' => 'required|integer',
+            'lines.*.debit' => 'required|numeric|min:0',
+            'lines.*.credit' => 'required|numeric|min:0',
+            'lines.*.description' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            RecurringJournals::update($recurringJournal, [
+                'name' => $data['name'],
+                'frequency' => $data['frequency'],
+                'next_run_date' => $data['next_run_date'],
+                'end_date' => $data['end_date'] ?? null,
+            ], $data['lines']);
+        } catch (LedgerException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'recurring.updated', $recurringJournal, $recurringJournal->name);
+
+        return redirect()->route('accounting.recurring-journals.index')
+            ->with('status', __('app.accounting.recurring_updated'));
+    }
+
     public function run(Request $request, RecurringJournal $recurringJournal)
     {
         $workspace = $this->requireWorkspace();
