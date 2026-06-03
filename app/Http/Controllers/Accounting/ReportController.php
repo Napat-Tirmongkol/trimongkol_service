@@ -32,6 +32,23 @@ class ReportController extends AccountingController
         ]);
     }
 
+    public function profitAndLossByDepartment(Request $request)
+    {
+        $workspace = $this->requireWorkspace();
+        if (! $this->isSetUp($workspace)) {
+            return redirect()->route('accounting.dashboard')->with('error', __('app.accounting.setup_required'));
+        }
+
+        $from = ($request->date('from') ?? now()->startOfYear())->toDateString();
+        $to = ($request->date('to') ?? now()->endOfYear())->toDateString();
+
+        return view('accounting.reports.pnl-by-department', [
+            'from' => $from,
+            'to' => $to,
+            'report' => Reporting::profitAndLossByDepartment($workspace, $from, $to),
+        ]);
+    }
+
     public function salesByPartner(Request $request)
     {
         $workspace = $this->requireWorkspace();

@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
@@ -146,6 +147,104 @@ class Reporting
     }
 
     public const AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', '90_plus'];
+
+    /**
+     * Profit & Loss split by department. Lines without a department_id roll
+     * up into "unassigned" so totals still tie out to the regular P&L. Each
+     * department row carries its revenue, expense, and net profit for the
+     * period.
+     */
+    public static function profitAndLossByDepartment(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        $accounts = Account::query()->forWorkspace($workspace)
+            ->whereIn('type', ['income', 'expense'])
+            ->get()->keyBy('id');
+
+        if ($accounts->isEmpty()) {
+            return self::buildPnlByDeptResult([], $from, $to);
+        }
+
+        $rows = JournalLine::query()
+            ->forWorkspace($workspace)
+            ->whereHas('journal', function ($q) use ($from, $to) {
+                $q->where('status', Journal::STATUS_POSTED);
+                if ($from) {
+                    $q->whereDate('date', '>=', $from);
+                }
+                if ($to) {
+                    $q->whereDate('date', '<=', $to);
+                }
+            })
+            ->whereIn('account_id', $accounts->keys())
+            ->selectRaw('account_id, department_id, SUM(debit) as d, SUM(credit) as c')
+            ->groupBy('account_id', 'department_id')
+            ->get();
+
+        $departments = Department::query()->forWorkspace($workspace)->get()->keyBy('id');
+        $byDept = [];
+
+        foreach ($rows as $row) {
+            // Use 0 as the bucket key for null/unassigned so it sorts last.
+            $deptKey = $row->department_id ?: 0;
+            if (! isset($byDept[$deptKey])) {
+                $byDept[$deptKey] = [
+                    'department' => $deptKey === 0 ? null : $departments->get($row->department_id),
+                    'revenue' => 0,
+                    'expense' => 0,
+                ];
+            }
+            $account = $accounts->get($row->account_id);
+            $debit = Money::toMinor((string) $row->d);
+            $credit = Money::toMinor((string) $row->c);
+
+            if ($account->type === 'income') {
+                $byDept[$deptKey]['revenue'] += $credit - $debit;
+            } else {
+                $byDept[$deptKey]['expense'] += $debit - $credit;
+            }
+        }
+
+        return self::buildPnlByDeptResult($byDept, $from, $to);
+    }
+
+    private static function buildPnlByDeptResult(array $byDept, ?string $from, ?string $to): array
+    {
+        // Unassigned (key 0) sinks to the bottom; named departments sorted by code.
+        uasort($byDept, function ($a, $b) {
+            if ($a['department'] === null) {
+                return 1;
+            }
+            if ($b['department'] === null) {
+                return -1;
+            }
+            return strcmp((string) $a['department']->code, (string) $b['department']->code);
+        });
+
+        $rows = [];
+        $totalRev = 0;
+        $totalExp = 0;
+        foreach ($byDept as $entry) {
+            $totalRev += $entry['revenue'];
+            $totalExp += $entry['expense'];
+            $rows[] = [
+                'department' => $entry['department'],
+                'revenue' => Money::fromMinor($entry['revenue']),
+                'expense' => Money::fromMinor($entry['expense']),
+                'profit' => Money::fromMinor($entry['revenue'] - $entry['expense']),
+            ];
+        }
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows,
+            'totals' => [
+                'revenue' => Money::fromMinor($totalRev),
+                'expense' => Money::fromMinor($totalExp),
+                'profit' => Money::fromMinor($totalRev - $totalExp),
+            ],
+        ];
+    }
 
     /**
      * Sales aggregated by customer over [$from, $to]. Excludes drafts and

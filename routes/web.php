@@ -344,6 +344,7 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/reports/sales-by-partner', [AccountingReportController::class, 'salesByPartner'])->name('reports.sales-by-partner');
         Route::get('/reports/purchases-by-partner', [AccountingReportController::class, 'purchasesByPartner'])->name('reports.purchases-by-partner');
         Route::get('/reports/partner-statement/{partner}', [AccountingReportController::class, 'partnerStatement'])->name('reports.partner-statement');
+        Route::get('/reports/pnl-by-department', [AccountingReportController::class, 'profitAndLossByDepartment'])->name('reports.pnl-by-department');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
 
         Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
