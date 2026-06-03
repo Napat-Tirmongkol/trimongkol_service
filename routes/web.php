@@ -8,6 +8,7 @@ use App\Http\Controllers\Accounting\AttachmentController as AccountingAttachment
 use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
+use App\Http\Controllers\Accounting\BudgetController as AccountingBudgetController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
 use App\Http\Controllers\Accounting\DepartmentController as AccountingDepartmentController;
 use App\Http\Controllers\Accounting\FixedAssetController as AccountingFixedAssetController;
@@ -370,6 +371,13 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/departments/{department}/edit', [AccountingDepartmentController::class, 'edit'])->name('departments.edit');
         Route::put('/departments/{department}', [AccountingDepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [AccountingDepartmentController::class, 'destroy'])->name('departments.destroy');
+
+        Route::get('/budgets', [AccountingBudgetController::class, 'index'])->name('budgets.index');
+        Route::get('/budgets/create', [AccountingBudgetController::class, 'create'])->name('budgets.create');
+        Route::post('/budgets', [AccountingBudgetController::class, 'store'])->name('budgets.store');
+        Route::get('/budgets/{budget}/edit', [AccountingBudgetController::class, 'edit'])->name('budgets.edit');
+        Route::put('/budgets/{budget}', [AccountingBudgetController::class, 'update'])->name('budgets.update');
+        Route::delete('/budgets/{budget}', [AccountingBudgetController::class, 'destroy'])->name('budgets.destroy');
 
         Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');

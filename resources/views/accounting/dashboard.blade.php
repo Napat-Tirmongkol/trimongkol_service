@@ -31,6 +31,10 @@
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         {{ __('app.accounting.departments') }}
                     </a>
+                    <a href="{{ route('accounting.budgets.index') }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        {{ __('app.accounting.budgets') }}
+                    </a>
                     <a href="{{ route('accounting.wht-certificates.index') }}"
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         {{ __('app.accounting.wht_certificates') }}
