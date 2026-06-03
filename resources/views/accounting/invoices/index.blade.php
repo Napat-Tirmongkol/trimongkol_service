@@ -27,15 +27,46 @@
     @endphp
 
     <div class="py-8">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-5xl space-y-4 px-4 sm:px-6 lg:px-8">
+            @if ($workspace)
+                <form method="GET" action="{{ route('accounting.invoices.index') }}" class="flex flex-wrap items-end gap-2">
+                    <div class="flex-1 min-w-[200px]">
+                        <label for="q" class="block text-xs font-medium text-slate-500">{{ __('app.accounting.search') }}</label>
+                        <input id="q" name="q" type="search" value="{{ $q }}"
+                               placeholder="{{ __('app.accounting.search_invoice_placeholder') }}"
+                               class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label for="status" class="block text-xs font-medium text-slate-500">{{ __('app.accounting.col_status') }}</label>
+                        <select id="status" name="status" class="mt-1 rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">{{ __('app.accounting.status_all') }}</option>
+                            @foreach (['draft', 'issued', 'partial', 'paid', 'void'] as $s)
+                                <option value="{{ $s }}" @selected($status === $s)>{{ __('app.accounting.status_'.$s) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.accounting.apply') }}</button>
+                    @if ($q !== '' || $status !== '')
+                        <a href="{{ route('accounting.invoices.index') }}" class="text-sm text-slate-500 hover:text-slate-800">{{ __('app.accounting.clear') }}</a>
+                    @endif
+                </form>
+            @endif
+
             @if (! $workspace)
                 <div class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 ring-1 ring-amber-200">{{ __('app.workspaces.no_workspace') }}</div>
             @elseif ($invoices->isEmpty())
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-                    <h3 class="text-lg font-semibold text-slate-900">{{ __('app.accounting.invoices_empty') }}</h3>
-                    <a href="{{ route('accounting.invoices.create') }}" class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
-                        {{ __('app.accounting.invoice_new') }}
-                    </a>
+                    @if ($q !== '' || $status !== '')
+                        <h3 class="text-lg font-semibold text-slate-900">{{ __('app.accounting.no_match') }}</h3>
+                        <a href="{{ route('accounting.invoices.index') }}" class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800">
+                            {{ __('app.accounting.clear') }} →
+                        </a>
+                    @else
+                        <h3 class="text-lg font-semibold text-slate-900">{{ __('app.accounting.invoices_empty') }}</h3>
+                        <a href="{{ route('accounting.invoices.create') }}" class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
+                            {{ __('app.accounting.invoice_new') }}
+                        </a>
+                    @endif
                 </div>
             @else
                 <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

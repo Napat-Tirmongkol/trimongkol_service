@@ -17,15 +17,25 @@ use Illuminate\Http\Request;
 
 class InvoiceController extends AccountingController
 {
-    public function index()
+    public function index(Request $request)
     {
         $workspace = $this->currentWorkspace();
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', '');
+
         $invoices = $workspace
             ? Invoice::forWorkspace($workspace)->with('partner')
-                ->latest('issue_date')->latest('id')->paginate(25)
+                ->when($q !== '', fn ($qb) => $qb->where(fn ($w) => $w
+                    ->where('no', 'like', "%{$q}%")
+                    ->orWhere('tax_invoice_no', 'like', "%{$q}%")
+                    ->orWhereHas('partner', fn ($p) => $p->where('name', 'like', "%{$q}%"))))
+                ->when($status !== '' && in_array($status, ['draft', 'issued', 'partial', 'paid', 'void'], true),
+                    fn ($qb) => $qb->where('status', $status))
+                ->latest('issue_date')->latest('id')
+                ->paginate(25)->withQueryString()
             : collect();
 
-        return view('accounting.invoices.index', compact('workspace', 'invoices'));
+        return view('accounting.invoices.index', compact('workspace', 'invoices', 'q', 'status'));
     }
 
     public function create()

@@ -11,14 +11,27 @@ use Illuminate\Validation\Rule;
 
 class PartnerController extends AccountingController
 {
-    public function index()
+    public function index(Request $request)
     {
         $workspace = $this->currentWorkspace();
+        $q = trim((string) $request->query('q', ''));
+        $type = (string) $request->query('type', '');
+
         $partners = $workspace
-            ? Partner::forWorkspace($workspace)->orderBy('name')->paginate(30)
+            ? Partner::forWorkspace($workspace)
+                ->when($q !== '', fn ($qb) => $qb->where(fn ($w) => $w
+                    ->where('name', 'like', "%{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%")
+                    ->orWhere('tax_id', 'like', "%{$q}%")
+                    ->orWhere('phone', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")))
+                ->when($type === 'customer', fn ($qb) => $qb->where('is_customer', true))
+                ->when($type === 'vendor', fn ($qb) => $qb->where('is_vendor', true))
+                ->orderBy('name')
+                ->paginate(30)->withQueryString()
             : collect();
 
-        return view('accounting.partners.index', compact('workspace', 'partners'));
+        return view('accounting.partners.index', compact('workspace', 'partners', 'q', 'type'));
     }
 
     public function create()
