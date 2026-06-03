@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.invoice_new') }}</h2>
+        <div>
+            <a href="{{ route('accounting.invoices.index') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.invoices') }}</a>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.invoice_new') }}</h2>
+        </div>
     </x-slot>
 
     <div class="py-8">
