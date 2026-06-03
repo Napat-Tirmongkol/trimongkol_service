@@ -179,6 +179,24 @@ class BillController extends AccountingController
         return back()->with('status', __('app.accounting.bill_posted'));
     }
 
+    public function void(Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        try {
+            Purchasing::void($bill);
+        } catch (LedgerException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'bill.voided', $bill, $bill->no);
+
+        return redirect()->route('accounting.bills.show', $bill)
+            ->with('status', __('app.accounting.bill_voided'));
+    }
+
     public function recordPayment(Request $request, Bill $bill)
     {
         $workspace = $this->requireWorkspace();

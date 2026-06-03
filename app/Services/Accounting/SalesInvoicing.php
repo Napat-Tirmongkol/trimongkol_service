@@ -6,6 +6,7 @@ use App\Exceptions\Accounting\InvoiceException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Partner;
+use App\Models\Accounting\PaymentAllocation;
 use App\Models\Accounting\TaxCode;
 use App\Models\Workspace;
 use Carbon\CarbonInterface;
@@ -275,6 +276,43 @@ class SalesInvoicing
             ])->save();
 
             return $invoice->refresh()->load('lines', 'journal');
+        });
+    }
+
+    /**
+     * Void an issued invoice: reverse its posting journal and mark void.
+     * Refuses if any receipt is already allocated — the receipts must be
+     * unwound first so AR doesn't end up double-cleared.
+     */
+    public static function void(Invoice $invoice, array $attributes = []): Invoice
+    {
+        if ($invoice->status !== Invoice::STATUS_ISSUED) {
+            throw new InvoiceException("Only issued invoices can be voided. {$invoice->no} is {$invoice->status}.");
+        }
+        if (! $invoice->journal_id) {
+            throw new InvoiceException("Invoice {$invoice->no} has no journal to reverse.");
+        }
+
+        $hasAllocations = PaymentAllocation::query()
+            ->where('allocatable_type', $invoice->getMorphClass())
+            ->where('allocatable_id', $invoice->id)
+            ->exists();
+        if ($hasAllocations) {
+            throw new InvoiceException("Invoice {$invoice->no} has receipts allocated — reverse the receipts before voiding.");
+        }
+
+        return DB::transaction(function () use ($invoice, $attributes) {
+            $invoice->loadMissing('journal.lines');
+
+            LedgerPosting::reverse($invoice->journal, [
+                'date' => $attributes['date'] ?? now(),
+                'memo' => $attributes['memo'] ?? "ยกเลิกใบกำกับ {$invoice->no}",
+                'created_by' => $attributes['created_by'] ?? null,
+            ]);
+
+            $invoice->forceFill(['status' => Invoice::STATUS_VOID])->save();
+
+            return $invoice->refresh();
         });
     }
 

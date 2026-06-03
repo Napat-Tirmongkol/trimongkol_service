@@ -363,6 +363,7 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/invoices/{invoice}/edit', [AccountingInvoiceController::class, 'edit'])->name('invoices.edit');
         Route::put('/invoices/{invoice}', [AccountingInvoiceController::class, 'update'])->name('invoices.update');
         Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
+        Route::post('/invoices/{invoice}/void', [AccountingInvoiceController::class, 'void'])->name('invoices.void');
         Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
 
         Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
@@ -372,6 +373,7 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/bills/{bill}/edit', [AccountingBillController::class, 'edit'])->name('bills.edit');
         Route::put('/bills/{bill}', [AccountingBillController::class, 'update'])->name('bills.update');
         Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
+        Route::post('/bills/{bill}/void', [AccountingBillController::class, 'void'])->name('bills.void');
         Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
 
         Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');

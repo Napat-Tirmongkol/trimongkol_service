@@ -193,6 +193,23 @@ class InvoiceController extends AccountingController
         return back()->with('status', __('app.accounting.invoice_issued'));
     }
 
+    public function void(Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+        $this->assertPoster($workspace);
+
+        try {
+            SalesInvoicing::void($invoice);
+        } catch (LedgerException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'invoice.voided', $invoice, $invoice->no);
+
+        return redirect()->route('accounting.invoices.show', $invoice)
+            ->with('status', __('app.accounting.invoice_voided'));
+    }
+
     public function recordReceipt(Request $request, Invoice $invoice)
     {
         $workspace = $this->scopedInvoice($invoice);

@@ -104,6 +104,13 @@
                     @endif
                 </div>
             @elseif (in_array($bill->status, ['issued', 'partial'], true) && $canPost)
+                @if ($bill->status === 'issued')
+                    <form method="POST" action="{{ route('accounting.bills.void', $bill) }}"
+                          data-confirm="{{ __('app.accounting.bill_void_confirm') }}" data-confirm-danger="1">
+                        @csrf
+                        <button type="submit" class="rounded-md border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">{{ __('app.accounting.bill_void') }}</button>
+                    </form>
+                @endif
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.pay_supplier') }}</h3>
                     <form method="POST" action="{{ route('accounting.bills.payments.store', $bill) }}" x-data="{ submitting: false }" @submit="submitting = true" class="mt-4 space-y-4">

@@ -6,6 +6,7 @@ use App\Exceptions\Accounting\InvoiceException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Partner;
+use App\Models\Accounting\PaymentAllocation;
 use App\Models\Accounting\TaxCode;
 use App\Models\Workspace;
 use Carbon\CarbonInterface;
@@ -255,6 +256,42 @@ class Purchasing
             ])->save();
 
             return $bill->refresh()->load('lines', 'journal');
+        });
+    }
+
+    /**
+     * Void an issued/posted bill: reverse its posting journal and mark void.
+     * Refuses if any supplier payment is already allocated.
+     */
+    public static function void(Bill $bill, array $attributes = []): Bill
+    {
+        if ($bill->status !== Bill::STATUS_ISSUED) {
+            throw new InvoiceException("Only issued bills can be voided. {$bill->no} is {$bill->status}.");
+        }
+        if (! $bill->journal_id) {
+            throw new InvoiceException("Bill {$bill->no} has no journal to reverse.");
+        }
+
+        $hasAllocations = PaymentAllocation::query()
+            ->where('allocatable_type', $bill->getMorphClass())
+            ->where('allocatable_id', $bill->id)
+            ->exists();
+        if ($hasAllocations) {
+            throw new InvoiceException("Bill {$bill->no} has payments allocated — reverse the payments before voiding.");
+        }
+
+        return DB::transaction(function () use ($bill, $attributes) {
+            $bill->loadMissing('journal.lines');
+
+            LedgerPosting::reverse($bill->journal, [
+                'date' => $attributes['date'] ?? now(),
+                'memo' => $attributes['memo'] ?? "ยกเลิกบิลซื้อ {$bill->no}",
+                'created_by' => $attributes['created_by'] ?? null,
+            ]);
+
+            $bill->forceFill(['status' => Bill::STATUS_VOID])->save();
+
+            return $bill->refresh();
         });
     }
 
