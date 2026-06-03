@@ -12,6 +12,7 @@ use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardCo
 use App\Http\Controllers\Accounting\FixedAssetController as AccountingFixedAssetController;
 use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\ManualJournalController as AccountingManualJournalController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\PayrollController as AccountingPayrollController;
@@ -405,6 +406,12 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
         Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
         Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');
+
+        Route::get('/manual-journals', [AccountingManualJournalController::class, 'index'])->name('manual-journals.index');
+        Route::get('/manual-journals/create', [AccountingManualJournalController::class, 'create'])->name('manual-journals.create');
+        Route::post('/manual-journals', [AccountingManualJournalController::class, 'store'])->name('manual-journals.store');
+        Route::get('/manual-journals/{manualJournal}', [AccountingManualJournalController::class, 'show'])->name('manual-journals.show');
+        Route::post('/manual-journals/{manualJournal}/void', [AccountingManualJournalController::class, 'void'])->name('manual-journals.void');
 
         // Fixed assets
         Route::get('/fixed-assets', [AccountingFixedAssetController::class, 'index'])->name('fixed-assets.index');

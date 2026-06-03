@@ -1381,6 +1381,22 @@ return [
         'optional' => 'ไม่บังคับ',
 
         // ── Recurring journals ───────────────────────────────────────────
+        'manual_journals' => 'สมุดรายวันทั่วไป',
+        'manual_journals_sub' => 'บันทึกรายการบัญชีเองสำหรับปรับปรุง/ตั้งค้างจ่าย/ค่าเสื่อม',
+        'manual_journals_empty' => 'ยังไม่มีสมุดรายวันที่บันทึกเอง',
+        'manual_journal_new' => 'บันทึกสมุดรายวัน',
+        'manual_journal_created' => 'บันทึกสมุดรายวันแล้ว',
+        'manual_journal_void' => 'ยกเลิก/กลับรายการ',
+        'manual_journal_voided' => 'กลับรายการเรียบร้อย',
+        'manual_journal_void_confirm' => 'กลับรายการสมุดรายวันนี้? ระบบจะบันทึกรายการกลับเพื่อรักษาประวัติ',
+        'manual_journal_memo_placeholder' => 'เช่น ตั้งค่าใช้จ่ายค้างจ่าย, ปรับปรุงค่าเสื่อมราคา',
+        'post_journal' => 'บันทึกสมุดรายวัน',
+        'balanced' => 'เดบิต = เครดิต',
+        'unbalanced' => 'ผลต่าง',
+        'reversal_entry' => 'รายการกลับ',
+        'reverses_journal' => 'รายการนี้กลับรายการ',
+        'reversed_by_journal' => 'ถูกกลับรายการโดย',
+
         'recurring_journals' => 'รายการประจำ',
         'recurring_journals_sub' => 'สมุดรายวันซ้ำทุกเดือน/ทุกไตรมาส เช่น ค่าเช่า ดอกเบี้ย',
         'recurring_new' => 'สร้างรายการประจำ',

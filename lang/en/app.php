@@ -1381,6 +1381,22 @@ return [
         'optional' => 'optional',
 
         // ── Recurring journals ───────────────────────────────────────────
+        'manual_journals' => 'General Journal',
+        'manual_journals_sub' => 'Free-form entries for adjustments, accruals, and depreciation',
+        'manual_journals_empty' => 'No manual journal entries yet',
+        'manual_journal_new' => 'New journal entry',
+        'manual_journal_created' => 'Journal entry posted.',
+        'manual_journal_void' => 'Reverse entry',
+        'manual_journal_voided' => 'Reversal entry posted.',
+        'manual_journal_void_confirm' => 'Reverse this journal entry? A mirror entry will be posted to preserve the audit trail.',
+        'manual_journal_memo_placeholder' => 'e.g. Accrued expense, depreciation adjustment',
+        'post_journal' => 'Post entry',
+        'balanced' => 'Balanced',
+        'unbalanced' => 'Out of balance',
+        'reversal_entry' => 'Reversal entry',
+        'reverses_journal' => 'Reverses',
+        'reversed_by_journal' => 'Reversed by',
+
         'recurring_journals' => 'Recurring Journals',
         'recurring_journals_sub' => 'Journal templates that repeat monthly, quarterly, or weekly',
         'recurring_new' => 'New recurring journal',
