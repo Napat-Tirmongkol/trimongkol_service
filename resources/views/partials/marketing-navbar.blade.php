@@ -16,7 +16,7 @@
         class="fixed top-0 z-50 w-full transition-all duration-300">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <a href="{{ route('home') }}" class="group flex items-center gap-2">
-            <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">T</span>
+            <img src="{{ asset('logo.png') }}" alt="{{ t('brand.name') }}" class="h-9 w-auto object-contain">
             <span :class="scrolled ? 'text-slate-900' : 'text-white drop-shadow'"
                   class="text-base font-semibold tracking-tight transition-colors">
                 {{ t('brand.name') }}

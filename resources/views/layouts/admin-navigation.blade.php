@@ -44,7 +44,7 @@
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center gap-8">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
-                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold shadow-md shadow-brand-500/30">T</span>
+                    <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="h-9 w-auto object-contain">
                     <span class="hidden text-sm font-semibold sm:inline">{{ __('app.admin.portalTitle') }}</span>
                 </a>
 

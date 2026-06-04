@@ -25,7 +25,7 @@
                 {{-- Brand --}}
                 <div class="mb-8 text-center">
                     <a href="{{ route('home') }}" class="inline-flex items-center gap-2 text-white/80 hover:text-white">
-                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold shadow-lg">T</span>
+                        <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto object-contain">
                         <span class="text-lg font-semibold">{{ config('app.name') }}</span>
                     </a>
                 </div>

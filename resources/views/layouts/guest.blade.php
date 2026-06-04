@@ -25,7 +25,7 @@
 
                 {{-- logo --}}
                 <a href="/" class="relative inline-flex items-center gap-2 self-start">
-                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/15 text-lg font-bold text-white ring-1 ring-white/30 backdrop-blur">T</span>
+                    <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto object-contain">
                     <span class="text-sm font-semibold tracking-tight text-white drop-shadow">{{ config('app.name') }}</span>
                 </a>
 
@@ -59,7 +59,7 @@
                 <div class="flex items-center justify-between">
                     {{-- mobile logo (hidden on desktop where the brand panel shows it) --}}
                     <a href="/" class="inline-flex items-center gap-2 lg:invisible">
-                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">T</span>
+                        <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="h-9 w-auto object-contain">
                         <span class="text-sm font-semibold tracking-tight text-slate-900">{{ config('app.name') }}</span>
                     </a>
                     <a href="{{ route('locale.switch', $otherLocale) }}"

@@ -14,7 +14,7 @@
 <body class="min-h-screen bg-white text-slate-900">
     <div class="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-12 text-center">
         <div class="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-1.5 text-sm font-semibold text-brand-700">
-            <span class="grid h-6 w-6 place-items-center rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">T</span>
+            <img src="{{ asset('logo.png') }}" alt="{{ config('app.name') }}" class="h-6 w-auto object-contain">
             {{ $queue->name }}
         </div>
 

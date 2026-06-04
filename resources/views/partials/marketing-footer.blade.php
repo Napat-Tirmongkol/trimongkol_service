@@ -15,7 +15,7 @@
         <div class="grid gap-10 md:grid-cols-3">
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white shadow-md shadow-brand-500/30">T</span>
+                    <img src="{{ asset('logo.png') }}" alt="{{ t('brand.name') }}" class="h-10 w-auto object-contain">
                     <span class="text-base font-semibold text-white">{{ t('brand.name') }}</span>
                 </div>
                 <p class="mt-4 max-w-sm text-sm text-slate-400">{{ t('footer.tagline') }}</p>
