@@ -160,6 +160,12 @@
         }
 
         /* Primary Accent Text / Brand colors */
+        body.admin-mode .bg-brand-50\/50,
+        body.admin-mode .bg-brand-50 {
+            background-color: rgba(14, 165, 233, 0.2) !important;
+            border-color: rgba(14, 165, 233, 0.3) !important;
+        }
+
         body.admin-mode .text-brand-700,
         body.admin-mode .text-brand-800 {
             color: #38bdf8 !important;
@@ -210,7 +216,7 @@
         <div class="flex flex-1 flex-col lg:pl-64">
             
             {{-- Top Header Bar --}}
-            <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-[#121418]/90 backdrop-blur px-4 sm:px-6 lg:px-8">
+            <header class="sticky top-0 z-20 flex min-h-16 py-3 shrink-0 items-center justify-between border-b border-slate-800 bg-[#121418]/90 backdrop-blur px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-4">
                     {{-- Hamburger menu for mobile --}}
                     <button type="button" @click="sidebarOpen = true" class="text-slate-400 hover:text-white lg:hidden">
