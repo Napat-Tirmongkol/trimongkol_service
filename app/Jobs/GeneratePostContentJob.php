@@ -31,37 +31,35 @@ class GeneratePostContentJob implements ShouldQueue
 
         $apiKey = $this->resolveApiKey();
         if (! $apiKey) {
-            $post->update(['status' => 'failed', 'error_message' => 'Anthropic API key not configured']);
+            $post->update(['status' => 'failed', 'error_message' => 'Gemini API key not configured']);
             return;
         }
 
         $prompt = $this->buildPrompt($post->title, $post->source_url);
 
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'anthropic-version' => '2023-06-01',
-            'content-type' => 'application/json',
-        ])->timeout(50)->post('https://api.anthropic.com/v1/messages', [
-            'model' => 'claude-haiku-4-5-20251001',
-            'max_tokens' => 1024,
-            'messages' => [['role' => 'user', 'content' => $prompt]],
-        ]);
+        $response = Http::timeout(50)->post(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='.$apiKey,
+            [
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['maxOutputTokens' => 1024],
+            ]
+        );
 
         if (! $response->successful()) {
             $post->update([
                 'status' => 'failed',
-                'error_message' => 'API error: '.$response->status().' '.$response->body(),
+                'error_message' => 'Gemini API error: '.$response->status().' '.$response->body(),
             ]);
             return;
         }
 
-        $content = $response->json('content.0.text', '');
+        $content = $response->json('candidates.0.content.parts.0.text', '');
         if (empty($content)) {
-            $post->update(['status' => 'failed', 'error_message' => 'Empty response from AI']);
+            $post->update(['status' => 'failed', 'error_message' => 'Empty response from Gemini']);
             return;
         }
 
-        $post->update(['ai_content' => $content, 'status' => 'draft']);
+        $post->update(['ai_content' => trim($content), 'status' => 'draft']);
     }
 
     private function buildPrompt(string $title, string $url): string
@@ -87,16 +85,16 @@ PROMPT;
 
     private function resolveApiKey(): ?string
     {
-        $stored = Setting::where('key', 'social.anthropic_key')->value('value');
+        $stored = Setting::where('key', 'social.gemini_key')->value('value');
         if ($stored) {
             try {
                 return Crypt::decryptString($stored);
             } catch (\Exception) {
-                Log::warning('social: could not decrypt anthropic key from settings');
+                Log::warning('social: could not decrypt gemini key from settings');
             }
         }
 
-        return config('services.anthropic.key') ?: null;
+        return config('services.gemini.key') ?: null;
     }
 
     public function failed(\Throwable $e): void

@@ -159,11 +159,11 @@ class SocialController extends Controller
     {
         $pageIdSet   = (bool) Setting::where('key', 'social.facebook_page_id')->value('value');
         $tokenSet    = (bool) Setting::where('key', 'social.facebook_page_token')->value('value');
-        $anthropicSet = (bool) Setting::where('key', 'social.anthropic_key')->value('value');
+        $geminiSet = (bool) Setting::where('key', 'social.gemini_key')->value('value');
 
         $pageId = Setting::where('key', 'social.facebook_page_id')->value('value') ?? '';
 
-        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'anthropicSet', 'pageId'));
+        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'geminiSet', 'pageId'));
     }
 
     public function updateSettings(Request $request)
@@ -171,7 +171,7 @@ class SocialController extends Controller
         $data = $request->validate([
             'facebook_page_id'    => 'nullable|string|max:50',
             'facebook_page_token' => 'nullable|string|max:1000',
-            'anthropic_key'       => 'nullable|string|max:200',
+            'gemini_key'          => 'nullable|string|max:200',
         ]);
 
         if (! empty($data['facebook_page_id'])) {
@@ -188,10 +188,10 @@ class SocialController extends Controller
             );
         }
 
-        if (! empty($data['anthropic_key'])) {
+        if (! empty($data['gemini_key'])) {
             Setting::updateOrCreate(
-                ['key' => 'social.anthropic_key'],
-                ['value' => Crypt::encryptString(trim($data['anthropic_key']))]
+                ['key' => 'social.gemini_key'],
+                ['value' => Crypt::encryptString(trim($data['gemini_key']))]
             );
         }
 

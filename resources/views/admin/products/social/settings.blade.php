@@ -39,16 +39,16 @@
                     </div>
                 </div>
 
-                {{-- Anthropic API key --}}
+                {{-- Gemini API key --}}
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="mb-4 text-sm font-semibold text-slate-900">{{ __('app.admin.products.social.ai_heading') }}</h3>
 
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-700">{{ __('app.admin.products.social.anthropic_key') }}</label>
-                        <input type="password" name="anthropic_key" maxlength="200"
-                               placeholder="{{ $anthropicSet ? __('app.admin.products.social.keep_existing') : 'sk-ant-...' }}"
+                        <label class="mb-1 block text-xs font-medium text-slate-700">{{ __('app.admin.products.social.gemini_key') }}</label>
+                        <input type="password" name="gemini_key" maxlength="200"
+                               placeholder="{{ $geminiSet ? __('app.admin.products.social.keep_existing') : 'AIza...' }}"
                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                        <p class="mt-1 text-xs text-slate-400">{{ __('app.admin.products.social.anthropic_key_hint') }}</p>
+                        <p class="mt-1 text-xs text-slate-400">{{ __('app.admin.products.social.gemini_key_hint') }}</p>
                     </div>
                 </div>
 

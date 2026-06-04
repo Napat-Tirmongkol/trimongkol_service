@@ -63,10 +63,10 @@ return [
         'webhook' => env('DISCORD_WEBHOOK_URL'),
     ],
 
-    // Anthropic Claude API — used by the social media auto-post feature.
+    // Google Gemini API — used by the social media auto-post feature.
     // Key is normally set in /admin (encrypted in site_settings); env is a fallback.
-    'anthropic' => [
-        'key' => env('ANTHROPIC_API_KEY'),
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
     ],
 
 ];
