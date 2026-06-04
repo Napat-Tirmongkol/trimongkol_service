@@ -1,5 +1,5 @@
 ---
-name: Tirmongkol Service
+name: LangBaan Service
 description: Playful, friendly, and vibrant software studio for Thai SMEs.
 colors:
   primary: "#3366ff"
@@ -70,7 +70,7 @@ components:
     padding: "24px"
 ---
 
-# Design System: Tirmongkol Service
+# Design System: LangBaan Service
 
 ## 1. Overview
 

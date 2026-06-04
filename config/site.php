@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => 'Tirmongkol Service',
+    'name' => 'LangBaan Service',
     'domain' => 'tirmongkol.com',
     'url' => 'https://tirmongkol.com',
     'email' => 'contact@tirmongkol.com',

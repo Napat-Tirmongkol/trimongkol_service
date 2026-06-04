@@ -22,7 +22,7 @@ return [
     ],
 
     'brand' => [
-        'name' => 'Tirmongkol Service',
+        'name' => 'LangBaan Service',
         'tagline' => 'End-to-end Business Software',
     ],
     'nav' => [
@@ -140,7 +140,7 @@ return [
         'heading' => 'About Us',
         'subheading' => 'A software team that understands Thai business',
         'story' => 'Our Story',
-        'storyText' => "Tirmongkol Service was founded with one goal: to give Thai SMEs modern, easy-to-use, and affordable systems. We believe technology shouldn't feel out of reach, and every business deserves great software to grow.",
+        'storyText' => "LangBaan Service was founded with one goal: to give Thai SMEs modern, easy-to-use, and affordable systems. We believe technology shouldn't feel out of reach, and every business deserves great software to grow.",
         'missionTitle' => 'Our Mission',
         'missionText' => "Build software that makes our clients' work easier, faster, and sustainably scalable — with the right technology and genuine care.",
         'visionTitle' => 'Our Vision',
