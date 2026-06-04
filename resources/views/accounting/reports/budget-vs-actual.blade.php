@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php
         $money = fn ($v) => number_format((float) $v, 2);
 
@@ -144,4 +144,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

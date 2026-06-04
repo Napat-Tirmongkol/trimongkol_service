@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div>
             <a href="{{ route('accounting.recurring-journals.index') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.recurring_journals') }}</a>
@@ -135,4 +135,4 @@
         });
     })();
     </script>
-</x-app-layout>
+</x-accounting-layout>

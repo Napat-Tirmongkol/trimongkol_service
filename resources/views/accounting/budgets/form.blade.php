@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php
         $isEdit = $budget->exists;
         $title = $isEdit ? __('app.accounting.budget_edit') : __('app.accounting.budget_new');
@@ -86,4 +86,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

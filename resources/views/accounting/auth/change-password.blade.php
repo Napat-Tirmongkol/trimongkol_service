@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.change_password') }}</h2>
     </x-slot>
@@ -38,4 +38,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

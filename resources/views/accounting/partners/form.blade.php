@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php
         $isEdit = $partner->exists;
         $title = $isEdit ? __('app.accounting.partner_edit') : __('app.accounting.partner_new');
@@ -80,4 +80,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

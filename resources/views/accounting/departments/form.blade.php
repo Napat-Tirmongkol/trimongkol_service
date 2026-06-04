@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php
         $isEdit = $department->exists;
         $title = $isEdit ? __('app.accounting.department_edit') : __('app.accounting.department_new');
@@ -53,4 +53,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

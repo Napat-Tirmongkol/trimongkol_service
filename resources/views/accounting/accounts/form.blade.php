@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php $editing = $account->exists; @endphp
     <x-slot name="header">
         <div>
@@ -98,4 +98,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

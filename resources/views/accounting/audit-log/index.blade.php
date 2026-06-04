@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div>
             <a href="{{ route('accounting.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.heading') }}</a>
@@ -91,4 +91,4 @@
 
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

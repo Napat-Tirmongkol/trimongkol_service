@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div class="flex items-start justify-between">
             <div>
@@ -125,4 +125,4 @@
 
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

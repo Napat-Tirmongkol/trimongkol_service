@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div>
             <a href="{{ route('accounting.products.show', $product) }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ $product->name }}</a>
@@ -82,4 +82,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

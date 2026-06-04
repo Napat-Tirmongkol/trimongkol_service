@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div>
             <a href="{{ route('accounting.products.index') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.products') }}</a>
@@ -61,4 +61,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>

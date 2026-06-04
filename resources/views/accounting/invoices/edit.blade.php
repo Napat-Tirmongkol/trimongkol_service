@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     <x-slot name="header">
         <div>
             <a href="{{ route('accounting.invoices.show', $invoice) }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ $invoice->no }}</a>
@@ -190,4 +190,4 @@
             };
         }
     </script>
-</x-app-layout>
+</x-accounting-layout>

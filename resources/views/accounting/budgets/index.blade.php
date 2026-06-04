@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-accounting-layout>
     @php
         $money = fn ($v) => number_format((float) $v, 2);
         $monthLabel = function ($m) {
@@ -87,4 +87,4 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+</x-accounting-layout>
