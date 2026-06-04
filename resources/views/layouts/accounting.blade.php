@@ -47,7 +47,7 @@
                             <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ __('app.accounting.role_staff') }}</span>
                         @endif
                     </span>
-                    <a href="{{ route('accounting.change-password') }}"
+                    <a href="{{ route('accounting.password.edit') }}"
                        class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
                         {{ __('app.accounting.change_password') }}
                     </a>
