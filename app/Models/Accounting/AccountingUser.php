@@ -13,12 +13,12 @@ class AccountingUser extends Authenticatable
     protected $table = 'accounting_users';
 
     protected $fillable = [
-        'workspace_id', 'name', 'email', 'password', 'role', 'is_active',
+        'workspace_id', 'name', 'email', 'password', 'role', 'is_active', 'is_demo',
     ];
 
     protected $hidden = ['password', 'remember_token'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = ['is_active' => 'boolean', 'is_demo' => 'boolean'];
 
     public function workspace()
     {
@@ -28,6 +28,11 @@ class AccountingUser extends Authenticatable
     public function isOwner(): bool
     {
         return $this->role === 'owner';
+    }
+
+    public function isDemo(): bool
+    {
+        return (bool) $this->is_demo;
     }
 
     public function canPost(): bool

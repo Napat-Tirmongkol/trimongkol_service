@@ -1642,6 +1642,7 @@ return [
         'login_btn'                => 'Sign in',
         'account_inactive'         => 'This account has been disabled. Please contact your administrator.',
         'change_password'          => 'Change Password',
+        'demo_readonly'            => 'Demo accounts are read-only.',
         'current_password'         => 'Current password',
         'new_password'             => 'New password',
         'confirm_password'         => 'Confirm new password',

@@ -108,6 +108,7 @@ class DemoSeeder
             'password' => Hash::make($rawPassword),
             'role' => 'owner',
             'is_active' => true,
+            'is_demo' => true,
         ]);
     }
 

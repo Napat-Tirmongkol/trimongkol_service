@@ -1642,6 +1642,7 @@ return [
         'login_btn'                => 'เข้าสู่ระบบ',
         'account_inactive'         => 'บัญชีนี้ถูกระงับ กรุณาติดต่อผู้ดูแล',
         'change_password'          => 'เปลี่ยนรหัสผ่าน',
+        'demo_readonly'            => 'บัญชีตัวอย่างไม่สามารถแก้ไขได้',
         'current_password'         => 'รหัสผ่านเดิม',
         'new_password'             => 'รหัสผ่านใหม่',
         'confirm_password'         => 'ยืนยันรหัสผ่านใหม่',

@@ -58,11 +58,14 @@ class AuthController extends Controller
 
     public function showChangePassword()
     {
+        abort_if(auth('accounting')->user()?->isDemo(), 403, __('app.accounting.demo_readonly'));
+
         return view('accounting.auth.change-password');
     }
 
     public function changePassword(Request $request)
     {
+        abort_if(auth('accounting')->user()?->isDemo(), 403, __('app.accounting.demo_readonly'));
         $request->validate([
             'current_password' => ['required'],
             'password'         => ['required', 'min:8', 'confirmed'],
