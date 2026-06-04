@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Setting;
 use App\Models\SocialPost;
+use App\Services\AgentLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,39 +30,48 @@ class PublishToFacebookJob implements ShouldQueue
             return;
         }
 
+        AgentLogger::info($post->id, 'เริ่มต้นส่งโพสต์ไปยัง Facebook');
+
         ['page_id' => $pageId, 'token' => $token] = $this->resolveCredentials();
 
         if (! $pageId || ! $token) {
+            AgentLogger::error($post->id, 'ไม่พบ Facebook credentials — กรุณาตั้งค่า Page ID และ Token ใน Settings');
             $post->update(['status' => 'failed', 'error_message' => 'Facebook credentials not configured']);
             return;
         }
 
-        $message = $post->ai_content;
+        AgentLogger::info($post->id, "กำลังโพสต์ไปยัง Facebook Page (ID: {$pageId})...");
 
+        $start    = microtime(true);
         $response = Http::timeout(25)->post(
             "https://graph.facebook.com/v21.0/{$pageId}/feed",
-            ['message' => $message, 'access_token' => $token]
+            ['message' => $post->ai_content, 'access_token' => $token]
         );
+        $ms = (int) ((microtime(true) - $start) * 1000);
 
         if (! $response->successful() || $response->json('error')) {
             $err = $response->json('error.message', $response->body());
+            AgentLogger::error($post->id, 'Facebook API ตอบกลับ error: '.$err);
             $post->update(['status' => 'failed', 'error_message' => 'Facebook API: '.$err]);
             return;
         }
 
+        $fbPostId = $response->json('id');
+        AgentLogger::success($post->id, "โพสต์ Facebook สำเร็จ (post_id: {$fbPostId})", $ms);
+
         $post->update([
-            'status' => 'published',
-            'facebook_post_id' => $response->json('id'),
-            'published_at' => now(),
-            'error_message' => null,
+            'status'           => 'published',
+            'facebook_post_id' => $fbPostId,
+            'published_at'     => now(),
+            'error_message'    => null,
         ]);
     }
 
     private function resolveCredentials(): array
     {
-        $pageId = Setting::where('key', 'social.facebook_page_id')->value('value');
+        $pageId   = Setting::where('key', 'social.facebook_page_id')->value('value');
         $tokenEnc = Setting::where('key', 'social.facebook_page_token')->value('value');
-        $token = null;
+        $token    = null;
 
         if ($tokenEnc) {
             try {
@@ -76,8 +86,9 @@ class PublishToFacebookJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        AgentLogger::error($this->postId, 'Job failed: '.$e->getMessage());
         SocialPost::where('id', $this->postId)->update([
-            'status' => 'failed',
+            'status'        => 'failed',
             'error_message' => $e->getMessage(),
         ]);
     }

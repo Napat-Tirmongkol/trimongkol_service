@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\GeneratePostContentJob;
 use App\Jobs\PublishToFacebookJob;
 use App\Models\Setting;
+use App\Models\SocialAgentLog;
 use App\Models\SocialFeedSource;
 use App\Models\SocialPost;
 use App\Services\AuditLog;
@@ -81,7 +82,11 @@ class SocialController extends Controller
     public function showPost(SocialPost $post)
     {
         $post->load('feedSource:id,name');
-        return view('admin.products.social.show', compact('post'));
+        $logs = SocialAgentLog::where('social_post_id', $post->id)
+            ->orderBy('id')
+            ->get();
+
+        return view('admin.products.social.show', compact('post', 'logs'));
     }
 
     public function updatePost(Request $request, SocialPost $post)

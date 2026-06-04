@@ -537,6 +537,8 @@ return [
                 'ai_heading'       => 'Google Gemini API',
                 'gemini_key'       => 'Gemini API Key',
                 'gemini_key_hint'  => 'ดู API key ได้ที่ aistudio.google.com — คีย์ถูกเข้ารหัสก่อนเก็บ',
+                'agent_log'         => 'Agent Activity Log',
+                'agent_running'     => 'กำลังทำงาน...',
                 'post_detail'       => 'รายละเอียดโพสต์',
                 'source_news'       => 'ข่าวต้นฉบับ',
                 'fb_preview'        => 'ตัวอย่าง Facebook Post',

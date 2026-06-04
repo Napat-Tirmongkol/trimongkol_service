@@ -78,6 +78,69 @@
                 </div>
             </div>
 
+            {{-- Agent Activity Log --}}
+            @if ($logs->isNotEmpty() || $post->isPending())
+                <div>
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ __('app.admin.products.social.agent_log') }}</span>
+                        @if ($post->isPending())
+                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                                <span class="h-1.5 w-1.5 animate-ping rounded-full bg-amber-500"></span>
+                                {{ __('app.admin.products.social.agent_running') }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-sm">
+                        {{-- Terminal header --}}
+                        <div class="flex items-center gap-1.5 border-b border-slate-700 px-4 py-2">
+                            <span class="h-3 w-3 rounded-full bg-red-500"></span>
+                            <span class="h-3 w-3 rounded-full bg-yellow-500"></span>
+                            <span class="h-3 w-3 rounded-full bg-green-500"></span>
+                            <span class="ml-2 text-xs text-slate-400">AI Agent — Post #{{ $post->id }}</span>
+                        </div>
+
+                        {{-- Log entries --}}
+                        <div class="space-y-0 px-4 py-3 font-mono text-xs" id="agent-log-container">
+                            @forelse ($logs as $log)
+                                @php
+                                    $color = match ($log->type) {
+                                        'success' => 'text-emerald-400',
+                                        'warning' => 'text-amber-400',
+                                        'error'   => 'text-red-400',
+                                        default   => 'text-slate-300',
+                                    };
+                                    $icon = match ($log->type) {
+                                        'success' => '✓',
+                                        'warning' => '⚠',
+                                        'error'   => '✗',
+                                        default   => '·',
+                                    };
+                                @endphp
+                                <div class="flex items-start gap-3 py-0.5 {{ $color }}">
+                                    <span class="shrink-0 text-slate-500">{{ $log->created_at->format('H:i:s') }}</span>
+                                    <span class="shrink-0">{{ $icon }}</span>
+                                    <span class="flex-1 break-all">{{ $log->message }}</span>
+                                    @if ($log->duration_ms)
+                                        <span class="shrink-0 text-slate-500">{{ $log->duration_ms }}ms</span>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="py-2 text-slate-500">รอ Agent เริ่มทำงาน...</div>
+                            @endforelse
+
+                            @if ($post->isPending())
+                                <div class="flex items-center gap-3 py-0.5 text-amber-400">
+                                    <span class="shrink-0 text-slate-500">{{ now()->format('H:i:s') }}</span>
+                                    <span class="shrink-0 animate-pulse">_</span>
+                                    <span>กำลังประมวลผล...</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- Edit form --}}
             @if (! $post->isPublished())
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -147,4 +210,7 @@
 
         </div>
     </div>
+@if ($post->isPending())
+<script>setTimeout(() => location.reload(), 3000)</script>
+@endif
 </x-admin-layout>

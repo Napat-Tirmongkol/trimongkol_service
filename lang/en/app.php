@@ -537,6 +537,8 @@ return [
                 'ai_heading'      => 'Google Gemini API',
                 'gemini_key'      => 'Gemini API Key',
                 'gemini_key_hint' => 'Get your API key at aistudio.google.com — stored encrypted',
+                'agent_log'         => 'Agent Activity Log',
+                'agent_running'     => 'Running...',
                 'post_detail'       => 'Post detail',
                 'source_news'       => 'Source article',
                 'fb_preview'        => 'Facebook post preview',

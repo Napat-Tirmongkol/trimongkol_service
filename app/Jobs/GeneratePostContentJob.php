@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Setting;
 use App\Models\SocialPost;
+use App\Services\AgentLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,7 +19,7 @@ class GeneratePostContentJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
-    public int $timeout = 60;
+    public int $timeout = 120;
 
     public function __construct(public readonly int $postId) {}
 
@@ -31,57 +32,172 @@ class GeneratePostContentJob implements ShouldQueue
 
         $apiKey = $this->resolveApiKey();
         if (! $apiKey) {
+            AgentLogger::error($this->postId, 'ไม่พบ Gemini API Key — กรุณาตั้งค่าใน Settings');
             $post->update(['status' => 'failed', 'error_message' => 'Gemini API key not configured']);
             return;
         }
 
-        $prompt = $this->buildPrompt($post->title, $post->source_url);
+        AgentLogger::info($this->postId, 'เริ่มต้น AI Agent (Gemini Function Calling)');
 
-        $response = Http::timeout(50)->post(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key='.$apiKey,
-            [
-                'contents' => [['parts' => [['text' => $prompt]]]],
-                'generationConfig' => ['maxOutputTokens' => 1024],
-            ]
-        );
+        try {
+            $start   = microtime(true);
+            $content = $this->runAgent($apiKey, $post);
+            $total   = (int) ((microtime(true) - $start) * 1000);
 
-        if (! $response->successful()) {
-            $post->update([
-                'status' => 'failed',
-                'error_message' => 'Gemini API error: '.$response->status().' '.$response->body(),
-            ]);
-            return;
+            AgentLogger::success($this->postId, 'บันทึก Draft เรียบร้อย', $total);
+            $post->update(['ai_content' => trim($content), 'status' => 'draft']);
+        } catch (\Throwable $e) {
+            AgentLogger::error($this->postId, 'เกิดข้อผิดพลาด: '.$e->getMessage());
+            $post->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
         }
-
-        $content = $response->json('candidates.0.content.parts.0.text', '');
-        if (empty($content)) {
-            $post->update(['status' => 'failed', 'error_message' => 'Empty response from Gemini']);
-            return;
-        }
-
-        $post->update(['ai_content' => trim($content), 'status' => 'draft']);
     }
 
-    private function buildPrompt(string $title, string $url): string
+    // ─── Agent Loop ────────────────────────────────────────────────────────────
+
+    private function runAgent(string $apiKey, SocialPost $post): string
     {
-        return <<<PROMPT
-คุณเป็น Social Media Editor ของเว็บไซต์ข่าวไทย ช่วยเขียนโพสต์ Facebook จากหัวข้อข่าวนี้:
+        $systemPrompt = implode(' ', [
+            'คุณเป็น Social Media Editor ผู้เชี่ยวชาญของเว็บข่าวไทย',
+            'คุณมี tool fetch_article_content สำหรับดึงเนื้อหาบทความ — ให้ดึงบทความก่อนเสมอ',
+            'หลังอ่านบทความแล้วให้เขียนโพสต์ Facebook เป็นภาษาไทย ไม่เกิน 3 ย่อหน้า',
+            'มี hashtag 3-5 ตัว และใส่ลิงก์บทความต้นฉบับท้ายโพสต์',
+            'ตอบด้วยตัวโพสต์ Facebook เท่านั้น ไม่ต้องมีคำนำหรือคำอธิบายเพิ่มเติม',
+        ]);
 
-หัวข้อ: {$title}
-ลิงก์: {$url}
+        $contents = [[
+            'role'  => 'user',
+            'parts' => [['text' => "บทความ: \"{$post->title}\"\nURL: {$post->source_url}\n\nกรุณาดึงเนื้อหาบทความแล้วเขียนโพสต์ Facebook เป็นภาษาไทย"]],
+        ]];
 
-คำแนะนำ:
-- เขียนโพสต์เป็นภาษาไทย ไม่เกิน 3 ย่อหน้า
-- ย่อหน้าแรก: ใจความสำคัญของข่าว (น่าสนใจ กระตุ้นให้อ่านต่อ)
-- ย่อหน้าสอง: รายละเอียดเพิ่มเติมหรือบริบท (ถ้ามี)
-- ย่อหน้าสุดท้าย: CTA + ลิงก์ เช่น "อ่านต่อได้ที่ → {$url}"
-- เพิ่ม hashtag ที่เหมาะสม 3-5 ตัว ท้ายโพสต์
-- ใช้ภาษาเป็นทางการแต่เข้าถึงง่าย ไม่เป็นทางการจนเกินไป
-- ห้ามเขียนเนื้อหาที่ไม่มีอยู่ในหัวข้อ (อย่าแต่งเนื้อหา)
+        $tools = [[
+            'function_declarations' => [[
+                'name'        => 'fetch_article_content',
+                'description' => 'ดึงข้อความเต็มของบทความข่าวจาก URL เพื่อนำไปสรุปและเขียน Facebook post',
+                'parameters'  => [
+                    'type'       => 'object',
+                    'properties' => ['url' => ['type' => 'string', 'description' => 'URL ของบทความที่ต้องการดึง']],
+                    'required'   => ['url'],
+                ],
+            ]],
+        ]];
 
-ตอบเฉพาะตัวโพสต์ Facebook เท่านั้น ไม่ต้องมีคำอธิบายเพิ่มเติม
-PROMPT;
+        AgentLogger::info($this->postId, "ส่งบทความให้ Agent: \"{$post->title}\"");
+
+        for ($turn = 0; $turn < 6; $turn++) {
+            $callStart = microtime(true);
+
+            $response = Http::timeout(60)->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={$apiKey}",
+                [
+                    'system_instruction' => ['parts' => [['text' => $systemPrompt]]],
+                    'contents'           => $contents,
+                    'tools'              => $tools,
+                    'tool_config'        => ['function_calling_config' => ['mode' => 'AUTO']],
+                    'generationConfig'   => ['maxOutputTokens' => 1500],
+                ]
+            );
+
+            $callMs = (int) ((microtime(true) - $callStart) * 1000);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException('Gemini API error: '.$response->status().' '.$response->body());
+            }
+
+            $candidate = $response->json('candidates.0.content') ?? [];
+            $parts     = $candidate['parts'] ?? [];
+
+            $functionCall = null;
+            $textContent  = null;
+
+            foreach ($parts as $part) {
+                if (isset($part['functionCall'])) {
+                    $functionCall = $part['functionCall'];
+                }
+                if (isset($part['text']) && trim($part['text']) !== '') {
+                    $textContent = $part['text'];
+                }
+            }
+
+            // Agent called a tool
+            if ($functionCall) {
+                $funcName = $functionCall['name'];
+                $funcArgs = $functionCall['args'] ?? [];
+
+                AgentLogger::info($this->postId, "Agent เรียก tool: {$funcName}(".(json_encode($funcArgs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)).')');
+
+                $contents[] = ['role' => 'model', 'parts' => $parts];
+
+                $toolStart  = microtime(true);
+                $toolResult = $this->executeTool($funcName, $funcArgs);
+                $toolMs     = (int) ((microtime(true) - $toolStart) * 1000);
+
+                if ($funcName === 'fetch_article_content') {
+                    if ($toolResult['success'] ?? false) {
+                        $len = mb_strlen($toolResult['content']);
+                        AgentLogger::success($this->postId, "ดึงบทความสำเร็จ — {$len} ตัวอักษร", $toolMs);
+                    } else {
+                        AgentLogger::warning($this->postId, 'ดึงบทความไม่ได้: '.($toolResult['content'] ?? ''));
+                    }
+                }
+
+                $contents[] = [
+                    'role'  => 'user',
+                    'parts' => [['functionResponse' => ['name' => $funcName, 'response' => $toolResult]]],
+                ];
+
+                continue;
+            }
+
+            // Agent returned the final Facebook post
+            if ($textContent) {
+                AgentLogger::success($this->postId, "Gemini เขียนโพสต์เสร็จแล้ว ({$callMs}ms)", $callMs);
+                return $textContent;
+            }
+
+            throw new \RuntimeException('Empty response from Gemini agent (turn '.$turn.')');
+        }
+
+        throw new \RuntimeException('AI Agent เกิน 6 รอบโดยไม่มีผลลัพธ์');
     }
+
+    // ─── Tool Implementations ──────────────────────────────────────────────────
+
+    private function executeTool(string $name, array $args): array
+    {
+        if ($name === 'fetch_article_content') {
+            return $this->fetchArticle($args['url'] ?? '');
+        }
+
+        return ['error' => "Unknown tool: {$name}"];
+    }
+
+    private function fetchArticle(string $url): array
+    {
+        if (! filter_var($url, FILTER_VALIDATE_URL)) {
+            return ['success' => false, 'content' => 'URL ไม่ถูกต้อง'];
+        }
+
+        try {
+            $response = Http::timeout(12)
+                ->withUserAgent('Mozilla/5.0 (compatible; TrimongkolBot/1.0)')
+                ->get($url);
+
+            if (! $response->successful()) {
+                return ['success' => false, 'content' => "HTTP {$response->status()}"];
+            }
+
+            $text = strip_tags($response->body());
+            $text = preg_replace('/\s+/', ' ', $text);
+            $text = trim(mb_substr($text, 0, 5000));
+
+            return ['success' => true, 'content' => $text ?: '(ไม่พบเนื้อหาในหน้า)'];
+        } catch (\Throwable $e) {
+            Log::warning("social agent: fetch_article failed for {$url}: ".$e->getMessage());
+            return ['success' => false, 'content' => $e->getMessage()];
+        }
+    }
+
+    // ─── Helpers ───────────────────────────────────────────────────────────────
 
     private function resolveApiKey(): ?string
     {
@@ -99,8 +215,9 @@ PROMPT;
 
     public function failed(\Throwable $e): void
     {
+        AgentLogger::error($this->postId, 'Job failed: '.$e->getMessage());
         SocialPost::where('id', $this->postId)->update([
-            'status' => 'failed',
+            'status'        => 'failed',
             'error_message' => $e->getMessage(),
         ]);
     }
