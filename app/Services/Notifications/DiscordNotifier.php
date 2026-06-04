@@ -73,4 +73,34 @@ class DiscordNotifier
             self::send($text);
         }
     }
+
+    /**
+     * Post a rich embed card. Never throws.
+     *
+     * @param array $embed  Discord embed object (title, description, url, color, fields, footer)
+     */
+    public static function sendEmbed(array $embed): array
+    {
+        $url = self::webhook();
+        if (! filled($url)) {
+            return [false, 'not_configured'];
+        }
+
+        try {
+            $res = Http::timeout(10)->post($url, ['embeds' => [$embed]]);
+        } catch (\Throwable $e) {
+            report($e);
+            return [false, 'unreachable'];
+        }
+
+        return $res->successful() ? [true, 'ok'] : [false, 'http_'.$res->status()];
+    }
+
+    /** Fire-and-forget embed. */
+    public static function notifyEmbed(array $embed): void
+    {
+        if (self::enabled()) {
+            self::sendEmbed($embed);
+        }
+    }
 }

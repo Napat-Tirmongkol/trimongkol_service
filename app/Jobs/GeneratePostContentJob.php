@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Setting;
 use App\Models\SocialPost;
 use App\Services\AgentLogger;
+use App\Services\Notifications\DiscordNotifier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -46,6 +47,7 @@ class GeneratePostContentJob implements ShouldQueue
 
             AgentLogger::success($this->postId, 'บันทึก Draft เรียบร้อย', $total);
             $post->update(['ai_content' => trim($content), 'status' => 'draft']);
+            $this->notifyDiscord($post->fresh());
         } catch (\Throwable $e) {
             AgentLogger::error($this->postId, 'เกิดข้อผิดพลาด: '.$e->getMessage());
             $post->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
@@ -198,6 +200,35 @@ class GeneratePostContentJob implements ShouldQueue
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    private function notifyDiscord(SocialPost $post): void
+    {
+        $adminUrl = rtrim(config('app.url'), '/').'/admin/products/social/posts/'.$post->id;
+        $preview  = mb_substr($post->ai_content ?? '', 0, 280);
+        if (mb_strlen($post->ai_content ?? '') > 280) {
+            $preview .= '…';
+        }
+
+        DiscordNotifier::notifyEmbed([
+            'color'       => 0xF59E0B, // amber
+            'title'       => '📰 '.mb_substr($post->title, 0, 200),
+            'description' => $preview,
+            'url'         => $adminUrl,
+            'fields'      => [
+                [
+                    'name'   => 'แหล่งข่าว',
+                    'value'  => $post->feedSource?->name ?? '—',
+                    'inline' => true,
+                ],
+                [
+                    'name'   => 'สร้างเมื่อ',
+                    'value'  => now()->format('d M Y H:i'),
+                    'inline' => true,
+                ],
+            ],
+            'footer' => ['text' => '👉 คลิก title เพื่อเปิดหน้า Approve'],
+        ]);
+    }
 
     private function resolveApiKey(): ?string
     {
