@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\BlockSuspendedUser::class,
             \App\Http\Middleware\RequireTwoFactor::class,
             \App\Http\Middleware\MaintenanceMode::class,
+            \App\Http\Middleware\EnsureUserSessionContext::class,
         ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,

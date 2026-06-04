@@ -48,6 +48,7 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->put('auth_context', 'admin');
         RateLimiter::clear($this->throttleKey($request));
 
         return redirect()->intended(route('admin.dashboard'));

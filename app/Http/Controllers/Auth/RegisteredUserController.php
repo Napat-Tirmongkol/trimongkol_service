@@ -46,6 +46,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        $request->session()->put('auth_context', 'user');
+
         return redirect(route('dashboard', absolute: false));
     }
 }

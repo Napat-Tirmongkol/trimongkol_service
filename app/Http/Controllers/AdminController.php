@@ -274,6 +274,7 @@ class AdminController extends Controller
 
         Auth::guard('web')->login($original);
         $request->session()->regenerate();
+        $request->session()->put('auth_context', 'admin');
 
         // Manually log here — the impersonated user is who acted, but the admin is back in control.
         AdminAction::create([
