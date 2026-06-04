@@ -34,6 +34,18 @@ class AdminController extends Controller
             $queueMrr += (int) (QueuePlan::price($key) ?? 0) * (int) $count;
         }
 
+        $queuePlans = [];
+        foreach (QueuePlan::KEYS as $key) {
+            $cfg = config("queue-plans.{$key}");
+            if (! $cfg) {
+                continue;
+            }
+            $queuePlans[$key] = [
+                'name'  => $cfg['name'] ?? ucfirst($key),
+                'price' => QueuePlan::price($key),
+            ];
+        }
+
         $scannerByPlan = Subscription::query()
             ->whereIn('status', ['active', 'trial'])
             ->selectRaw('plan_key, COUNT(*) as c')

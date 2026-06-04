@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Models\Accounting\Account;
 use App\Models\Workspace;
+use App\Services\Accounting\AccountingAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -63,6 +64,8 @@ class AccountController extends AccountingController
             'is_tax_deductible' => $request->boolean('is_tax_deductible'),
         ]);
 
+        AccountingAuditLog::record($workspace, 'account.created', null, "{$data['code']} {$data['name']}");
+
         return redirect()->route('accounting.accounts.index')->with('status', __('app.accounting.account_saved'));
     }
 
@@ -96,6 +99,8 @@ class AccountController extends AccountingController
             'is_tax_deductible' => $request->boolean('is_tax_deductible'),
         ]);
 
+        AccountingAuditLog::record($workspace, 'account.updated', $account, "{$account->code} {$account->name}");
+
         return redirect()->route('accounting.accounts.index')->with('status', __('app.accounting.account_saved'));
     }
 
@@ -111,7 +116,10 @@ class AccountController extends AccountingController
             return back()->with('error', __('app.accounting.account_has_entries'));
         }
 
+        $label = "{$account->code} {$account->name}";
         $account->delete();
+
+        AccountingAuditLog::record($workspace, 'account.deleted', null, $label);
 
         return redirect()->route('accounting.accounts.index')->with('status', __('app.accounting.account_deleted'));
     }

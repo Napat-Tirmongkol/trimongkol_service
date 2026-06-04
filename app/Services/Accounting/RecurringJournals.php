@@ -52,6 +52,39 @@ class RecurringJournals
         });
     }
 
+    /** Update a recurring journal template — replaces lines. */
+    public static function update(RecurringJournal $template, array $attributes, array $lines): RecurringJournal
+    {
+        if (count($lines) < 2) {
+            throw new LedgerException('A recurring journal template needs at least two lines.');
+        }
+
+        return DB::transaction(function () use ($template, $attributes, $lines) {
+            $template->update([
+                'name' => $attributes['name'],
+                'frequency' => $attributes['frequency'] ?? $template->frequency,
+                'next_run_date' => $attributes['next_run_date'],
+                'end_date' => $attributes['end_date'] ?? null,
+            ]);
+
+            $template->lines()->delete();
+            foreach ($lines as $i => $line) {
+                RecurringJournalLine::create([
+                    'workspace_id' => $template->workspace_id,
+                    'recurring_journal_id' => $template->id,
+                    'line_no' => $i + 1,
+                    'account_id' => $line['account_id'],
+                    'debit' => $line['debit'] ?? 0,
+                    'credit' => $line['credit'] ?? 0,
+                    'description' => $line['description'] ?? null,
+                    'department_id' => $line['department_id'] ?? null,
+                ]);
+            }
+
+            return $template->refresh()->load('lines');
+        });
+    }
+
     /**
      * Execute a template: post one journal from its lines and advance
      * next_run_date by one frequency period. Uses $date if given, otherwise

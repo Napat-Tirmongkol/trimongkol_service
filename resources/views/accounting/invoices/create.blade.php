@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.invoice_new') }}</h2>
+        <div>
+            <a href="{{ route('accounting.invoices.index') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.invoices') }}</a>
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.invoice_new') }}</h2>
+        </div>
     </x-slot>
 
     <div class="py-8">
@@ -64,6 +67,16 @@
                                             <option value="{{ $code->id }}">{{ $code->code }} ({{ rtrim(rtrim(number_format((float) $code->rate, 3), '0'), '.') }}%)</option>
                                         @endforeach
                                     </select>
+                                    @if ($departments->isNotEmpty())
+                                        <select x-model="line.department_id" :name="`lines[${i}][department_id]`"
+                                                aria-label="{{ __('app.accounting.department') }}"
+                                                class="block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:w-32">
+                                            <option value="">{{ __('app.accounting.no_department') }}</option>
+                                            @foreach ($departments as $dept)
+                                                <option value="{{ $dept->id }}">{{ $dept->code }} {{ $dept->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
                                     <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-2 sm:justify-end sm:border-0 sm:pt-0">
                                         <span class="text-xs text-slate-400 sm:hidden">{{ __('app.accounting.col_total') }}</span>
                                         <span class="font-medium tabular-nums text-slate-900 sm:w-24 sm:text-right" x-text="money(lineAmount(line))"></span>
@@ -119,12 +132,12 @@
         function invoiceForm() {
             return {
                 submitting: false,
-                lines: [{ description: '', quantity: 1, unit_price: '', account_id: '', tax_code_id: '' }],
+                lines: [{ description: '', quantity: 1, unit_price: '', account_id: '', tax_code_id: '', department_id: '' }],
                 whtCode: '',
                 vatRates: @js($vatCodes->pluck('rate', 'id')),
                 whtRates: @js($whtCodes->pluck('rate', 'id')),
                 addLine() {
-                    this.lines.push({ description: '', quantity: 1, unit_price: '', account_id: '', tax_code_id: '' });
+                    this.lines.push({ description: '', quantity: 1, unit_price: '', account_id: '', tax_code_id: '', department_id: '' });
                 },
                 removeLine(i) {
                     if (this.lines.length > 1) this.lines.splice(i, 1);

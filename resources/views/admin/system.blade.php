@@ -8,6 +8,35 @@
     <div class="py-8">
         <div class="mx-auto max-w-4xl space-y-6 px-4 sm:px-6 lg:px-8">
 
+            @if (session('demo_credentials'))
+                @php $creds = session('demo_credentials'); @endphp
+                <div class="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-6 shadow-sm">
+                    <h3 class="text-sm font-semibold text-emerald-900">{{ __('app.admin.system.demo_seed_done') }}</h3>
+                    <p class="mt-1 text-sm text-emerald-800">{{ __('app.admin.system.demo_seed_done_hint') }}</p>
+                    <dl class="mt-4 space-y-2 text-sm">
+                        <div class="flex flex-wrap gap-3">
+                            <dt class="w-32 text-xs uppercase tracking-wider text-emerald-700">{{ __('app.admin.system.demo_workspace') }}</dt>
+                            <dd class="font-medium text-slate-900">{{ $creds['workspace_name'] }} <span class="font-mono text-xs text-slate-500">/ {{ $creds['workspace_slug'] }}</span></dd>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <dt class="w-32 text-xs uppercase tracking-wider text-emerald-700">{{ __('app.admin.system.demo_email') }}</dt>
+                            <dd class="font-mono text-slate-900">{{ $creds['login_email'] }}</dd>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <dt class="w-32 text-xs uppercase tracking-wider text-emerald-700">{{ __('app.admin.system.demo_password') }}</dt>
+                            <dd class="font-mono text-slate-900">{{ $creds['login_password'] }}</dd>
+                        </div>
+                    </dl>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                        <a href="{{ route('accounting.login') }}" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
+                            {{ __('app.admin.system.demo_open_login') }} ↗
+                        </a>
+                        <p class="text-xs text-emerald-700">{{ __('app.admin.system.demo_password_warning') }}</p>
+                    </div>
+                </div>
+            @endif
+
             {{-- Environment info --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.system.env_heading') }}</h3>
@@ -112,6 +141,24 @@
                         <button type="submit"
                                 class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             {{ __('app.admin.system.run_build') }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Demo accounting workspace --}}
+            <div class="rounded-xl border border-brand-200 bg-brand-50/40 p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-brand-900">{{ __('app.admin.system.demo_seed_heading') }}</h3>
+                        <p class="mt-1 text-xs text-brand-800">{{ __('app.admin.system.demo_seed_hint') }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.system.seed-accounting-demo') }}"
+                          data-confirm="{{ __('app.admin.system.demo_seed_confirm') }}">
+                        @csrf
+                        <button type="submit"
+                                class="rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+                            {{ __('app.admin.system.demo_seed_run') }}
                         </button>
                     </form>
                 </div>

@@ -15,6 +15,10 @@
                 ][$bill->status] ?? 'bg-slate-100 text-slate-600 ring-slate-200';
             @endphp
             <div class="flex shrink-0 items-center gap-2">
+                @if ($bill->status === 'draft')
+                    <a href="{{ route('accounting.bills.edit', $bill) }}"
+                       class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">{{ __('app.common.edit') }}</a>
+                @endif
                 <a href="{{ route('accounting.bills.print', $bill) }}" target="_blank" rel="noopener"
                    class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">{{ __('app.accounting.print') }} ↗</a>
                 <span class="rounded-full px-3 py-1 text-sm ring-1 ring-inset {{ $badge }}">{{ __('app.accounting.status_'.$bill->status) }}</span>
@@ -85,11 +89,28 @@
                             @csrf
                             <button type="submit" class="rounded-md bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700">{{ __('app.accounting.post_bill') }}</button>
                         </form>
+                    @elseif ($pendingApproval)
+                        <p class="mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800 ring-1 ring-sky-200">
+                            &#9203; {{ __('app.accounting.awaiting_approval') }} — {{ __('app.accounting.approval_for') }}: {{ $pendingApproval->requestedBy->name }}
+                            {{ $pendingApproval->created_at->diffForHumans() }}
+                        </p>
                     @else
-                        <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-200">{{ __('app.accounting.awaiting_poster') }}</p>
+                        <form method="POST" action="{{ route('accounting.approvals.request', ['type' => 'bill', 'id' => $bill->id]) }}" class="mt-3">
+                            @csrf
+                            <button type="submit" class="rounded-md border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+                                {{ __('app.accounting.request_approval') }}
+                            </button>
+                        </form>
                     @endif
                 </div>
             @elseif (in_array($bill->status, ['issued', 'partial'], true) && $canPost)
+                @if ($bill->status === 'issued')
+                    <form method="POST" action="{{ route('accounting.bills.void', $bill) }}"
+                          data-confirm="{{ __('app.accounting.bill_void_confirm') }}" data-confirm-danger="1">
+                        @csrf
+                        <button type="submit" class="rounded-md border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50">{{ __('app.accounting.bill_void') }}</button>
+                    </form>
+                @endif
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.pay_supplier') }}</h3>
                     <form method="POST" action="{{ route('accounting.bills.payments.store', $bill) }}" x-data="{ submitting: false }" @submit="submitting = true" class="mt-4 space-y-4">
@@ -140,6 +161,14 @@
             @elseif ($bill->status === 'paid')
                 <div class="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-200">{{ __('app.accounting.paid_full') }}</div>
             @endif
+
+            {{-- Attachments --}}
+            @include('accounting.partials.attachments', [
+                'attachments'  => $bill->attachments,
+                'uploadRoute'  => 'accounting.attachments.store',
+                'uploadParams' => ['type' => 'bill', 'id' => $bill->id],
+                'canDelete'    => $canPost,
+            ])
 
             @if ($bill->journal)
                 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">

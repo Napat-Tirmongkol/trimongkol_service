@@ -38,7 +38,10 @@ class QueueBillingController extends Controller
         abort_unless($workspace, 422, __('app.workspaces.no_workspace'));
 
         $plans = collect(QueuePlan::PURCHASABLE)
-            ->mapWithKeys(fn ($k) => [$k => config("queue-plans.{$k}")])
+            ->mapWithKeys(fn ($k) => [$k => array_merge(
+                config("queue-plans.{$k}"),
+                ['price' => QueuePlan::price($k), 'limits' => QueuePlan::limitsForKey($k)],
+            )])
             ->all();
 
         $pending = QueuePayment::where('workspace_id', $workspace->id)

@@ -1,14 +1,20 @@
 <?php
 
 use App\Http\Controllers\Accounting\AccountController as AccountingAccountController;
+use App\Http\Controllers\Accounting\AuditLogController as AccountingAuditLogController;
 use App\Http\Controllers\Accounting\AccountingUserController as AccountingUserController;
+use App\Http\Controllers\Accounting\ApprovalController as AccountingApprovalController;
+use App\Http\Controllers\Accounting\AttachmentController as AccountingAttachmentController;
 use App\Http\Controllers\Accounting\AuthController as AccountingAuthController;
 use App\Http\Controllers\Accounting\BankReconciliationController as AccountingBankReconciliationController;
 use App\Http\Controllers\Accounting\BillController as AccountingBillController;
+use App\Http\Controllers\Accounting\BudgetController as AccountingBudgetController;
 use App\Http\Controllers\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Accounting\DepartmentController as AccountingDepartmentController;
 use App\Http\Controllers\Accounting\FixedAssetController as AccountingFixedAssetController;
 use App\Http\Controllers\Accounting\OnboardingController as AccountingOnboardingController;
 use App\Http\Controllers\Accounting\InvoiceController as AccountingInvoiceController;
+use App\Http\Controllers\Accounting\ManualJournalController as AccountingManualJournalController;
 use App\Http\Controllers\Accounting\OpeningBalanceController as AccountingOpeningBalanceController;
 use App\Http\Controllers\Accounting\PartnerController as AccountingPartnerController;
 use App\Http\Controllers\Accounting\PayrollController as AccountingPayrollController;
@@ -256,6 +262,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/system/migrate', [AdminSystemController::class, 'migrate'])->name('system.migrate');
             Route::post('/system/clear-cache', [AdminSystemController::class, 'clearCache'])->name('system.clear-cache');
             Route::post('/system/build-assets', [AdminSystemController::class, 'buildAssets'])->name('system.build-assets');
+            Route::post('/system/seed-accounting-demo', [AdminSystemController::class, 'seedAccountingDemo'])->name('system.seed-accounting-demo');
             Route::post('/system/test-email', [AdminSystemController::class, 'testEmail'])->name('system.test-email');
         });
 
@@ -334,6 +341,13 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::post('/onboarding', [AccountingOnboardingController::class, 'store'])->name('onboarding.store');
         Route::get('/reports', [AccountingReportController::class, 'index'])->name('reports');
         Route::get('/reports/tax', [AccountingReportController::class, 'tax'])->name('reports.tax');
+        Route::get('/reports/aged-ar', [AccountingReportController::class, 'agedReceivables'])->name('reports.aged-ar');
+        Route::get('/reports/aged-ap', [AccountingReportController::class, 'agedPayables'])->name('reports.aged-ap');
+        Route::get('/reports/sales-by-partner', [AccountingReportController::class, 'salesByPartner'])->name('reports.sales-by-partner');
+        Route::get('/reports/purchases-by-partner', [AccountingReportController::class, 'purchasesByPartner'])->name('reports.purchases-by-partner');
+        Route::get('/reports/partner-statement/{partner}', [AccountingReportController::class, 'partnerStatement'])->name('reports.partner-statement');
+        Route::get('/reports/pnl-by-department', [AccountingReportController::class, 'profitAndLossByDepartment'])->name('reports.pnl-by-department');
+        Route::get('/reports/budget-vs-actual', [AccountingReportController::class, 'budgetVsActual'])->name('reports.budget-vs-actual');
         Route::get('/reports/export', [AccountingReportController::class, 'exportJournal'])->name('reports.export');
 
         Route::get('/opening-balances', [AccountingOpeningBalanceController::class, 'edit'])->name('opening-balances.edit');
@@ -349,19 +363,42 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/partners', [AccountingPartnerController::class, 'index'])->name('partners.index');
         Route::get('/partners/create', [AccountingPartnerController::class, 'create'])->name('partners.create');
         Route::post('/partners', [AccountingPartnerController::class, 'store'])->name('partners.store');
+        Route::get('/partners/{partner}/edit', [AccountingPartnerController::class, 'edit'])->name('partners.edit');
+        Route::put('/partners/{partner}', [AccountingPartnerController::class, 'update'])->name('partners.update');
+        Route::delete('/partners/{partner}', [AccountingPartnerController::class, 'destroy'])->name('partners.destroy');
+
+        Route::get('/departments', [AccountingDepartmentController::class, 'index'])->name('departments.index');
+        Route::get('/departments/create', [AccountingDepartmentController::class, 'create'])->name('departments.create');
+        Route::post('/departments', [AccountingDepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}/edit', [AccountingDepartmentController::class, 'edit'])->name('departments.edit');
+        Route::put('/departments/{department}', [AccountingDepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [AccountingDepartmentController::class, 'destroy'])->name('departments.destroy');
+
+        Route::get('/budgets', [AccountingBudgetController::class, 'index'])->name('budgets.index');
+        Route::get('/budgets/create', [AccountingBudgetController::class, 'create'])->name('budgets.create');
+        Route::post('/budgets', [AccountingBudgetController::class, 'store'])->name('budgets.store');
+        Route::get('/budgets/{budget}/edit', [AccountingBudgetController::class, 'edit'])->name('budgets.edit');
+        Route::put('/budgets/{budget}', [AccountingBudgetController::class, 'update'])->name('budgets.update');
+        Route::delete('/budgets/{budget}', [AccountingBudgetController::class, 'destroy'])->name('budgets.destroy');
 
         Route::get('/invoices', [AccountingInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [AccountingInvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoices', [AccountingInvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/invoices/{invoice}', [AccountingInvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('/invoices/{invoice}/edit', [AccountingInvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('/invoices/{invoice}', [AccountingInvoiceController::class, 'update'])->name('invoices.update');
         Route::post('/invoices/{invoice}/issue', [AccountingInvoiceController::class, 'issue'])->name('invoices.issue');
+        Route::post('/invoices/{invoice}/void', [AccountingInvoiceController::class, 'void'])->name('invoices.void');
         Route::post('/invoices/{invoice}/receipts', [AccountingInvoiceController::class, 'recordReceipt'])->name('invoices.receipts.store');
 
         Route::get('/bills', [AccountingBillController::class, 'index'])->name('bills.index');
         Route::get('/bills/create', [AccountingBillController::class, 'create'])->name('bills.create');
         Route::post('/bills', [AccountingBillController::class, 'store'])->name('bills.store');
         Route::get('/bills/{bill}', [AccountingBillController::class, 'show'])->name('bills.show');
+        Route::get('/bills/{bill}/edit', [AccountingBillController::class, 'edit'])->name('bills.edit');
+        Route::put('/bills/{bill}', [AccountingBillController::class, 'update'])->name('bills.update');
         Route::post('/bills/{bill}/post', [AccountingBillController::class, 'post'])->name('bills.post');
+        Route::post('/bills/{bill}/void', [AccountingBillController::class, 'void'])->name('bills.void');
         Route::post('/bills/{bill}/payments', [AccountingBillController::class, 'recordPayment'])->name('bills.payments.store');
 
         Route::get('/invoices/{invoice}/print', [AccountingInvoiceController::class, 'print'])->name('invoices.print');
@@ -388,9 +425,17 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/recurring-journals', [AccountingRecurringJournalController::class, 'index'])->name('recurring-journals.index');
         Route::get('/recurring-journals/create', [AccountingRecurringJournalController::class, 'create'])->name('recurring-journals.create');
         Route::post('/recurring-journals', [AccountingRecurringJournalController::class, 'store'])->name('recurring-journals.store');
+        Route::get('/recurring-journals/{recurringJournal}/edit', [AccountingRecurringJournalController::class, 'edit'])->name('recurring-journals.edit');
+        Route::put('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'update'])->name('recurring-journals.update');
         Route::post('/recurring-journals/{recurringJournal}/run', [AccountingRecurringJournalController::class, 'run'])->name('recurring-journals.run');
         Route::post('/recurring-journals/{recurringJournal}/toggle', [AccountingRecurringJournalController::class, 'toggle'])->name('recurring-journals.toggle');
         Route::delete('/recurring-journals/{recurringJournal}', [AccountingRecurringJournalController::class, 'destroy'])->name('recurring-journals.destroy');
+
+        Route::get('/manual-journals', [AccountingManualJournalController::class, 'index'])->name('manual-journals.index');
+        Route::get('/manual-journals/create', [AccountingManualJournalController::class, 'create'])->name('manual-journals.create');
+        Route::post('/manual-journals', [AccountingManualJournalController::class, 'store'])->name('manual-journals.store');
+        Route::get('/manual-journals/{manualJournal}', [AccountingManualJournalController::class, 'show'])->name('manual-journals.show');
+        Route::post('/manual-journals/{manualJournal}/void', [AccountingManualJournalController::class, 'void'])->name('manual-journals.void');
 
         // Fixed assets
         Route::get('/fixed-assets', [AccountingFixedAssetController::class, 'index'])->name('fixed-assets.index');
@@ -405,6 +450,9 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::get('/products/create', [AccountingProductController::class, 'create'])->name('products.create');
         Route::post('/products', [AccountingProductController::class, 'store'])->name('products.store');
         Route::get('/products/{product}', [AccountingProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{product}/edit', [AccountingProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{product}', [AccountingProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{product}', [AccountingProductController::class, 'destroy'])->name('products.destroy');
         Route::post('/products/{product}/receive', [AccountingProductController::class, 'receive'])->name('products.receive');
         Route::post('/products/{product}/issue', [AccountingProductController::class, 'issue'])->name('products.issue');
         Route::post('/products/{product}/adjust', [AccountingProductController::class, 'adjust'])->name('products.adjust');
@@ -428,9 +476,23 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         Route::post('/users/{accountingUser}/reset-password', [AccountingUserController::class, 'resetPassword'])->name('users.reset-password');
         Route::delete('/users/{accountingUser}', [AccountingUserController::class, 'destroy'])->name('users.destroy');
 
+        // Audit log
+        Route::get('/audit-log', [AccountingAuditLogController::class, 'index'])->name('audit-log.index');
+
         // Change own password
         Route::get('/password', [AccountingAuthController::class, 'showChangePassword'])->name('password.edit');
         Route::post('/password', [AccountingAuthController::class, 'changePassword'])->name('password.update');
+
+        // Document attachments
+        Route::post('/attachments/{type}/{id}', [AccountingAttachmentController::class, 'store'])->name('attachments.store');
+        Route::get('/attachments/{attachment}/download', [AccountingAttachmentController::class, 'download'])->name('attachments.download');
+        Route::delete('/attachments/{attachment}', [AccountingAttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+        // Approval workflow
+        Route::get('/approvals', [AccountingApprovalController::class, 'index'])->name('approvals.index');
+        Route::post('/approvals/{type}/{id}/request', [AccountingApprovalController::class, 'request'])->name('approvals.request');
+        Route::post('/approvals/{approval}/approve', [AccountingApprovalController::class, 'approve'])->name('approvals.approve');
+        Route::post('/approvals/{approval}/reject', [AccountingApprovalController::class, 'reject'])->name('approvals.reject');
     });
 });
 

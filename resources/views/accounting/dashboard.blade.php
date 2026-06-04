@@ -23,6 +23,18 @@
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         {{ __('app.accounting.bills') }}
                     </a>
+                    <a href="{{ route('accounting.manual-journals.index') }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        {{ __('app.accounting.manual_journals') }}
+                    </a>
+                    <a href="{{ route('accounting.departments.index') }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        {{ __('app.accounting.departments') }}
+                    </a>
+                    <a href="{{ route('accounting.budgets.index') }}"
+                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        {{ __('app.accounting.budgets') }}
+                    </a>
                     <a href="{{ route('accounting.wht-certificates.index') }}"
                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
                         {{ __('app.accounting.wht_certificates') }}
@@ -103,7 +115,7 @@
                         <div class="border-b border-slate-200 px-6 py-3">
                             <h3 class="text-sm font-semibold text-slate-900">{{ __('app.accounting.action_items') }}</h3>
                         </div>
-                        @php $hasTodos = $finance['overdue_count'] || $finance['draft_invoices'] || $finance['draft_bills']; @endphp
+                        @php $hasTodos = $finance['overdue_count'] || $finance['draft_invoices'] || $finance['draft_bills'] || ($canPost && $pendingApprovalsCount); @endphp
                         @if (! $hasTodos)
                             <div class="flex items-center gap-2 px-6 py-8 text-sm text-slate-500">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>
@@ -135,6 +147,14 @@
                                         <a href="{{ route('accounting.bills.index') }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
                                             <span class="text-sm text-slate-700">{{ __('app.accounting.draft_bills_n') }}</span>
                                             <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1.5 text-xs font-semibold text-slate-600">{{ $finance['draft_bills'] }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                                @if ($canPost && $pendingApprovalsCount)
+                                    <li>
+                                        <a href="{{ route('accounting.approvals.index') }}" class="flex items-center justify-between gap-3 px-6 py-3 hover:bg-slate-50">
+                                            <span class="text-sm text-slate-700">{{ __('app.accounting.approval_pending_count') }}</span>
+                                            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-700">{{ $pendingApprovalsCount }}</span>
                                         </a>
                                     </li>
                                 @endif

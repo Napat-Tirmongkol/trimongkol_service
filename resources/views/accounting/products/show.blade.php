@@ -1,11 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-start justify-between">
+        <div class="flex items-start justify-between gap-3">
             <div>
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ $product->name }}</h2>
                 <p class="mt-0.5 font-mono text-sm text-slate-500">{{ $product->sku }}</p>
             </div>
-            <a href="{{ route('accounting.products.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← {{ __('app.accounting.products') }}</a>
+            <div class="flex shrink-0 items-center gap-3">
+                <a href="{{ route('accounting.products.edit', $product) }}" class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">{{ __('app.common.edit') }}</a>
+                <form method="POST" action="{{ route('accounting.products.destroy', $product) }}"
+                      data-confirm="{{ __('app.accounting.product_delete_confirm') }}" data-confirm-danger="1">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50">{{ __('app.common.delete') }}</button>
+                </form>
+                <a href="{{ route('accounting.products.index') }}" class="text-sm text-slate-500 hover:text-slate-800">← {{ __('app.accounting.products') }}</a>
+            </div>
         </div>
     </x-slot>
 

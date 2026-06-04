@@ -6,6 +6,7 @@ use App\Exceptions\Accounting\InvoiceException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
 use App\Models\Accounting\Partner;
+use App\Models\Accounting\PaymentAllocation;
 use App\Models\Accounting\TaxCode;
 use App\Models\Workspace;
 use Carbon\CarbonInterface;
@@ -107,6 +108,95 @@ class Purchasing
         });
     }
 
+    /** Update a draft bill in place — replaces lines and recomputes totals. */
+    public static function update(Bill $bill, array $attributes, array $lines): Bill
+    {
+        if ($bill->status !== Bill::STATUS_DRAFT) {
+            throw new InvoiceException("Bill {$bill->no} is not a draft.");
+        }
+        if ($lines === []) {
+            throw new InvoiceException('A bill needs at least one line.');
+        }
+
+        return DB::transaction(function () use ($bill, $attributes, $lines) {
+            $workspace = $bill->workspace;
+            $partner = Partner::query()->forWorkspace($workspace)->find($attributes['partner_id'] ?? $bill->partner_id);
+            if (! $partner) {
+                throw new InvoiceException('Vendor does not belong to this workspace.');
+            }
+
+            $issueDate = Carbon::parse($attributes['issue_date'] ?? $bill->issue_date);
+            $dueDate = isset($attributes['due_date']) && $attributes['due_date'] !== null
+                ? Carbon::parse($attributes['due_date'])
+                : null;
+
+            $accounts = Account::query()->forWorkspace($workspace)
+                ->whereIn('id', collect($lines)->pluck('account_id')->filter()->unique())
+                ->pluck('id')->flip();
+            $taxCodes = TaxCode::query()->forWorkspace($workspace)
+                ->whereIn('id', collect($lines)->pluck('tax_code_id')->filter()->unique())
+                ->get()->keyBy('id');
+
+            $subtotal = 0;
+            $vat = 0;
+            $rows = [];
+
+            foreach ($lines as $i => $line) {
+                $accountId = $line['account_id'] ?? null;
+                if (! $accountId || ! $accounts->has($accountId)) {
+                    throw new InvoiceException("Expense account {$accountId} is not in this workspace.");
+                }
+
+                $amount = isset($line['amount'])
+                    ? Money::toMinor($line['amount'])
+                    : Money::lineAmount($line['quantity'] ?? 1, $line['unit_price'] ?? 0);
+                if ($amount < 0) {
+                    throw new InvoiceException('Line amount cannot be negative.');
+                }
+                $subtotal += $amount;
+
+                $taxCodeId = $line['tax_code_id'] ?? null;
+                if ($taxCodeId) {
+                    $code = $taxCodes->get($taxCodeId);
+                    if (! $code) {
+                        throw new InvoiceException("Tax code {$taxCodeId} is not in this workspace.");
+                    }
+                    if ($code->kind === TaxCode::KIND_VAT_INPUT) {
+                        $vat += Money::percentage($amount, $code->rate);
+                    }
+                }
+
+                $rows[] = [
+                    'workspace_id' => $workspace->id,
+                    'line_no' => $i + 1,
+                    'account_id' => $accountId,
+                    'description' => $line['description'] ?? null,
+                    'quantity' => $line['quantity'] ?? 1,
+                    'unit_price' => $line['unit_price'] ?? Money::fromMinor($amount),
+                    'amount' => Money::fromMinor($amount),
+                    'tax_code_id' => $taxCodeId,
+                    'department_id' => $line['department_id'] ?? null,
+                ];
+            }
+
+            $bill->forceFill([
+                'partner_id' => $partner->id,
+                'bill_ref' => $attributes['bill_ref'] ?? null,
+                'issue_date' => $issueDate->toDateString(),
+                'due_date' => $dueDate?->toDateString(),
+                'subtotal' => Money::fromMinor($subtotal),
+                'vat_amount' => Money::fromMinor($vat),
+                'total' => Money::fromMinor($subtotal + $vat),
+                'memo' => $attributes['memo'] ?? null,
+            ])->save();
+
+            $bill->lines()->delete();
+            $bill->lines()->createMany($rows);
+
+            return $bill->refresh()->load('lines');
+        });
+    }
+
     /** Post a draft bill: DR expenses + DR input VAT / CR accounts payable. */
     public static function post(Bill $bill, array $attributes = []): Bill
     {
@@ -166,6 +256,42 @@ class Purchasing
             ])->save();
 
             return $bill->refresh()->load('lines', 'journal');
+        });
+    }
+
+    /**
+     * Void an issued/posted bill: reverse its posting journal and mark void.
+     * Refuses if any supplier payment is already allocated.
+     */
+    public static function void(Bill $bill, array $attributes = []): Bill
+    {
+        if ($bill->status !== Bill::STATUS_ISSUED) {
+            throw new InvoiceException("Only issued bills can be voided. {$bill->no} is {$bill->status}.");
+        }
+        if (! $bill->journal_id) {
+            throw new InvoiceException("Bill {$bill->no} has no journal to reverse.");
+        }
+
+        $hasAllocations = PaymentAllocation::query()
+            ->where('allocatable_type', $bill->getMorphClass())
+            ->where('allocatable_id', $bill->id)
+            ->exists();
+        if ($hasAllocations) {
+            throw new InvoiceException("Bill {$bill->no} has payments allocated — reverse the payments before voiding.");
+        }
+
+        return DB::transaction(function () use ($bill, $attributes) {
+            $bill->loadMissing('journal.lines');
+
+            LedgerPosting::reverse($bill->journal, [
+                'date' => $attributes['date'] ?? now(),
+                'memo' => $attributes['memo'] ?? "ยกเลิกบิลซื้อ {$bill->no}",
+                'created_by' => $attributes['created_by'] ?? null,
+            ]);
+
+            $bill->forceFill(['status' => Bill::STATUS_VOID])->save();
+
+            return $bill->refresh();
         });
     }
 

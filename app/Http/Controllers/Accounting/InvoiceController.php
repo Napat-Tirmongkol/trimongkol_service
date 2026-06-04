@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
 use App\Services\Accounting\Money;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\Receipts;
 use App\Services\Accounting\SalesInvoicing;
 use App\Services\AccountingPlan;
@@ -15,15 +17,25 @@ use Illuminate\Http\Request;
 
 class InvoiceController extends AccountingController
 {
-    public function index()
+    public function index(Request $request)
     {
         $workspace = $this->currentWorkspace();
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', '');
+
         $invoices = $workspace
             ? Invoice::forWorkspace($workspace)->with('partner')
-                ->latest('issue_date')->latest('id')->paginate(25)
+                ->when($q !== '', fn ($qb) => $qb->where(fn ($w) => $w
+                    ->where('no', 'like', "%{$q}%")
+                    ->orWhere('tax_invoice_no', 'like', "%{$q}%")
+                    ->orWhereHas('partner', fn ($p) => $p->where('name', 'like', "%{$q}%"))))
+                ->when($status !== '' && in_array($status, ['draft', 'issued', 'partial', 'paid', 'void'], true),
+                    fn ($qb) => $qb->where('status', $status))
+                ->latest('issue_date')->latest('id')
+                ->paginate(25)->withQueryString()
             : collect();
 
-        return view('accounting.invoices.index', compact('workspace', 'invoices'));
+        return view('accounting.invoices.index', compact('workspace', 'invoices', 'q', 'status'));
     }
 
     public function create()
@@ -44,8 +56,9 @@ class InvoiceController extends AccountingController
         $revenueAccounts = Account::forWorkspace($workspace)->where('type', 'income')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_output')->where('is_active', true)->get();
         $whtCodes = TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.invoices.create', compact('partners', 'revenueAccounts', 'vatCodes', 'whtCodes'));
+        return view('accounting.invoices.create', compact('partners', 'revenueAccounts', 'vatCodes', 'whtCodes', 'departments'));
     }
 
     public function store(Request $request)
@@ -67,6 +80,7 @@ class InvoiceController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {
@@ -81,14 +95,74 @@ class InvoiceController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'invoice.created', $invoice, $invoice->no);
+
         return redirect()->route('accounting.invoices.show', $invoice)
             ->with('status', __('app.accounting.invoice_created'));
+    }
+
+    public function edit(Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+
+        if (! $invoice->isDraft()) {
+            return redirect()->route('accounting.invoices.show', $invoice)->with('error', __('app.accounting.invoice_edit_only_draft'));
+        }
+
+        $invoice->load('lines');
+        $partners = Partner::forWorkspace($workspace)->where('is_customer', true)->orderBy('name')->get();
+        $revenueAccounts = Account::forWorkspace($workspace)->where('type', 'income')->where('is_active', true)->orderBy('code')->get();
+        $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_output')->where('is_active', true)->get();
+        $whtCodes = TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
+
+        return view('accounting.invoices.edit', compact('invoice', 'partners', 'revenueAccounts', 'vatCodes', 'whtCodes', 'departments'));
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+
+        if (! $invoice->isDraft()) {
+            return redirect()->route('accounting.invoices.show', $invoice)->with('error', __('app.accounting.invoice_edit_only_draft'));
+        }
+
+        $data = $request->validate([
+            'partner_id' => 'required|integer',
+            'issue_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'wht_tax_code_id' => 'nullable|integer',
+            'memo' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.account_id' => 'required|integer',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.quantity' => 'required|numeric|min:0',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
+        ]);
+
+        try {
+            SalesInvoicing::update($invoice, [
+                'partner_id' => $data['partner_id'],
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'] ?? null,
+                'wht_tax_code_id' => $data['wht_tax_code_id'] ?? null,
+                'memo' => $data['memo'] ?? null,
+            ], $data['lines']);
+        } catch (LedgerException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'invoice.updated', $invoice, $invoice->no);
+
+        return redirect()->route('accounting.invoices.show', $invoice)->with('status', __('app.accounting.invoice_updated'));
     }
 
     public function show(Invoice $invoice)
     {
         $workspace = $this->scopedInvoice($invoice);
-        $invoice->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account');
+        $invoice->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account', 'attachments.accountingUser');
 
         $outstandingMinor = Money::toMinor(Receipts::outstanding($invoice));
         // Pre-fill the receipt form: default WHT to the expected amount on a
@@ -97,13 +171,16 @@ class InvoiceController extends AccountingController
             ? Money::toMinor($invoice->wht_amount)
             : 0;
 
+        $canPost = auth('accounting')->user()?->canPost() ?? false;
+
         return view('accounting.invoices.show', [
             'invoice' => $invoice,
             'outstanding' => Money::fromMinor($outstandingMinor),
             'cashDefault' => Money::fromMinor($outstandingMinor - $whtDefaultMinor),
             'whtDefault' => Money::fromMinor($whtDefaultMinor),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
-            'canPost' => auth('accounting')->user()?->canPost() ?? false,
+            'canPost' => $canPost,
+            'pendingApproval' => $invoice->pendingApproval,
         ]);
     }
 
@@ -126,7 +203,26 @@ class InvoiceController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'invoice.issued', $invoice, $invoice->no);
+
         return back()->with('status', __('app.accounting.invoice_issued'));
+    }
+
+    public function void(Invoice $invoice)
+    {
+        $workspace = $this->scopedInvoice($invoice);
+        $this->assertPoster($workspace);
+
+        try {
+            SalesInvoicing::void($invoice);
+        } catch (LedgerException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'invoice.voided', $invoice, $invoice->no);
+
+        return redirect()->route('accounting.invoices.show', $invoice)
+            ->with('status', __('app.accounting.invoice_voided'));
     }
 
     public function recordReceipt(Request $request, Invoice $invoice)
@@ -158,6 +254,9 @@ class InvoiceController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'invoice.receipt_recorded', $invoice, $invoice->no,
+            ['amount' => $data['amount']]);
 
         return redirect()->route('accounting.invoices.show', $invoice)
             ->with('status', __('app.accounting.receipt_recorded'));

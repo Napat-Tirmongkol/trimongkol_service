@@ -2,6 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
+                <a href="{{ route('accounting.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-700">← {{ __('app.accounting.heading') }}</a>
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('app.accounting.recurring_journals') }}</h2>
                 <p class="mt-0.5 text-sm text-slate-500">{{ __('app.accounting.recurring_journals_sub') }}</p>
             </div>
@@ -72,6 +73,8 @@
                                 </form>
                             @endif
                             <div class="flex gap-2">
+                                <a href="{{ route('accounting.recurring-journals.edit', $t) }}"
+                                   class="text-xs text-slate-500 hover:text-slate-800">{{ __('app.common.edit') }}</a>
                                 <form method="POST" action="{{ route('accounting.recurring-journals.toggle', $t) }}">
                                     @csrf
                                     <button type="submit" class="text-xs text-slate-500 hover:text-slate-800">

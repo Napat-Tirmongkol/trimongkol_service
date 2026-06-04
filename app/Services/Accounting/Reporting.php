@@ -3,9 +3,15 @@
 namespace App\Services\Accounting;
 
 use App\Models\Accounting\Account;
+use App\Models\Accounting\Bill;
+use App\Models\Accounting\Budget;
+use App\Models\Accounting\Department;
+use App\Models\Accounting\Invoice;
 use App\Models\Accounting\Journal;
 use App\Models\Accounting\JournalLine;
+use App\Models\Accounting\PaymentAllocation;
 use App\Models\Workspace;
+use Illuminate\Support\Carbon;
 
 /**
  * Financial statements, derived entirely from posted journal lines (the
@@ -138,6 +144,587 @@ class Reporting
             'net_income' => Money::fromMinor($netIncome),                         // current period, not yet closed
             'liabilities_and_equity' => Money::fromMinor($liabilityTotal + $equityTotal + $netIncome),
             'balanced' => $assetTotal === ($liabilityTotal + $equityTotal + $netIncome),
+        ];
+    }
+
+    public const AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', '90_plus'];
+
+    /**
+     * Budget vs Actual for a fiscal year, optionally narrowed to a single
+     * month and/or a department. The result includes every (account × dept)
+     * combo that has either a budget or an actual — surprise spending shows
+     * up even when no budget was set. Variance is plain Actual − Budget; the
+     * view decides the colour from account type.
+     *
+     * @param  int|string|null  $deptId  null = no filter, int id = specific dept, "unassigned" = department_id IS NULL
+     */
+    public static function budgetVsActual(Workspace $workspace, int $year, ?int $month = null, int|string|null $deptId = null): array
+    {
+        // 1. Budgets for this year, optionally narrowed to a single dept.
+        $budgetQuery = Budget::query()->forWorkspace($workspace)->where('fiscal_year', $year);
+        if ($deptId === 'unassigned') {
+            $budgetQuery->whereNull('department_id');
+        } elseif (is_int($deptId)) {
+            $budgetQuery->where('department_id', $deptId);
+        }
+        $budgets = $budgetQuery->get();
+
+        // 2. Bucket budgets into ($accountId, $deptKey) — annual entries spread
+        //    across 12 months when the user asked for a single month.
+        $budgetMap = [];
+        foreach ($budgets as $b) {
+            $deptKey = $b->department_id ?? 0;
+            $key = $b->account_id.'_'.$deptKey;
+
+            if ($month !== null) {
+                if ($b->fiscal_month === $month) {
+                    $contribution = Money::toMinor($b->amount);
+                } elseif ($b->fiscal_month === null) {
+                    $contribution = intdiv(Money::toMinor($b->amount), 12);
+                } else {
+                    continue;
+                }
+            } else {
+                $contribution = Money::toMinor($b->amount);
+            }
+            $budgetMap[$key] = ($budgetMap[$key] ?? 0) + $contribution;
+        }
+
+        // 3. Actuals from posted ledger lines on income/expense accounts.
+        $accounts = Account::query()->forWorkspace($workspace)
+            ->whereIn('type', ['income', 'expense'])
+            ->get()->keyBy('id');
+
+        if ($accounts->isEmpty()) {
+            return self::buildBvaResult([], $year, $month, $deptId);
+        }
+
+        $from = $month !== null
+            ? Carbon::create($year, $month, 1)->startOfMonth()
+            : Carbon::create($year, 1, 1)->startOfYear();
+        $to = $month !== null
+            ? Carbon::create($year, $month, 1)->endOfMonth()
+            : Carbon::create($year, 12, 31)->endOfYear();
+
+        $actualLines = JournalLine::query()
+            ->forWorkspace($workspace)
+            ->whereHas('journal', fn ($q) => $q->where('status', Journal::STATUS_POSTED)
+                ->whereDate('date', '>=', $from->toDateString())
+                ->whereDate('date', '<=', $to->toDateString()))
+            ->whereIn('account_id', $accounts->keys())
+            ->when($deptId === 'unassigned', fn ($q) => $q->whereNull('department_id'))
+            ->when(is_int($deptId), fn ($q) => $q->where('department_id', $deptId))
+            ->selectRaw('account_id, department_id, SUM(debit) as d, SUM(credit) as c')
+            ->groupBy('account_id', 'department_id')
+            ->get();
+
+        $actualMap = [];
+        foreach ($actualLines as $row) {
+            $account = $accounts->get($row->account_id);
+            $deptKey = $row->department_id ?? 0;
+            $key = $row->account_id.'_'.$deptKey;
+
+            $debit = Money::toMinor((string) $row->d);
+            $credit = Money::toMinor((string) $row->c);
+            $signed = $account->type === 'income' ? ($credit - $debit) : ($debit - $credit);
+
+            $actualMap[$key] = ($actualMap[$key] ?? 0) + $signed;
+        }
+
+        // 4. Union of budget and actual keys — so unbudgeted spend surfaces.
+        $departments = Department::query()->forWorkspace($workspace)->get()->keyBy('id');
+        $allKeys = array_unique(array_merge(array_keys($budgetMap), array_keys($actualMap)));
+
+        $rows = [];
+        $totals = [
+            'income' => ['budget' => 0, 'actual' => 0],
+            'expense' => ['budget' => 0, 'actual' => 0],
+        ];
+
+        foreach ($allKeys as $key) {
+            [$accountId, $deptKey] = explode('_', $key);
+            $accountId = (int) $accountId;
+            $deptKey = (int) $deptKey;
+            $account = $accounts->get($accountId);
+            if (! $account) {
+                continue;
+            }
+
+            $budget = $budgetMap[$key] ?? 0;
+            $actual = $actualMap[$key] ?? 0;
+
+            $rows[] = [
+                'account' => $account,
+                'department' => $deptKey === 0 ? null : $departments->get($deptKey),
+                'budget' => Money::fromMinor($budget),
+                'actual' => Money::fromMinor($actual),
+                'variance' => Money::fromMinor($actual - $budget),
+            ];
+
+            $totals[$account->type]['budget'] += $budget;
+            $totals[$account->type]['actual'] += $actual;
+        }
+
+        // Income first, then expense; within each, by account code.
+        usort($rows, function ($a, $b) {
+            $order = ['income' => 0, 'expense' => 1];
+            $cmp = ($order[$a['account']->type] ?? 9) <=> ($order[$b['account']->type] ?? 9);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+            return strcmp((string) $a['account']->code, (string) $b['account']->code);
+        });
+
+        return self::buildBvaResult([
+            'rows' => $rows,
+            'totals_raw' => $totals,
+        ], $year, $month, $deptId);
+    }
+
+    private static function buildBvaResult(array $partial, int $year, ?int $month, $deptId): array
+    {
+        $rows = $partial['rows'] ?? [];
+        $totals = $partial['totals_raw'] ?? ['income' => ['budget' => 0, 'actual' => 0], 'expense' => ['budget' => 0, 'actual' => 0]];
+
+        $incBudget = $totals['income']['budget'];
+        $incActual = $totals['income']['actual'];
+        $expBudget = $totals['expense']['budget'];
+        $expActual = $totals['expense']['actual'];
+
+        return [
+            'year' => $year,
+            'month' => $month,
+            'department_id' => $deptId,
+            'rows' => $rows,
+            'totals' => [
+                'income' => [
+                    'budget' => Money::fromMinor($incBudget),
+                    'actual' => Money::fromMinor($incActual),
+                    'variance' => Money::fromMinor($incActual - $incBudget),
+                ],
+                'expense' => [
+                    'budget' => Money::fromMinor($expBudget),
+                    'actual' => Money::fromMinor($expActual),
+                    'variance' => Money::fromMinor($expActual - $expBudget),
+                ],
+                'profit' => [
+                    'budget' => Money::fromMinor($incBudget - $expBudget),
+                    'actual' => Money::fromMinor($incActual - $expActual),
+                    'variance' => Money::fromMinor(($incActual - $expActual) - ($incBudget - $expBudget)),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Profit & Loss split by department. Lines without a department_id roll
+     * up into "unassigned" so totals still tie out to the regular P&L. Each
+     * department row carries its revenue, expense, and net profit for the
+     * period.
+     */
+    public static function profitAndLossByDepartment(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        $accounts = Account::query()->forWorkspace($workspace)
+            ->whereIn('type', ['income', 'expense'])
+            ->get()->keyBy('id');
+
+        if ($accounts->isEmpty()) {
+            return self::buildPnlByDeptResult([], $from, $to);
+        }
+
+        $rows = JournalLine::query()
+            ->forWorkspace($workspace)
+            ->whereHas('journal', function ($q) use ($from, $to) {
+                $q->where('status', Journal::STATUS_POSTED);
+                if ($from) {
+                    $q->whereDate('date', '>=', $from);
+                }
+                if ($to) {
+                    $q->whereDate('date', '<=', $to);
+                }
+            })
+            ->whereIn('account_id', $accounts->keys())
+            ->selectRaw('account_id, department_id, SUM(debit) as d, SUM(credit) as c')
+            ->groupBy('account_id', 'department_id')
+            ->get();
+
+        $departments = Department::query()->forWorkspace($workspace)->get()->keyBy('id');
+        $byDept = [];
+
+        foreach ($rows as $row) {
+            // Use 0 as the bucket key for null/unassigned so it sorts last.
+            $deptKey = $row->department_id ?: 0;
+            if (! isset($byDept[$deptKey])) {
+                $byDept[$deptKey] = [
+                    'department' => $deptKey === 0 ? null : $departments->get($row->department_id),
+                    'revenue' => 0,
+                    'expense' => 0,
+                ];
+            }
+            $account = $accounts->get($row->account_id);
+            $debit = Money::toMinor((string) $row->d);
+            $credit = Money::toMinor((string) $row->c);
+
+            if ($account->type === 'income') {
+                $byDept[$deptKey]['revenue'] += $credit - $debit;
+            } else {
+                $byDept[$deptKey]['expense'] += $debit - $credit;
+            }
+        }
+
+        return self::buildPnlByDeptResult($byDept, $from, $to);
+    }
+
+    private static function buildPnlByDeptResult(array $byDept, ?string $from, ?string $to): array
+    {
+        // Unassigned (key 0) sinks to the bottom; named departments sorted by code.
+        uasort($byDept, function ($a, $b) {
+            if ($a['department'] === null) {
+                return 1;
+            }
+            if ($b['department'] === null) {
+                return -1;
+            }
+            return strcmp((string) $a['department']->code, (string) $b['department']->code);
+        });
+
+        $rows = [];
+        $totalRev = 0;
+        $totalExp = 0;
+        foreach ($byDept as $entry) {
+            $totalRev += $entry['revenue'];
+            $totalExp += $entry['expense'];
+            $rows[] = [
+                'department' => $entry['department'],
+                'revenue' => Money::fromMinor($entry['revenue']),
+                'expense' => Money::fromMinor($entry['expense']),
+                'profit' => Money::fromMinor($entry['revenue'] - $entry['expense']),
+            ];
+        }
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows,
+            'totals' => [
+                'revenue' => Money::fromMinor($totalRev),
+                'expense' => Money::fromMinor($totalExp),
+                'profit' => Money::fromMinor($totalRev - $totalExp),
+            ],
+        ];
+    }
+
+    /**
+     * Sales aggregated by customer over [$from, $to]. Excludes drafts and
+     * voided invoices — only what actually hit the ledger counts.
+     */
+    public static function salesByPartner(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        return self::documentsByPartner($workspace, Invoice::class, $from, $to);
+    }
+
+    /** Purchases aggregated by vendor over [$from, $to]. */
+    public static function purchasesByPartner(Workspace $workspace, ?string $from, ?string $to): array
+    {
+        return self::documentsByPartner($workspace, Bill::class, $from, $to);
+    }
+
+    /**
+     * Per-partner statement: every issued document for this partner in the
+     * window, with outstanding per document and totals at the bottom.
+     */
+    public static function partnerStatement(Workspace $workspace, \App\Models\Accounting\Partner $partner, ?string $from, ?string $to): array
+    {
+        $isVendor = (bool) $partner->is_vendor;
+        $modelClass = $isVendor ? Bill::class : Invoice::class;
+
+        $query = $modelClass::query()->forWorkspace($workspace)
+            ->where('partner_id', $partner->id)
+            ->whereIn('status', ['issued', 'partial', 'paid'])
+            ->orderBy('issue_date')->orderBy('id');
+
+        if ($from) {
+            $query->whereDate('issue_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('issue_date', '<=', $to);
+        }
+
+        $docs = $query->get();
+        $allocated = self::allocatedByDocument($workspace, $modelClass, $docs->pluck('id'));
+
+        $entries = [];
+        $totalAmount = 0;
+        $totalPaid = 0;
+        $totalOutstanding = 0;
+
+        foreach ($docs as $doc) {
+            $totalMinor = Money::toMinor($doc->total);
+            $paidMinor = $allocated[$doc->id] ?? 0;
+            $outstandingMinor = $totalMinor - $paidMinor;
+
+            $entries[] = [
+                'date' => $doc->issue_date,
+                'due_date' => $doc->due_date,
+                'no' => $doc->no,
+                'ref' => $isVendor ? $doc->bill_ref : $doc->tax_invoice_no,
+                'status' => $doc->status,
+                'total' => Money::fromMinor($totalMinor),
+                'paid' => Money::fromMinor($paidMinor),
+                'outstanding' => Money::fromMinor($outstandingMinor),
+            ];
+
+            $totalAmount += $totalMinor;
+            $totalPaid += $paidMinor;
+            $totalOutstanding += $outstandingMinor;
+        }
+
+        return [
+            'partner' => $partner,
+            'role' => $isVendor ? 'vendor' : 'customer',
+            'from' => $from,
+            'to' => $to,
+            'entries' => $entries,
+            'total' => Money::fromMinor($totalAmount),
+            'paid' => Money::fromMinor($totalPaid),
+            'outstanding' => Money::fromMinor($totalOutstanding),
+        ];
+    }
+
+    /**
+     * Aggregate invoices or bills by partner inside [$from, $to].
+     * Returns rows sorted by total descending and grand totals.
+     */
+    private static function documentsByPartner(Workspace $workspace, string $modelClass, ?string $from, ?string $to): array
+    {
+        $query = $modelClass::query()->forWorkspace($workspace)
+            ->whereIn('status', ['issued', 'partial', 'paid'])
+            ->with('partner');
+
+        if ($from) {
+            $query->whereDate('issue_date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('issue_date', '<=', $to);
+        }
+
+        $docs = $query->get();
+        $allocated = self::allocatedByDocument($workspace, $modelClass, $docs->pluck('id'));
+
+        $byPartner = [];
+        foreach ($docs as $doc) {
+            $partnerId = $doc->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $doc->partner,
+                    'count' => 0,
+                    'subtotal' => 0,
+                    'vat' => 0,
+                    'total' => 0,
+                    'paid' => 0,
+                    'outstanding' => 0,
+                ];
+            }
+            $totalMinor = Money::toMinor($doc->total);
+            $paidMinor = $allocated[$doc->id] ?? 0;
+
+            $byPartner[$partnerId]['count']++;
+            $byPartner[$partnerId]['subtotal'] += Money::toMinor($doc->subtotal);
+            $byPartner[$partnerId]['vat'] += Money::toMinor($doc->vat_amount);
+            $byPartner[$partnerId]['total'] += $totalMinor;
+            $byPartner[$partnerId]['paid'] += $paidMinor;
+            $byPartner[$partnerId]['outstanding'] += $totalMinor - $paidMinor;
+        }
+
+        usort($byPartner, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        $rows = [];
+        $totals = ['subtotal' => 0, 'vat' => 0, 'total' => 0, 'paid' => 0, 'outstanding' => 0, 'count' => 0];
+        foreach ($byPartner as $entry) {
+            foreach (['subtotal', 'vat', 'total', 'paid', 'outstanding'] as $field) {
+                $totals[$field] += $entry[$field];
+            }
+            $totals['count'] += $entry['count'];
+
+            $rows[] = [
+                'partner' => $entry['partner'],
+                'count' => $entry['count'],
+                'subtotal' => Money::fromMinor($entry['subtotal']),
+                'vat' => Money::fromMinor($entry['vat']),
+                'total' => Money::fromMinor($entry['total']),
+                'paid' => Money::fromMinor($entry['paid']),
+                'outstanding' => Money::fromMinor($entry['outstanding']),
+            ];
+        }
+
+        return [
+            'from' => $from,
+            'to' => $to,
+            'rows' => $rows,
+            'totals' => [
+                'count' => $totals['count'],
+                'subtotal' => Money::fromMinor($totals['subtotal']),
+                'vat' => Money::fromMinor($totals['vat']),
+                'total' => Money::fromMinor($totals['total']),
+                'paid' => Money::fromMinor($totals['paid']),
+                'outstanding' => Money::fromMinor($totals['outstanding']),
+            ],
+        ];
+    }
+
+    /**
+     * Aged receivables: outstanding amount on every open invoice, grouped by
+     * partner and bucketed by days past due as of $asOf (default today).
+     * "Open" = issued or partial; void/draft/paid are excluded.
+     */
+    public static function agedReceivables(Workspace $workspace, ?string $asOf = null): array
+    {
+        $asOfDate = Carbon::parse($asOf ?: now()->toDateString());
+
+        $invoices = Invoice::query()->forWorkspace($workspace)
+            ->whereIn('status', [Invoice::STATUS_ISSUED, Invoice::STATUS_PARTIAL])
+            ->whereDate('issue_date', '<=', $asOfDate->toDateString())
+            ->with('partner')
+            ->get();
+
+        $allocated = self::allocatedByDocument($workspace, Invoice::class, $invoices->pluck('id'));
+
+        $byPartner = [];
+        foreach ($invoices as $invoice) {
+            $outstandingMinor = Money::toMinor($invoice->total) - ($allocated[$invoice->id] ?? 0);
+            if ($outstandingMinor <= 0) {
+                continue;
+            }
+
+            $dueDate = $invoice->due_date ?: $invoice->issue_date;
+            $bucket = self::ageBucket($dueDate, $asOfDate);
+
+            $partnerId = $invoice->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $invoice->partner,
+                    'amounts' => array_fill_keys(self::AGING_BUCKETS, 0),
+                    'total' => 0,
+                ];
+            }
+            $byPartner[$partnerId]['amounts'][$bucket] += $outstandingMinor;
+            $byPartner[$partnerId]['total'] += $outstandingMinor;
+        }
+
+        return self::buildAgingResult($byPartner, $asOfDate);
+    }
+
+    /**
+     * Aged payables: outstanding on every open bill, grouped by vendor and
+     * bucketed by days past due as of $asOf.
+     */
+    public static function agedPayables(Workspace $workspace, ?string $asOf = null): array
+    {
+        $asOfDate = Carbon::parse($asOf ?: now()->toDateString());
+
+        $bills = Bill::query()->forWorkspace($workspace)
+            ->whereIn('status', [Bill::STATUS_ISSUED, Bill::STATUS_PARTIAL])
+            ->whereDate('issue_date', '<=', $asOfDate->toDateString())
+            ->with('partner')
+            ->get();
+
+        $allocated = self::allocatedByDocument($workspace, Bill::class, $bills->pluck('id'));
+
+        $byPartner = [];
+        foreach ($bills as $bill) {
+            $outstandingMinor = Money::toMinor($bill->total) - ($allocated[$bill->id] ?? 0);
+            if ($outstandingMinor <= 0) {
+                continue;
+            }
+
+            $dueDate = $bill->due_date ?: $bill->issue_date;
+            $bucket = self::ageBucket($dueDate, $asOfDate);
+
+            $partnerId = $bill->partner_id;
+            if (! isset($byPartner[$partnerId])) {
+                $byPartner[$partnerId] = [
+                    'partner' => $bill->partner,
+                    'amounts' => array_fill_keys(self::AGING_BUCKETS, 0),
+                    'total' => 0,
+                ];
+            }
+            $byPartner[$partnerId]['amounts'][$bucket] += $outstandingMinor;
+            $byPartner[$partnerId]['total'] += $outstandingMinor;
+        }
+
+        return self::buildAgingResult($byPartner, $asOfDate);
+    }
+
+    /** Days-past-due → bucket key. Future/today → 'current'. */
+    private static function ageBucket($dueDate, Carbon $asOf): string
+    {
+        $due = Carbon::parse($dueDate);
+        $days = $due->diffInDays($asOf, false);  // positive when asOf is after due
+
+        return match (true) {
+            $days <= 0 => 'current',
+            $days <= 30 => '1_30',
+            $days <= 60 => '31_60',
+            $days <= 90 => '61_90',
+            default => '90_plus',
+        };
+    }
+
+    /**
+     * Sum allocated amounts per document, in minor units.
+     *
+     * @return array<int, int> document_id => allocatedMinor
+     */
+    private static function allocatedByDocument(Workspace $workspace, string $modelClass, $documentIds): array
+    {
+        if (count($documentIds) === 0) {
+            return [];
+        }
+
+        $instance = new $modelClass;
+        $morphClass = $instance->getMorphClass();
+
+        return PaymentAllocation::query()
+            ->forWorkspace($workspace)
+            ->where('allocatable_type', $morphClass)
+            ->whereIn('allocatable_id', $documentIds)
+            ->selectRaw('allocatable_id, SUM(amount) as total')
+            ->groupBy('allocatable_id')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->allocatable_id => Money::toMinor((string) $row->total)])
+            ->all();
+    }
+
+    /** Convert internal minor-unit aging map into the view-friendly shape. */
+    private static function buildAgingResult(array $byPartner, Carbon $asOf): array
+    {
+        $rows = [];
+        $totals = array_fill_keys(self::AGING_BUCKETS, 0);
+        $grandTotal = 0;
+
+        // Sort by total descending so the biggest debtors/creditors lead.
+        usort($byPartner, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        foreach ($byPartner as $entry) {
+            $row = [
+                'partner' => $entry['partner'],
+                'amounts' => [],
+                'total' => Money::fromMinor($entry['total']),
+            ];
+            foreach (self::AGING_BUCKETS as $bucket) {
+                $minor = $entry['amounts'][$bucket];
+                $row['amounts'][$bucket] = Money::fromMinor($minor);
+                $totals[$bucket] += $minor;
+            }
+            $grandTotal += $entry['total'];
+            $rows[] = $row;
+        }
+
+        return [
+            'as_of' => $asOf->toDateString(),
+            'rows' => $rows,
+            'totals' => array_map(fn ($v) => Money::fromMinor($v), $totals),
+            'grand_total' => Money::fromMinor($grandTotal),
         ];
     }
 

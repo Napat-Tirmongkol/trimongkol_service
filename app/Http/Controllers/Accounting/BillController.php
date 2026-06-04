@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Accounting;
 use App\Exceptions\Accounting\LedgerException;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Bill;
+use App\Models\Accounting\Department;
 use App\Models\Accounting\Partner;
 use App\Models\Accounting\TaxCode;
+use App\Services\Accounting\AccountingAuditLog;
 use App\Services\Accounting\Money;
 use App\Services\Accounting\Purchasing;
 use App\Services\Accounting\SupplierPayments;
@@ -14,14 +16,25 @@ use Illuminate\Http\Request;
 
 class BillController extends AccountingController
 {
-    public function index()
+    public function index(Request $request)
     {
         $workspace = $this->currentWorkspace();
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', '');
+
         $bills = $workspace
-            ? Bill::forWorkspace($workspace)->with('partner')->latest('issue_date')->latest('id')->paginate(25)
+            ? Bill::forWorkspace($workspace)->with('partner')
+                ->when($q !== '', fn ($qb) => $qb->where(fn ($w) => $w
+                    ->where('no', 'like', "%{$q}%")
+                    ->orWhere('bill_ref', 'like', "%{$q}%")
+                    ->orWhereHas('partner', fn ($p) => $p->where('name', 'like', "%{$q}%"))))
+                ->when($status !== '' && in_array($status, ['draft', 'issued', 'partial', 'paid', 'void'], true),
+                    fn ($qb) => $qb->where('status', $status))
+                ->latest('issue_date')->latest('id')
+                ->paginate(25)->withQueryString()
             : collect();
 
-        return view('accounting.bills.index', compact('workspace', 'bills'));
+        return view('accounting.bills.index', compact('workspace', 'bills', 'q', 'status'));
     }
 
     public function create()
@@ -38,8 +51,9 @@ class BillController extends AccountingController
 
         $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
         $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_input')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
 
-        return view('accounting.bills.create', compact('vendors', 'expenseAccounts', 'vatCodes'));
+        return view('accounting.bills.create', compact('vendors', 'expenseAccounts', 'vatCodes', 'departments'));
     }
 
     public function store(Request $request)
@@ -58,6 +72,7 @@ class BillController extends AccountingController
             'lines.*.quantity' => 'required|numeric|min:0',
             'lines.*.unit_price' => 'required|numeric|min:0',
             'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
         ]);
 
         try {
@@ -72,21 +87,85 @@ class BillController extends AccountingController
             return back()->withInput()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'bill.created', $bill, $bill->no);
+
         return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.bill_created'));
+    }
+
+    public function edit(Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+
+        if (! $bill->isDraft()) {
+            return redirect()->route('accounting.bills.show', $bill)->with('error', __('app.accounting.bill_edit_only_draft'));
+        }
+
+        $bill->load('lines');
+        $vendors = Partner::forWorkspace($workspace)->where('is_vendor', true)->orderBy('name')->get();
+        $expenseAccounts = Account::forWorkspace($workspace)->where('type', 'expense')->where('is_active', true)->orderBy('code')->get();
+        $vatCodes = TaxCode::forWorkspace($workspace)->where('kind', 'vat_input')->where('is_active', true)->get();
+        $departments = Department::forWorkspace($workspace)->where('is_active', true)->orderBy('code')->get();
+
+        return view('accounting.bills.edit', compact('bill', 'vendors', 'expenseAccounts', 'vatCodes', 'departments'));
+    }
+
+    public function update(Request $request, Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+
+        if (! $bill->isDraft()) {
+            return redirect()->route('accounting.bills.show', $bill)->with('error', __('app.accounting.bill_edit_only_draft'));
+        }
+
+        $data = $request->validate([
+            'partner_id' => 'required|integer',
+            'issue_date' => 'required|date',
+            'due_date' => 'nullable|date',
+            'bill_ref' => 'nullable|string|max:120',
+            'memo' => 'nullable|string|max:255',
+            'lines' => 'required|array|min:1',
+            'lines.*.account_id' => 'required|integer',
+            'lines.*.description' => 'nullable|string|max:255',
+            'lines.*.quantity' => 'required|numeric|min:0',
+            'lines.*.unit_price' => 'required|numeric|min:0',
+            'lines.*.tax_code_id' => 'nullable|integer',
+            'lines.*.department_id' => 'nullable|integer',
+        ]);
+
+        try {
+            Purchasing::update($bill, [
+                'partner_id' => $data['partner_id'],
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'] ?? null,
+                'bill_ref' => $data['bill_ref'] ?? null,
+                'memo' => $data['memo'] ?? null,
+            ], $data['lines']);
+        } catch (LedgerException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'bill.updated', $bill, $bill->no);
+
+        return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.bill_updated'));
     }
 
     public function show(Bill $bill)
     {
         $workspace = $this->requireWorkspace();
         abort_unless($bill->workspace_id === $workspace->id, 404);
-        $bill->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account');
+        $bill->load('partner', 'lines.account', 'lines.taxCode', 'journal.lines.account', 'attachments.accountingUser');
+
+        $canPost = auth('accounting')->user()?->canPost() ?? false;
 
         return view('accounting.bills.show', [
             'bill' => $bill,
             'outstanding' => SupplierPayments::outstanding($bill),
             'bankAccounts' => Account::forWorkspace($workspace)->where('type', 'asset')->where('is_active', true)->orderBy('code')->get(),
             'whtCodes' => TaxCode::forWorkspace($workspace)->where('kind', 'wht')->where('is_active', true)->get(),
-            'canPost' => auth('accounting')->user()?->canPost() ?? false,
+            'canPost' => $canPost,
+            'pendingApproval' => $bill->pendingApproval,
         ]);
     }
 
@@ -111,7 +190,27 @@ class BillController extends AccountingController
             return back()->with('error', $e->getMessage());
         }
 
+        AccountingAuditLog::record($workspace, 'bill.posted', $bill, $bill->no);
+
         return back()->with('status', __('app.accounting.bill_posted'));
+    }
+
+    public function void(Bill $bill)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($bill->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        try {
+            Purchasing::void($bill);
+        } catch (LedgerException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        AccountingAuditLog::record($workspace, 'bill.voided', $bill, $bill->no);
+
+        return redirect()->route('accounting.bills.show', $bill)
+            ->with('status', __('app.accounting.bill_voided'));
     }
 
     public function recordPayment(Request $request, Bill $bill)
@@ -142,6 +241,8 @@ class BillController extends AccountingController
         } catch (LedgerException $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        AccountingAuditLog::record($workspace, 'bill.payment_recorded', $bill, $bill->no);
 
         return redirect()->route('accounting.bills.show', $bill)->with('status', __('app.accounting.payment_recorded'));
     }
