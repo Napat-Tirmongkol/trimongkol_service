@@ -39,4 +39,17 @@ return [
             ['route' => 'admin.accounting.dashboard', 'label_key' => 'app.admin.products.accounting.tab_overview', 'pattern' => 'admin.accounting.dashboard'],
         ],
     ],
+
+    'social' => [
+        'label_key' => 'app.admin.products.social.label',
+        'desc_key'  => 'app.admin.products.social.desc',
+        'route'     => 'admin.social.dashboard',
+        'pattern'   => 'admin.social.*',
+        'tabs' => [
+            ['route' => 'admin.social.dashboard', 'label_key' => 'app.admin.products.social.tab_overview', 'pattern' => 'admin.social.dashboard'],
+            ['route' => 'admin.social.feeds',     'label_key' => 'app.admin.products.social.tab_feeds',    'pattern' => 'admin.social.feeds*'],
+            ['route' => 'admin.social.posts',     'label_key' => 'app.admin.products.social.tab_posts',    'pattern' => 'admin.social.posts*'],
+            ['route' => 'admin.social.settings',  'label_key' => 'app.admin.products.social.tab_settings', 'pattern' => 'admin.social.settings*'],
+        ],
+    ],
 ];

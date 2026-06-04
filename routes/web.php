@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingController;
 use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
+use App\Http\Controllers\Admin\Products\SocialController as AdminSocialController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
@@ -301,6 +302,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/users', [AdminAccountingController::class, 'users'])->name('users');
                 Route::post('/users', [AdminAccountingController::class, 'storeUser'])->name('users.store');
                 Route::delete('/users/{accountingUser}', [AdminAccountingController::class, 'destroyUser'])->name('users.destroy');
+            });
+
+            Route::prefix('products/social')->name('social.')->group(function () {
+                Route::get('/', [AdminSocialController::class, 'dashboard'])->name('dashboard');
+                Route::get('/feeds', [AdminSocialController::class, 'feeds'])->name('feeds');
+                Route::post('/feeds', [AdminSocialController::class, 'storeFeed'])->name('feeds.store');
+                Route::patch('/feeds/{feed}/toggle', [AdminSocialController::class, 'toggleFeed'])->name('feeds.toggle');
+                Route::delete('/feeds/{feed}', [AdminSocialController::class, 'destroyFeed'])->name('feeds.destroy');
+                Route::get('/posts', [AdminSocialController::class, 'posts'])->name('posts');
+                Route::post('/posts/{post}/approve', [AdminSocialController::class, 'approvePost'])->name('posts.approve');
+                Route::post('/posts/{post}/reject', [AdminSocialController::class, 'rejectPost'])->name('posts.reject');
+                Route::post('/posts/{post}/publish', [AdminSocialController::class, 'publishPost'])->name('posts.publish');
+                Route::post('/posts/{post}/retry', [AdminSocialController::class, 'retryPost'])->name('posts.retry');
+                Route::delete('/posts/{post}', [AdminSocialController::class, 'destroyPost'])->name('posts.destroy');
+                Route::get('/settings', [AdminSocialController::class, 'settings'])->name('settings');
+                Route::patch('/settings', [AdminSocialController::class, 'updateSettings'])->name('settings.update');
+                Route::post('/fetch-now', [AdminSocialController::class, 'fetchNow'])->name('fetch-now');
             });
 
             // Back-compat redirects for the old flat URLs.
