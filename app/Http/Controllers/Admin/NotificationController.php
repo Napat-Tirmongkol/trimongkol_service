@@ -93,4 +93,89 @@ class NotificationController extends Controller
 
         return $translated !== $key ? $translated : $token;
     }
+
+    /** Receive and process webhook events from LINE to capture User IDs. */
+    public function handleLineWebhook(Request $request)
+    {
+        $events = $request->json('events', []);
+        
+        if (empty($events)) {
+            return response()->json(['status' => 'no_events']);
+        }
+
+        $token = LineNotifier::token();
+        $existing = json_decode(Setting::get('line.captured_users') ?: '[]', true);
+        $maxItems = 20;
+
+        foreach ($events as $event) {
+            $source = $event['source'] ?? null;
+            if (! $source) continue;
+
+            $type = $source['type'] ?? 'user';
+            $id = match ($type) {
+                'group' => $source['groupId'] ?? null,
+                'room' => $source['roomId'] ?? null,
+                default => $source['userId'] ?? null,
+            };
+
+            if (! $id) continue;
+
+            // Fetch name from LINE if token is configured and type is user
+            $name = 'Unknown Name';
+            if ($type === 'user' && $token) {
+                try {
+                    $profileRes = \Illuminate\Support\Facades\Http::timeout(5)
+                        ->withToken($token)
+                        ->get("https://api.line.me/v2/bot/profile/{$id}");
+                    if ($profileRes->successful()) {
+                        $name = $profileRes->json('displayName') ?? 'Unknown Name';
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Failed to fetch LINE profile: " . $e->getMessage());
+                }
+            } elseif ($type !== 'user') {
+                $name = ucfirst($type) . ' Chat';
+            }
+
+            // Capture snippet of message text if available to help identify
+            $msgText = '';
+            if (($event['type'] ?? '') === 'message' && ($event['message']['type'] ?? '') === 'text') {
+                $msgText = $event['message']['text'] ?? '';
+            }
+
+            // Check if this ID is already in the list
+            $foundIndex = -1;
+            foreach ($existing as $index => $item) {
+                if ($item['id'] === $id) {
+                    $foundIndex = $index;
+                    break;
+                }
+            }
+
+            $newItem = [
+                'id' => $id,
+                'type' => $type,
+                'name' => $name,
+                'snippet' => $msgText ? mb_substr($msgText, 0, 50) : null,
+                'timestamp' => now()->toDateTimeString(),
+            ];
+
+            if ($foundIndex >= 0) {
+                unset($existing[$foundIndex]);
+            }
+            array_unshift($existing, $newItem);
+        }
+
+        $existing = array_slice($existing, 0, $maxItems);
+        Setting::updateOrCreate(['key' => 'line.captured_users'], ['value' => json_encode($existing)]);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /** Clear the history of captured User IDs. */
+    public function clearLineCaptured()
+    {
+        Setting::updateOrCreate(['key' => 'line.captured_users'], ['value' => '[]']);
+        return back()->with('status', 'ล้างประวัติการตรวจจับเรียบร้อยแล้ว');
+    }
 }

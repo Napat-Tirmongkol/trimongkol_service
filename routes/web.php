@@ -83,6 +83,9 @@ Route::post('/workspace-invite/{token}/accept', [WorkspaceInvitationController::
     ->middleware('auth')
     ->name('workspace-invitations.accept');
 
+// LINE Webhook for capturing user ID (public, CSRF-exempt)
+Route::post('/line/webhook', [App\Http\Controllers\Admin\NotificationController::class, 'handleLineWebhook'])->name('line.webhook');
+
 // Admin portal (separate login from the regular Breeze /login)
 Route::middleware('guest')->group(function () {
     Route::get('/admin/login', [AdminLoginController::class, 'create'])->name('admin.login');
@@ -252,6 +255,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/notifications', [AdminNotificationController::class, 'edit'])->name('notifications.edit');
             Route::post('/notifications/line', [AdminNotificationController::class, 'updateLine'])->name('notifications.line');
             Route::post('/notifications/line-test', [AdminNotificationController::class, 'testLine'])->name('notifications.line-test');
+            Route::post('/notifications/line-clear-captured', [AdminNotificationController::class, 'clearLineCaptured'])->name('notifications.line-clear-captured');
             Route::post('/notifications/discord', [AdminNotificationController::class, 'updateDiscord'])->name('notifications.discord');
             Route::post('/notifications/discord-test', [AdminNotificationController::class, 'testDiscord'])->name('notifications.discord-test');
         });
