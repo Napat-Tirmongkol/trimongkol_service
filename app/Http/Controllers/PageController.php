@@ -53,4 +53,9 @@ class PageController extends Controller
     {
         return view('pages.ocr');
     }
+
+    public function privacyPolicy()
+    {
+        return view('pages.privacy-policy');
+    }
 }
