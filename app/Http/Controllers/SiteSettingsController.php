@@ -91,8 +91,14 @@ class SiteSettingsController extends Controller
             'footer.copyright' => ['type' => 'i18n', 'label' => 'Copyright line'],
         ],
         'Maintenance' => [
-            'maintenance.enabled' => ['type' => 'shared', 'label' => 'Enable maintenance mode (1 = on, blank = off)'],
-            'maintenance.message' => ['type' => 'i18n', 'label' => 'Maintenance message', 'textarea' => true],
+            'maintenance.enabled' => [
+                'type' => 'shared',
+                'toggle' => true,
+                'default_on' => false,
+                'label' => 'เปิดใช้งานโหมดปรับปรุงระบบ (Maintenance Mode)',
+                'hint' => 'เมื่อเปิดใช้งาน ผู้ใช้ทั่วไปจะเข้าหน้าเว็บไม่ได้และจะเห็นข้อความปรับปรุงระบบด้านล่างนี้'
+            ],
+            'maintenance.message' => ['type' => 'i18n', 'label' => 'ข้อความแจ้งปรับปรุงระบบ', 'textarea' => true],
         ],
         'ระบบที่เปิดใช้งาน (Products)' => [
             'products.queue.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบเรียกคิว', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้ (สแกนเนอร์/ส่งการบ้านเปิดตลอด)'],
@@ -106,7 +112,14 @@ class SiteSettingsController extends Controller
             'company.address' => ['type' => 'shared', 'label' => 'ที่อยู่', 'textarea' => true, 'wide' => true],
         ],
         'Free launch / Billing' => [
-            'billing.free_mode' => ['type' => 'shared', 'label' => 'โหมดเปิดตัวฟรี — 1 = เปิด (ฟรีทุกคน ลิมิตช่วงเปิดตัว), 0 = ปิด (เริ่มเก็บเงิน ใช้แพ็คเกจจริง). ค่าเริ่มต้น = เปิด', 'wide' => true],
+            'billing.free_mode' => [
+                'type' => 'shared',
+                'toggle' => true,
+                'default_on' => true,
+                'label' => 'โหมดเปิดตัวฟรี (Free Launch Mode)',
+                'hint' => 'เมื่อเปิดใช้งาน ทุกทีมจะสามารถใช้งานระบบได้ฟรีโดยอยู่ภายใต้ลิมิตช่วงเปิดตัว หากปิดใช้งานระบบจะเริ่มเก็บค่าบริการและใช้แพ็คเกจตามจริง',
+                'wide' => true
+            ],
             'billing.launch_max_classrooms' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: ห้องเรียนต่อบัญชี (เว้นว่าง = ค่าเริ่มต้น 15)'],
             'billing.launch_max_members' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: สมาชิกต่อทีม (เว้นว่าง = 5)'],
             'billing.launch_max_students_per_classroom' => ['type' => 'shared', 'label' => 'ลิมิตช่วงฟรี: นักเรียนต่อห้อง (เว้นว่าง = 80)'],
@@ -115,7 +128,14 @@ class SiteSettingsController extends Controller
             'deploy.webhook_url' => ['type' => 'shared', 'label' => 'Plesk Git webhook URL (used by the Pull button in /admin/system)', 'wide' => true],
         ],
         'Donation / บริจาค' => [
-            'donate.enabled' => ['type' => 'shared', 'label' => 'เปิดช่องทางบริจาค (1 = เปิด, 0 = ปิด)', 'wide' => true],
+            'donate.enabled' => [
+                'type' => 'shared',
+                'toggle' => true,
+                'default_on' => false,
+                'label' => 'เปิดแสดงช่องทางสนับสนุน/บริจาค',
+                'hint' => 'เมื่อเปิดใช้งาน ลิงก์สนับสนุนความช่วยเหลือจะปรากฏที่เมนูและท้ายเว็บไซต์',
+                'wide' => true
+            ],
             'donate.heading' => ['type' => 'i18n', 'label' => 'หัวข้อหน้าบริจาค'],
             'donate.note' => ['type' => 'i18n', 'label' => 'ข้อความ / คำขอบคุณ', 'textarea' => true],
             'donate.name' => ['type' => 'shared', 'label' => 'ชื่อบัญชี'],

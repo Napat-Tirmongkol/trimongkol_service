@@ -96,7 +96,12 @@
 
                                         @if ($cfg['type'] === 'shared')
                                             @if (! empty($cfg['toggle']))
-                                                @php $on = ($values[$key] ?? '') !== '0'; @endphp
+                                                @php
+                                                    $defaultOn = isset($cfg['default_on']) ? $cfg['default_on'] : true;
+                                                    $on = $defaultOn 
+                                                        ? ($values[$key] ?? '') !== '0' 
+                                                        : ($values[$key] ?? '') === '1';
+                                                @endphp
                                                 <label class="relative mt-2 inline-flex cursor-pointer items-center">
                                                     <input type="hidden" name="s[{{ $key }}]" value="0">
                                                     <input type="checkbox" name="s[{{ $key }}]" value="1" @checked($on) class="peer sr-only">
