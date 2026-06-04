@@ -78,6 +78,21 @@ class SocialController extends Controller
 
     // --- Posts ---
 
+    public function showPost(SocialPost $post)
+    {
+        $post->load('feedSource:id,name');
+        return view('admin.products.social.show', compact('post'));
+    }
+
+    public function updatePost(Request $request, SocialPost $post)
+    {
+        $data = $request->validate(['ai_content' => 'required|string|max:5000']);
+        $post->update(['ai_content' => $data['ai_content']]);
+        AuditLog::record('social.post.edit', null, $post->title);
+
+        return back()->with('status', __('app.admin.products.social.post_saved'));
+    }
+
     public function posts(Request $request)
     {
         $status = $request->query('status', '');

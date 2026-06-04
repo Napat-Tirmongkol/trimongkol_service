@@ -56,12 +56,13 @@
                                                 <span class="text-xs text-slate-400">{{ $post->source_published_at->format('d M Y') }}</span>
                                             @endif
                                         </div>
-                                        <div class="text-sm font-medium text-slate-900">{{ $post->title }}</div>
+                                        <a href="{{ route('admin.social.posts.show', $post) }}"
+                                           class="block text-sm font-medium text-slate-900 hover:text-brand-700">{{ $post->title }}</a>
                                         <a href="{{ $post->source_url }}" target="_blank" rel="noopener"
                                            class="text-xs text-brand-600 hover:underline">{{ $post->source_url }}</a>
 
                                         @if ($post->ai_content)
-                                            <div class="mt-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-700 whitespace-pre-line">{{ $post->ai_content }}</div>
+                                            <div class="mt-2 line-clamp-3 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-700 whitespace-pre-line">{{ $post->ai_content }}</div>
                                         @endif
 
                                         @if ($post->error_message)

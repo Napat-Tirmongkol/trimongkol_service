@@ -311,6 +311,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::patch('/feeds/{feed}/toggle', [AdminSocialController::class, 'toggleFeed'])->name('feeds.toggle');
                 Route::delete('/feeds/{feed}', [AdminSocialController::class, 'destroyFeed'])->name('feeds.destroy');
                 Route::get('/posts', [AdminSocialController::class, 'posts'])->name('posts');
+                Route::get('/posts/{post}', [AdminSocialController::class, 'showPost'])->name('posts.show');
+                Route::patch('/posts/{post}', [AdminSocialController::class, 'updatePost'])->name('posts.update');
                 Route::post('/posts/{post}/approve', [AdminSocialController::class, 'approvePost'])->name('posts.approve');
                 Route::post('/posts/{post}/reject', [AdminSocialController::class, 'rejectPost'])->name('posts.reject');
                 Route::post('/posts/{post}/publish', [AdminSocialController::class, 'publishPost'])->name('posts.publish');
