@@ -43,9 +43,9 @@ class PublishToFacebookJob implements ShouldQueue
         AgentLogger::info($post->id, "กำลังโพสต์ไปยัง Facebook Page (ID: {$pageId})...");
 
         $start    = microtime(true);
-        $response = Http::timeout(25)->post(
-            "https://graph.facebook.com/v21.0/{$pageId}/feed",
-            ['message' => $post->ai_content, 'access_token' => $token]
+        $response = Http::withToken($token)->timeout(25)->post(
+            'https://graph.facebook.com/v21.0/me/feed',
+            ['message' => $post->ai_content]
         );
         $ms = (int) ((microtime(true) - $start) * 1000);
 
