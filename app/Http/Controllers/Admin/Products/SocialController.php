@@ -177,13 +177,13 @@ class SocialController extends Controller
 
     public function settings()
     {
-        $pageIdSet   = (bool) Setting::where('key', 'social.facebook_page_id')->value('value');
-        $tokenSet    = (bool) Setting::where('key', 'social.facebook_page_token')->value('value');
-        $geminiSet = (bool) Setting::where('key', 'social.gemini_key')->value('value');
+        $pageIdSet      = (bool) Setting::where('key', 'social.facebook_page_id')->value('value');
+        $tokenSet       = (bool) Setting::where('key', 'social.facebook_page_token')->value('value');
+        $geminiSet      = (bool) Setting::where('key', 'social.gemini_key')->value('value');
+        $pageId         = Setting::where('key', 'social.facebook_page_id')->value('value') ?? '';
+        $discordWebhook = Setting::where('key', 'social.discord_webhook')->value('value') ?? '';
 
-        $pageId = Setting::where('key', 'social.facebook_page_id')->value('value') ?? '';
-
-        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'geminiSet', 'pageId'));
+        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'geminiSet', 'pageId', 'discordWebhook'));
     }
 
     public function updateSettings(Request $request)
@@ -192,6 +192,7 @@ class SocialController extends Controller
             'facebook_page_id'    => 'nullable|string|max:50',
             'facebook_page_token' => 'nullable|string|max:1000',
             'gemini_key'          => 'nullable|string|max:200',
+            'discord_webhook'     => 'nullable|url|max:500',
         ]);
 
         if (! empty($data['facebook_page_id'])) {
@@ -214,6 +215,12 @@ class SocialController extends Controller
                 ['value' => Crypt::encryptString(trim($data['gemini_key']))]
             );
         }
+
+        // Discord webhook เก็บ plain text (ไม่ encrypt เหมือน global webhook)
+        Setting::updateOrCreate(
+            ['key' => 'social.discord_webhook'],
+            ['value' => trim($data['discord_webhook'] ?? '')]
+        );
 
         AuditLog::record('social.settings.update', null, 'Social media settings updated');
 

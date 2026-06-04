@@ -203,6 +203,8 @@ class GeneratePostContentJob implements ShouldQueue
 
     private function notifyDiscord(SocialPost $post): void
     {
+        // ใช้ webhook เฉพาะของ social ถ้าตั้งค่าไว้ มิเช่นนั้นใช้ global
+        $webhook  = Setting::where('key', 'social.discord_webhook')->value('value') ?: null;
         $adminUrl = rtrim(config('app.url'), '/').'/admin/products/social/posts/'.$post->id;
         $preview  = mb_substr($post->ai_content ?? '', 0, 280);
         if (mb_strlen($post->ai_content ?? '') > 280) {
@@ -227,7 +229,7 @@ class GeneratePostContentJob implements ShouldQueue
                 ],
             ],
             'footer' => ['text' => '👉 คลิก title เพื่อเปิดหน้า Approve'],
-        ]);
+        ], $webhook);
     }
 
     private function resolveApiKey(): ?string

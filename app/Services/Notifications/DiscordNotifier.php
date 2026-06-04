@@ -38,7 +38,6 @@ class DiscordNotifier
             return [false, 'not_configured'];
         }
 
-        // A Discord webhook URL must look like .../api/webhooks/<id>/<token>.
         if (! preg_match('#^https://(\w+\.)?discord(app)?\.com/api/webhooks/#', $url)) {
             return [false, 'bad_url'];
         }
@@ -52,13 +51,12 @@ class DiscordNotifier
             return [false, 'unreachable'];
         }
 
-        // Discord returns 204 No Content on success.
         if ($res->successful()) {
             return [true, 'ok'];
         }
 
         $reason = match ($res->status()) {
-            401, 403, 404 => 'bad_url',   // deleted/invalid webhook
+            401, 403, 404 => 'bad_url',
             429 => 'rate_limited',
             default => 'http_'.$res->status(),
         };
@@ -76,12 +74,11 @@ class DiscordNotifier
 
     /**
      * Post a rich embed card. Never throws.
-     *
-     * @param array $embed  Discord embed object (title, description, url, color, fields, footer)
+     * Pass $webhookUrl to use a specific channel instead of the global one.
      */
-    public static function sendEmbed(array $embed): array
+    public static function sendEmbed(array $embed, ?string $webhookUrl = null): array
     {
-        $url = self::webhook();
+        $url = $webhookUrl ?? self::webhook();
         if (! filled($url)) {
             return [false, 'not_configured'];
         }
@@ -96,11 +93,15 @@ class DiscordNotifier
         return $res->successful() ? [true, 'ok'] : [false, 'http_'.$res->status()];
     }
 
-    /** Fire-and-forget embed. */
-    public static function notifyEmbed(array $embed): void
+    /**
+     * Fire-and-forget embed.
+     * Pass $webhookUrl to override the global webhook (e.g. per-product channel).
+     */
+    public static function notifyEmbed(array $embed, ?string $webhookUrl = null): void
     {
-        if (self::enabled()) {
-            self::sendEmbed($embed);
+        $url = $webhookUrl ?? self::webhook();
+        if (filled($url)) {
+            self::sendEmbed($embed, $url);
         }
     }
 }
