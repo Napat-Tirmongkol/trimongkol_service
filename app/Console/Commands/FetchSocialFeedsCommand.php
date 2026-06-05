@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Jobs\GeneratePostContentJob;
 use App\Models\SocialFeedSource;
 use App\Models\SocialPost;
+use App\Services\ProductGate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,11 @@ class FetchSocialFeedsCommand extends Command
 
     public function handle(): int
     {
+        if (! ProductGate::isOn('social')) {
+            $this->info('Social product is disabled — skipping fetch.');
+            return self::SUCCESS;
+        }
+
         $query = SocialFeedSource::where('is_active', true);
         if ($sourceId = $this->option('source')) {
             $query->where('id', $sourceId);

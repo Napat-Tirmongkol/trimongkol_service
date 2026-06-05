@@ -10,6 +10,7 @@ use App\Models\SocialAgentLog;
 use App\Models\SocialFeedSource;
 use App\Models\SocialPost;
 use App\Services\AuditLog;
+use App\Services\ProductGate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Crypt;
@@ -182,18 +183,26 @@ class SocialController extends Controller
         $geminiSet      = (bool) Setting::where('key', 'social.gemini_key')->value('value');
         $pageId         = Setting::where('key', 'social.facebook_page_id')->value('value') ?? '';
         $discordWebhook = Setting::where('key', 'social.discord_webhook')->value('value') ?? '';
+        $enabled        = ProductGate::isOn('social');
 
-        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'geminiSet', 'pageId', 'discordWebhook'));
+        return view('admin.products.social.settings', compact('pageIdSet', 'tokenSet', 'geminiSet', 'pageId', 'discordWebhook', 'enabled'));
     }
 
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
+            'enabled'             => 'nullable|in:0,1',
             'facebook_page_id'    => 'nullable|string|max:50',
             'facebook_page_token' => 'nullable|string|max:1000',
             'gemini_key'          => 'nullable|string|max:200',
             'discord_webhook'     => 'nullable|url|max:500',
         ]);
+
+        $enabled = ($data['enabled'] ?? '0') === '1' ? '1' : '0';
+        Setting::updateOrCreate(
+            ['key' => 'products.social.enabled'],
+            ['value' => $enabled]
+        );
 
         if (! empty($data['facebook_page_id'])) {
             Setting::updateOrCreate(
@@ -229,6 +238,10 @@ class SocialController extends Controller
 
     public function fetchNow()
     {
+        if (! ProductGate::isOn('social')) {
+            return back()->with('error', __('app.admin.products.social.disabled_notice'));
+        }
+
         Artisan::call('social:fetch-feeds');
         AuditLog::record('social.fetch.manual', null, 'Manual feed fetch triggered');
 

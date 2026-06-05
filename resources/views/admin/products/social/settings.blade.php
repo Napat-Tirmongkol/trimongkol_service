@@ -16,6 +16,21 @@
             <form method="POST" action="{{ route('admin.social.settings.update') }}" class="space-y-6">
                 @csrf @method('PATCH')
 
+                {{-- Master enable/disable --}}
+                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.products.social.enabled_heading') }}</h3>
+                            <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.products.social.enabled_hint') }}</p>
+                        </div>
+                        <label class="relative inline-flex shrink-0 cursor-pointer items-center">
+                            <input type="hidden" name="enabled" value="0">
+                            <input type="checkbox" name="enabled" value="1" @checked(old('enabled', $enabled ? '1' : '0') === '1') class="peer sr-only">
+                            <div class="h-6 w-11 rounded-full bg-slate-300 transition-colors peer-checked:bg-brand-600 peer-focus:ring-2 peer-focus:ring-brand-300 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-full"></div>
+                        </label>
+                    </div>
+                </div>
+
                 {{-- Facebook settings --}}
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="mb-4 text-sm font-semibold text-slate-900">{{ __('app.admin.products.social.facebook_heading') }}</h3>
