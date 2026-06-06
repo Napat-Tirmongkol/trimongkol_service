@@ -13,70 +13,95 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
+    <style>[x-cloak]{display:none !important;}</style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
+@php $accountingUser = auth('accounting')->user(); @endphp
+<body x-data="{ sidebarOpen: false }" class="min-h-screen bg-slate-50 text-slate-900 antialiased">
 
-    {{-- Accounting-specific top navigation — no main platform links --}}
-    <nav class="sticky top-0 z-40 border-b border-slate-200 bg-white">
-        <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    @if ($accountingUser)
+        @include('partials.accounting.sidebar')
+    @endif
 
-            {{-- Brand --}}
-            <a href="{{ route('accounting.dashboard') }}"
-               class="flex shrink-0 items-center gap-2 text-sm font-semibold text-slate-900 hover:text-brand-700">
-                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-white">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
-                </div>
-                <span class="hidden sm:inline">{{ __('app.accounting.nav') }}</span>
-                <span class="inline sm:hidden">{{ __('app.accounting.nav') }}</span>
-            </a>
+    <div class="flex min-h-screen flex-col {{ $accountingUser ? 'lg:pl-64' : '' }}">
 
-            {{-- Right: user + logout --}}
-            @php $accountingUser = auth('accounting')->user(); @endphp
-            @if ($accountingUser)
-                <div class="flex items-center gap-3">
-                    <span class="hidden text-sm text-slate-500 sm:inline">
-                        {{ $accountingUser->name }}
-                        @if ($accountingUser->role === 'owner')
-                            <span class="ml-1.5 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">{{ __('app.accounting.role_owner') }}</span>
-                        @elseif ($accountingUser->role === 'admin')
-                            <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ __('app.accounting.role_admin') }}</span>
-                        @else
-                            <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ __('app.accounting.role_staff') }}</span>
-                        @endif
-                    </span>
-                    @unless ($accountingUser->isDemo())
-                    <a href="{{ route('accounting.password.edit') }}"
-                       class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
-                        {{ __('app.accounting.change_password') }}
-                    </a>
-                    @endunless
-                    <form method="POST" action="{{ route('accounting.logout') }}">
-                        @csrf
-                        <button type="submit"
-                                class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
-                            {{ __('app.admin.logout') }}
+        {{-- Top bar: hamburger on mobile, user/logout on the right --}}
+        <nav class="sticky top-0 z-20 border-b border-slate-200 bg-white">
+            <div class="flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+
+                <div class="flex items-center gap-3 min-w-0">
+                    @if ($accountingUser)
+                        <button type="button" @click="sidebarOpen = true"
+                                class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 lg:hidden"
+                                aria-label="Open menu">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                         </button>
-                    </form>
+                    @endif
+
+                    {{-- Brand (only shown when no sidebar — i.e. unauthenticated) --}}
+                    @unless ($accountingUser)
+                        <a href="{{ route('accounting.dashboard') }}"
+                           class="flex shrink-0 items-center gap-2 text-sm font-semibold text-slate-900 hover:text-brand-700">
+                            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-white">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                                </svg>
+                            </div>
+                            <span>{{ __('app.accounting.nav') }}</span>
+                        </a>
+                    @endunless
+
+                    {{-- Brand label on mobile when sidebar is hidden --}}
+                    @if ($accountingUser)
+                        <span class="text-sm font-semibold text-slate-900 lg:hidden">{{ __('app.accounting.nav') }}</span>
+                    @endif
                 </div>
-            @endif
-        </div>
-    </nav>
 
-    @isset($header)
-        <header class="border-b border-slate-200 bg-white">
-            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-                {{ $header }}
+                @if ($accountingUser)
+                    <div class="flex items-center gap-2">
+                        <span class="hidden text-sm text-slate-500 sm:inline">
+                            {{ $accountingUser->name }}
+                            @if ($accountingUser->role === 'owner')
+                                <span class="ml-1.5 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">{{ __('app.accounting.role_owner') }}</span>
+                            @elseif ($accountingUser->role === 'admin')
+                                <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ __('app.accounting.role_admin') }}</span>
+                            @else
+                                <span class="ml-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ __('app.accounting.role_staff') }}</span>
+                            @endif
+                        </span>
+                        @unless ($accountingUser->isDemo())
+                        <a href="{{ route('accounting.password.edit') }}"
+                           class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                            {{ __('app.accounting.change_password') }}
+                        </a>
+                        @endunless
+                        <form method="POST" action="{{ route('accounting.logout') }}">
+                            @csrf
+                            <button type="submit"
+                                    class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700">
+                                {{ __('app.admin.logout') }}
+                            </button>
+                        </form>
+                    </div>
+                @endif
             </div>
-        </header>
-    @endisset
+        </nav>
 
-    <main class="pb-16">
-        {{ $slot }}
-    </main>
+        @isset($header)
+            <header class="border-b border-slate-200 bg-white">
+                <div class="px-4 py-5 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
+        @endisset
+
+        <main class="flex-1 pb-16">
+            {{ $slot }}
+        </main>
+    </div>
 
     @include('partials.sweetalert')
+    @livewireScripts
 </body>
 </html>

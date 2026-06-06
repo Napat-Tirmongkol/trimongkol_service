@@ -6,39 +6,7 @@
                 <p class="mt-0.5 text-sm text-slate-500">{{ __('app.accounting.subheading') }}</p>
             </div>
             @if ($workspace && $isSetUp)
-                <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
-                    <a href="{{ route('accounting.reports') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.reports') }}
-                    </a>
-                    <a href="{{ route('accounting.partners.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.partners') }}
-                    </a>
-                    <a href="{{ route('accounting.accounts.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.accounts') }}
-                    </a>
-                    <a href="{{ route('accounting.bills.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.bills') }}
-                    </a>
-                    <a href="{{ route('accounting.manual-journals.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.manual_journals') }}
-                    </a>
-                    <a href="{{ route('accounting.departments.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.departments') }}
-                    </a>
-                    <a href="{{ route('accounting.budgets.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.budgets') }}
-                    </a>
-                    <a href="{{ route('accounting.wht-certificates.index') }}"
-                       class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                        {{ __('app.accounting.wht_certificates') }}
-                    </a>
+                <div class="flex items-center gap-2 sm:shrink-0">
                     <a href="{{ route('accounting.invoices.create') }}"
                        class="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

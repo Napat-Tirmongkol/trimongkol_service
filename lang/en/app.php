@@ -1182,6 +1182,15 @@ return [
         'subheading' => 'Issue sales tax invoices, record receipts, and track receivables — posted to the ledger automatically.',
         'view_all' => 'View all',
 
+        'sidebar_overview' => 'Overview',
+        'sidebar_dashboard' => 'Dashboard',
+        'sidebar_sales' => 'Sales',
+        'sidebar_purchases' => 'Purchases',
+        'sidebar_books' => 'Bookkeeping',
+        'sidebar_assets' => 'Assets & People',
+        'sidebar_reports' => 'Reports',
+        'sidebar_admin' => 'Admin',
+
         'setup_title' => 'Set up accounting',
         'setup_desc' => 'This seeds a chart of accounts, tax codes (VAT/WHT), and the current-year period automatically.',
         'setup_confirm' => 'Set up accounting for this workspace?',

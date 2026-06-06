@@ -1182,6 +1182,15 @@ return [
         'subheading' => 'ออกใบกำกับภาษีขาย รับชำระเงิน และดูยอดลูกหนี้ — ลงบัญชีคู่ให้อัตโนมัติ',
         'view_all' => 'ดูทั้งหมด',
 
+        'sidebar_overview' => 'ภาพรวม',
+        'sidebar_dashboard' => 'แดชบอร์ด',
+        'sidebar_sales' => 'รายรับ',
+        'sidebar_purchases' => 'รายจ่าย',
+        'sidebar_books' => 'สมุดบัญชี',
+        'sidebar_assets' => 'ทรัพย์สิน & บุคลากร',
+        'sidebar_reports' => 'รายงาน',
+        'sidebar_admin' => 'ระบบ',
+
         'setup_title' => 'เริ่มใช้งานระบบบัญชี',
         'setup_desc' => 'ระบบจะตั้งผังบัญชี รหัสภาษี (VAT/หัก ณ ที่จ่าย) และงวดบัญชีปีปัจจุบันให้อัตโนมัติ',
         'setup_confirm' => 'เริ่มตั้งค่าระบบบัญชีสำหรับ workspace นี้?',
