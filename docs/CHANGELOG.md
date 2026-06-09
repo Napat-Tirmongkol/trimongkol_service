@@ -4,6 +4,24 @@
 
 ---
 
+## 💼 ระบบเงินเดือน — ค่าล่วงเวลา + OT + ส่งสลิปทาง Email อัตโนมัติ
+
+- **ค่าล่วงเวลา + OT แบบใส่บาทตรง** — แต่ละ payroll item มี 2 คอลัมน์ใหม่ `overtime` กับ `ot` ไม่ต้องคำนวณชั่วโมง × อัตรา
+- **SS คิดบนเงินเดือนพื้นฐานเท่านั้น** (ตามกฎหมายไทย) — overtime/OT ไม่เข้าฐาน 15,000
+- **`net = gross + overtime + ot − ss − wht − other`**
+- **ตอน post: DR salary expense = total earnings (gross+OT+overtime)** — ลงบัญชีถูกต้อง
+- **เพิ่ม email ให้พนักงาน** + ฟอร์มแก้ไขข้อมูลพนักงาน (เดิมมีแค่ create)
+- **ส่งสลิป PDF ทาง email อัตโนมัติหลัง post** — พนักงานที่มี email ทุกคน, เก็บ log ถ้าส่งไม่สำเร็จ
+- **Dep ใหม่:** `barryvdh/laravel-dompdf` ^3.1 (ต้องรัน `composer install` บน production)
+
+**Deploy steps:**
+1. Pull
+2. รัน `composer install` (Plesk → Composer panel)
+3. Run migrations (`/admin/system`)
+4. Clear cache
+
+---
+
 ## 📊 ระบบบัญชี — แดชบอร์ดภาพรวมการเงิน
 
 ยกเครื่องหน้า `/accounting` จากการ์ดบาง ๆ ให้เป็นภาพรวมที่ front-office ใช้ได้จริงทุกวัน

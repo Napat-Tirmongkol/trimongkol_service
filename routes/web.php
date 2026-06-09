@@ -485,6 +485,8 @@ Route::middleware('product:accounting')->prefix('accounting')->name('accounting.
         // Payroll
         Route::get('/payroll/employees', [AccountingPayrollController::class, 'employees'])->name('payroll.employees');
         Route::post('/payroll/employees', [AccountingPayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
+        Route::get('/payroll/employees/{employee}/edit', [AccountingPayrollController::class, 'editEmployee'])->name('payroll.employees.edit');
+        Route::patch('/payroll/employees/{employee}', [AccountingPayrollController::class, 'updateEmployee'])->name('payroll.employees.update');
         Route::post('/payroll/employees/{employee}/toggle', [AccountingPayrollController::class, 'toggleEmployee'])->name('payroll.employees.toggle');
         Route::get('/payroll/runs', [AccountingPayrollController::class, 'runs'])->name('payroll.runs.index');
         Route::get('/payroll/runs/create', [AccountingPayrollController::class, 'createRun'])->name('payroll.runs.create');

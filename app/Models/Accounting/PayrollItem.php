@@ -14,7 +14,7 @@ class PayrollItem extends Model
 
     protected $fillable = [
         'workspace_id', 'payroll_run_id', 'employee_id',
-        'gross', 'ss_employee', 'ss_employer', 'wht', 'other_deductions', 'net',
+        'gross', 'overtime', 'ot', 'ss_employee', 'ss_employer', 'wht', 'other_deductions', 'net',
     ];
 
     public function run(): BelongsTo
