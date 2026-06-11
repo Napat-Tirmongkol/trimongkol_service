@@ -35,6 +35,9 @@ pattern แพ็กเกจของ queue/accounting, PromptPay + SlipVerifie
 - ออเดอร์ค้างต่อโต๊ะ — สั่งเพิ่มได้หลายรอบจนกว่าจะเก็บเงิน · ขายกลับบ้าน (ไม่มีโต๊ะ) ได้
 - ตัวเลือกเมนู (modifier): ระดับเผ็ด/หวาน, ท็อปปิ้ง ± ราคา + โน้ตต่อจาน ("ไม่ใส่ผัก")
 - ส่งครัวเป็นรอบ ๆ + พิมพ์ใบส่งครัว (kitchen ticket)
+- **พนักงานเสิร์ฟรับออเดอร์ผ่านมือถือตัวเอง** — เว็บเดียวกัน ไม่ต้องลงแอป ล็อกอินใครล็อกอินมัน
+  จอสั่งเป็น responsive สำหรับมือถือ และใบส่งครัวเด้งไปพิมพ์ที่เครื่องพิมพ์หน้าร้าน/ครัว
+  ผ่าน **จุดพิมพ์กลาง** (print queue — ดู §6)
 - Service charge % (ร้านที่เก็บ) คิดให้อัตโนมัติเฉพาะทานที่ร้าน
 
 ### ตั้งใจ *ยังไม่ทำ* ใน v1 (พร้อมเหตุผล)
@@ -98,6 +101,12 @@ v1 UI สร้าง 1 บิล = 1 payment แต่ schema พร้อม�
 ชื่อ+ราคา ณ เวลาสั่ง ฝังในแถว item (เหมือน name/sku ที่ snapshot อยู่แล้ว) — เมนูแก้ทีหลัง
 บิลเก่า/ใบครัวเก่ายังถูกต้อง ส่วนตัวนิยาม modifier เป็นตาราง master ปกติ (แก้ได้ ไม่กระทบประวัติ)
 
+**D11 — มือถือพนักงาน = เว็บ responsive + คิวงานพิมพ์กลาง (ไม่มี native app / websocket)**
+อุปกรณ์ทุกตัวคือ browser เปิดเว็บเดียวกัน ("เพิ่มไปหน้าจอโฮม" ได้ เปิดเหมือนแอป) —
+การพิมพ์ตัดขาดจากเครื่องที่สั่ง: ทุกใบ (ครัว/ใบเสร็จ) **enqueue ลง `pos_print_jobs`**
+แล้วเครื่องที่ต่อเครื่องพิมพ์เป็นคนดึงไปพิมพ์ — sync ระหว่างเครื่องใช้ polling เบา ๆ
+(ไม่เพิ่ม websocket/พึ่งบริการภายนอก ตามกฎห้ามเพิ่ม dependency)
+
 ---
 
 ## 3. Data model
@@ -110,6 +119,7 @@ workspaces 1─n pos_orders 1─n pos_order_items          ← ร้านอ�
 workspaces 1─n pos_shifts 1─n pos_sales 1─n pos_sale_items     ← ปิดแล้วแก้ไม่ได้
                                         1─n pos_sale_payments
            pos_orders ──(ตอนเก็บเงิน)──→ pos_sales (sale_id ผูกกลับ)
+workspaces 1─n pos_print_jobs                          ← คิวงานพิมพ์ (ใบครัว/ใบเสร็จ)
 workspaces 1─1 pos_settings
 ```
 
@@ -184,7 +194,8 @@ workspaces 1─1 pos_settings
 
 `order_id` · `product_id` (FK) · `name` + `unit_price` (**snapshot รวม price_delta ของ
 modifier แล้ว**) · `quantity` · `modifiers` JSON snapshot `[{name, price}]` · `note`
-("ไม่ใส่ผัก") · `round_no` (รอบที่ส่งครัว — null = ยังไม่ส่ง) · `sent_at` ·
+("ไม่ใส่ผัก") · `added_by` (FK users — **คนรับออเดอร์** อาจคนละคนกับคนเปิดโต๊ะ/คนเก็บเงิน) ·
+`round_no` (รอบที่ส่งครัว — null = ยังไม่ส่ง) · `sent_at` ·
 `status` (pending / sent / cancelled) · `cancelled_by` / `cancel_reason`
 
 กติกา: แก้/ลบเสรีตอน `pending` · หลัง `sent` ยกเลิกได้เฉพาะ owner/admin + ต้องใส่เหตุผล + log
@@ -222,6 +233,20 @@ modifier แล้ว**) · `quantity` · `modifiers` JSON snapshot `[{name, pri
 `sale_id` · `method` (cash / promptpay / transfer / card / other) · `amount` ·
 `tendered` + `change` (เฉพาะเงินสด) · `reference` nullable (เลขอ้างอิงโอน)
 
+### `pos_print_jobs` (คิวงานพิมพ์ — หัวใจของการสั่งจากมือถือ)
+
+| คอลัมน์ | หมายเหตุ |
+|---|---|
+| workspace_id | |
+| kind | kitchen_ticket / receipt |
+| order_id + round_no | เมื่อ kind = kitchen_ticket |
+| sale_id | เมื่อ kind = receipt |
+| status | pending / printed |
+| created_by / printed_at | |
+
+จุดพิมพ์กลาง claim งานแบบ atomic (`UPDATE … WHERE status='pending'`) — กันสองเครื่องพิมพ์ซ้ำ
+ทุกใบเปิดดู/พิมพ์ซ้ำเป็นหน้าเว็บได้เสมอ (ร้านที่ไม่มีเครื่องพิมพ์ก็ใช้ได้)
+
 ### `workspaces` (เพิ่มคอลัมน์)
 
 `pos_plan` string nullable + `pos_plan_until` timestamp nullable —
@@ -237,7 +262,8 @@ modifier แล้ว**) · `quantity` · `modifiers` JSON snapshot `[{name, pri
 | `Pos\SaleNumber` | ออกเลขบิลใน transaction + retry เมื่อชน unique |
 | `Pos\Checkout` | หัวใจระบบ — รับรายการ (จากตะกร้า retail หรือจาก `pos_orders`) + payment แล้วใน **DB transaction เดียว**: ดึงราคาสินค้า+modifier จาก DB (***ไม่เชื่อราคาจาก client เด็ดขาด***) → คิด subtotal/discount/SC/total/VAT ด้วย `Money` → ออกเลขบิล → insert sale+items+payments → ตัดสต๊อกเฉพาะ track_stock → (ร้านอาหาร) ตั้ง order = paid + ผูก sale_id → คืน sale |
 | `Pos\Orders` | โหมดร้านอาหาร — เปิดออเดอร์ (กันซ้อนโต๊ะ), เพิ่ม/แก้/ยกเลิกรายการตามกติกาสถานะ, ย้ายโต๊ะ, ยกเลิกทั้งออเดอร์ (owner/admin + เหตุผล + log) |
-| `Pos\KitchenTicket` | "ส่งครัว": ตีตรา round_no + sent_at ให้รายการ pending แล้วเปิดหน้าพิมพ์ใบส่งครัวของรอบนั้น |
+| `Pos\KitchenTicket` | "ส่งครัว": ตีตรา round_no + sent_at ให้รายการ pending → enqueue ใบส่งครัวลง `PrintQueue` (เครื่องที่กดเป็นเครื่องต่อปริ้นเตอร์เองก็พิมพ์ตรงได้เลย) |
+| `Pos\PrintQueue` | enqueue งานพิมพ์ (ใบครัว/ใบเสร็จที่สั่งจากมือถือ) · ให้จุดพิมพ์กลาง claim แบบ atomic + ตีตรา printed · นับงานค้างไว้โชว์ badge |
 | `Pos\VoidSale` | ตรวจสิทธิ์ (owner/admin) → ตั้ง voided + เหตุผล → คืนสต๊อก → `AuditLog::record('pos.sale.void', …)` |
 | `Pos\ShiftReport` | เปิด/ปิดกะ + expected_cash = opening + ยอดขายเงินสดในกะ เทียบ counted |
 | `Pos\Reports` | ยอดขายช่วงวันที่ แยก วิธีจ่าย/สินค้า/หมวด/พนักงาน/ประเภทออเดอร์ + ยอด SC รวม + CSV (UTF-8 BOM แบบ `TaxReporting`) — CSV เป็น flag ของแพ็กเกจ |
@@ -272,6 +298,9 @@ GET  /pos/orders/{order}/kitchen-ticket/{round}  พิมพ์ใบส่ง�
 POST /pos/orders/{order}/move     ย้ายโต๊ะ
 POST /pos/orders/{order}/checkout เก็บเงิน → Checkout เดียวกับ retail
 POST /pos/orders/{order}/cancel   ยกเลิกทั้งออเดอร์              [owner/admin]
+GET  /pos/print-station           จุดพิมพ์กลาง — เปิดค้างบนเครื่องที่ต่อเครื่องพิมพ์
+GET  /pos/print-jobs              งานพิมพ์ค้าง (JSON สำหรับ poll + หน้า badge)
+POST /pos/print-jobs/{job}/printed  claim + ตีตราพิมพ์แล้ว (atomic — กันพิมพ์ซ้ำ)
 CRUD /pos/tables, /pos/modifier-groups                           [owner/admin]
 
 — เหมือนกันทั้งสองโหมด —
@@ -333,6 +362,38 @@ admin.pos.payments    ยืนยันสลิปซื้อแพ็กเ�
 │  ว่าง=slate · มีลูกค้า=amber │          │                              │ [ส่งครัว] [เก็บเงิน]│
 └─────────────────────────────┘          └──────────────────────────────┴─────────────────┘
 ```
+
+### รับออเดอร์ด้วยมือถือพนักงาน + จุดพิมพ์กลาง
+
+พนักงานแต่ละคนล็อกอินบนมือถือตัวเอง (member ของ workspace) — จอผังโต๊ะ/จอสั่งเป็น
+responsive: บนจอแคบ เมนูเต็มจอ + แถบสรุปลอยด้านล่าง แตะเพื่อกางรายการที่สั่ง
+
+```
+มือถือพนักงาน (จอสั่ง โต๊ะ 3)            จุดพิมพ์กลาง (เครื่องที่ต่อปริ้นเตอร์)
+┌──────────────────┐                  ┌────────────────────────────┐
+│ ← โต๊ะ 3 · 2 ที่นั่ง│                  │ /pos/print-station          │
+│ [ค้นหา ________] │                  │ ● รอพิมพ์ 1 งาน             │
+│ [ข้าว][เส้น][น้ำ] │   ส่งครัว         │ 14:32 ใบครัว โต๊ะ 3 รอบ 2   │
+│ ┌──────┐┌──────┐ │   ───────→      │   → พิมพ์อัตโนมัติ ✓        │
+│ │กะเพรา ││ผัดไทย│ │   (enqueue)     │ 14:21 ใบครัว โต๊ะ 1 รอบ 1 ✓ │
+│ │  60.- ││  55.-│ │                  └────────────────────────────┘
+│ └──────┘└──────┘ │
+│──────────────────│
+│ 🛒 3 รายการ 190.- │ ← แถบลอย แตะ = กางตะกร้า
+│ [    ส่งครัว    ] │
+└──────────────────┘
+```
+
+- **จุดพิมพ์กลาง** = เครื่องเดียวในร้านที่ต่อเครื่องพิมพ์ (แท็บเล็ตแคชเชียร์/คอม/จอครัว)
+  เปิดหน้า `/pos/print-station` ค้างไว้ — poll ทุก ~5 วิ เจองานใหม่ → render ใบ →
+  `window.print()` → ตีตรา printed
+- พิมพ์เงียบไม่มี dialog: เปิด Chrome ที่เครื่องนั้นด้วย `--kiosk-printing` (ตั้งครั้งเดียว —
+  ใส่วิธีตั้งค่าไว้ในหน้า `pos/settings`) · ไม่ตั้งก็ใช้ได้ แค่ต้องแตะยืนยัน print dialog
+- ไม่เปิด print station ก็ไม่พัง: ทุกเครื่องเห็น badge "ใบครัวรอพิมพ์ N" กดพิมพ์เองได้
+  และร้านเล็กไม่มีเครื่องพิมพ์ก็เปิดใบครัวดูบนจอแทน
+- เครื่องพิมพ์หลายจุด (แยกครัว/บาร์ตามหมวด) — ไว้ Phase 5 คู่กับ KDS
+
+### รายละเอียด interaction ร่วม
 
 - ช่องค้นหา autofocus ตลอด — **barcode scanner = keyboard wedge** ยิงแล้ว Enter เข้าตะกร้าเอง
 - เมนูที่มี modifier บังคับ (min_select ≥ 1) เด้ง popup ก่อนลงตะกร้า/ออเดอร์เสมอ
@@ -402,16 +463,19 @@ admin.pos.payments    ยืนยันสลิปซื้อแพ็กเ�
   VoidTest (สิทธิ์/คืนสต๊อก/AuditLog), ReceiptTest
 - **DoD:** ร้านโหมด retail ใช้ขายจริงได้ตั้งแต่จบเฟสนี้
 
-### Phase R1 — ชั้นร้านอาหาร: โต๊ะ + ออเดอร์ + ส่งครัว (~4–5 วัน)
+### Phase R1 — ชั้นร้านอาหาร: โต๊ะ + ออเดอร์ + มือถือพนักงาน + ส่งครัว (~5–6 วัน)
 - Migrations: `pos_tables`, `pos_orders`, `pos_order_items`, `pos_modifier_groups`,
-  `pos_modifiers`, `pos_product_modifier_group` (+ คอลัมน์ order/SC บน `pos_sales`)
-- ผังโต๊ะ + เปิดออเดอร์/กันซ้อนโต๊ะ + จอสั่ง (modifier popup + โน้ต) + ส่งครัวเป็นรอบ +
-  ใบส่งครัว + ย้ายโต๊ะ + ยกเลิกจาน/ออเดอร์ตามกติกา + service charge + เก็บเงินผ่าน
-  `Checkout` เดิม + CRUD โต๊ะ/ตัวเลือก
+  `pos_modifiers`, `pos_product_modifier_group`, `pos_print_jobs`
+  (+ คอลัมน์ order/SC บน `pos_sales`)
+- ผังโต๊ะ + เปิดออเดอร์/กันซ้อนโต๊ะ + จอสั่ง **responsive ถึงมือถือพนักงาน** (modifier popup +
+  โน้ต + `added_by`) + ส่งครัวเป็นรอบ + ใบส่งครัวผ่าน **จุดพิมพ์กลาง** + ย้ายโต๊ะ +
+  ยกเลิกจาน/ออเดอร์ตามกติกา + service charge + เก็บเงินผ่าน `Checkout` เดิม + CRUD โต๊ะ/ตัวเลือก
 - **Tests:** OrderFlowTest (เปิด→สั่ง→ส่งครัว→สั่งเพิ่ม→เก็บเงิน→โต๊ะว่าง), กันออเดอร์ซ้อนโต๊ะ,
   ModifierPricingTest (ราคา+delta จาก DB), CancelAfterSentTest (สิทธิ์+log), ServiceChargeTest
-  (สูตร SC→VAT), MoveTableTest
-- **DoD:** **ร้านตามสั่ง 1 ร้านรับลูกค้าจริงได้ทั้งวัน** — นี่คือเฟส dogfood กับร้านนำร่อง
+  (สูตร SC→VAT), MoveTableTest, PrintQueueTest (enqueue ตอนส่งครัว, claim atomic กันพิมพ์ซ้ำ),
+  สองคนสั่งโต๊ะเดียวกันพร้อมกัน (added_by ถูกคน รายการไม่หาย)
+- **DoD:** **ร้านตามสั่ง 1 ร้านรับลูกค้าจริงได้ทั้งวัน โดยพนักงานเสิร์ฟถือมือถือตัวเองไปรับ
+  ออเดอร์ที่โต๊ะ แล้วใบครัวออกที่เครื่องพิมพ์หน้าครัวเอง** — นี่คือเฟส dogfood กับร้านนำร่อง
 - *ถ้าลูกค้ากลุ่มแรกเป็น retail ล้วน สลับเฟสนี้ไปหลัง Phase 4 ได้ — เป็นชั้นอิสระ ไม่มีเฟสอื่นพึ่งมัน*
 
 ### Phase 3 — กะ + PromptPay + รายงาน (~3 วัน)
@@ -446,7 +510,10 @@ admin.pos.payments    ยืนยันสลิปซื้อแพ็กเ�
 | ราคา/ยอดถูกปลอมจาก client | `Checkout`/`Orders` คิดทุกบาทจาก DB (รวม modifier delta) — client ส่งได้แค่ id/qty/discount และ discount มีเพดาน |
 | กดปิดบิลซ้ำ (เน็ตช้า/มือลั่น) | `client_uuid` unique ต่อบิล — ซ้ำ = คืนบิลเดิม ไม่สร้างใหม่ + disable ปุ่มตอน submit |
 | เลขบิลชนเมื่อขายพร้อมกัน 2 เครื่อง | transaction + unique `(workspace_id, number)` + retry ใน `SaleNumber` |
-| สองเครื่องแก้ออเดอร์โต๊ะเดียวกัน | รายการเป็น append-only row (ชนกันยาก) · เปิดออเดอร์ซ้อนโต๊ะกันใน transaction · ผังโต๊ะ poll สถานะ |
+| สองเครื่องแก้ออเดอร์โต๊ะเดียวกัน | รายการเป็น append-only row (ชนกันยาก) ติด `added_by` รายแถว · เปิดออเดอร์ซ้อนโต๊ะกันใน transaction · ผังโต๊ะ/จอสั่ง poll สถานะ |
+| มือถือพนักงานเน็ตหลุดกลางสั่ง | ทุกจานบันทึกลง DB ทันทีที่กดเพิ่ม — เปิดหน้าใหม่กลับมาออเดอร์อยู่ครบ ไม่มี state ค้างบนมือถือ |
+| จุดพิมพ์กลางถูกปิด/ลืมเปิด | งานพิมพ์ค้างอยู่ในคิว (ไม่หาย) + ทุกเครื่องเห็น badge "รอพิมพ์ N" กดพิมพ์เองได้ + พิมพ์ซ้ำได้เสมอ |
+| งานพิมพ์ถูกพิมพ์ซ้ำสองเครื่อง | claim แบบ atomic (`UPDATE … WHERE status='pending'`) — เครื่องเดียวได้งาน |
 | เก็บเงินแข่งกัน/สั่งเพิ่มระหว่างจ่าย | `Checkout` ล็อกแถวออเดอร์ (`lockForUpdate`) — จ่ายแล้วห้ามเพิ่มจาน, จ่ายซ้ำไม่ได้ |
 | ยกเลิกจานหลังส่งครัวแล้ว | เฉพาะ owner/admin + เหตุผลบังคับ + AuditLog (กันเทคนิคโกง "ขายแล้วลบ") |
 | ออเดอร์ค้างข้ามวัน (ลืมเก็บเงิน) | แดชบอร์ด/ผังโต๊ะโชว์อายุออเดอร์ · ปิดกะมีออเดอร์ค้าง → เตือน + ต้องยืนยัน (ยอดไปลงกะที่เก็บเงินจริง) |
