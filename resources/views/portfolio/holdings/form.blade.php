@@ -20,7 +20,7 @@
         if ($costBasisValue === null) {
             $costBasisValue = isset($holding->metadata['cost_basis_native'])
                 ? $holding->metadata['cost_basis_native']
-                : $holding->cost_basis;
+                : ($holding->quantity > 0 ? ($holding->cost_basis / $holding->quantity) : $holding->cost_basis);
         }
     @endphp
 

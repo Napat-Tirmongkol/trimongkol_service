@@ -80,11 +80,13 @@ class DashboardController extends Controller
         $data = $this->validated($request);
         $data['user_id'] = (int) auth()->id();
 
-        $nativeCost = (float) ($data['cost_basis'] ?? 0);
+        $nativeUnitCost = (float) ($data['cost_basis'] ?? 0);
         $data['metadata'] = [
-            'cost_basis_native' => $nativeCost,
+            'cost_basis_native' => $nativeUnitCost,
         ];
-        $data['cost_basis'] = $prices->toThb($nativeCost, 1, $data['currency']) ?? $nativeCost;
+        
+        $totalCostNative = $nativeUnitCost * (float) ($data['quantity'] ?? 0);
+        $data['cost_basis'] = $prices->toThb($totalCostNative, 1, $data['currency']) ?? $totalCostNative;
 
         $data['current_value_thb'] = $prices->toThb(
             (float) ($data['current_price'] ?? 0),
@@ -111,11 +113,13 @@ class DashboardController extends Controller
 
         $data = $this->validated($request);
 
-        $nativeCost = (float) ($data['cost_basis'] ?? 0);
+        $nativeUnitCost = (float) ($data['cost_basis'] ?? 0);
         $data['metadata'] = array_merge((array) ($holding->metadata ?? []), [
-            'cost_basis_native' => $nativeCost,
+            'cost_basis_native' => $nativeUnitCost,
         ]);
-        $data['cost_basis'] = $prices->toThb($nativeCost, 1, $data['currency']) ?? $nativeCost;
+        
+        $totalCostNative = $nativeUnitCost * (float) ($data['quantity'] ?? 0);
+        $data['cost_basis'] = $prices->toThb($totalCostNative, 1, $data['currency']) ?? $totalCostNative;
 
         $data['current_value_thb'] = $prices->toThb(
             (float) ($data['current_price'] ?? 0),
