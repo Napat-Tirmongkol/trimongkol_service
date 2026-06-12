@@ -19,16 +19,17 @@
 
         /* Cards & Surfaces */
         .portfolio-dark .bg-white {
-            background-color: #121418 !important;
+            background-color: #141720 !important;
+            border-color: #1e2231 !important;
         }
 
         .portfolio-dark .bg-slate-50,
         .portfolio-dark .bg-slate-50\/50 {
-            background-color: #0b0c0e !important;
+            background-color: #0d0f14 !important;
         }
 
         .portfolio-dark .bg-slate-100 {
-            background-color: #16191d !important;
+            background-color: #181c28 !important;
         }
 
         /* Borders & Dividers */
@@ -39,18 +40,23 @@
         .portfolio-dark .border-r,
         .portfolio-dark .border-slate-100,
         .portfolio-dark .border-slate-200,
-        .portfolio-dark .border-slate-150,
+        .portfolio-dark .border-slate-300,
         .portfolio-dark .divide-y > :not([hidden]) ~ :not([hidden]),
         .portfolio-dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
         .portfolio-dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-            border-color: #1f2226 !important;
+            border-color: #1e2231 !important;
         }
 
-        /* Shadows */
+        /* Shadows — deeper glow for dark surfaces */
         .portfolio-dark .shadow-sm,
         .portfolio-dark .shadow,
         .portfolio-dark .shadow-md {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Rounded cards — subtle border glow */
+        .portfolio-dark .rounded-2xl.border {
+            border-color: #242a3a !important;
         }
 
         /* Text Colors */
@@ -60,16 +66,16 @@
         }
 
         .portfolio-dark .text-slate-700 {
-            color: #e2e8f0 !important;
+            color: #cbd5e1 !important;
         }
 
         .portfolio-dark .text-slate-600,
         .portfolio-dark .text-slate-500 {
-            color: #94a3b8 !important;
+            color: #8896ab !important;
         }
 
         .portfolio-dark .text-slate-400 {
-            color: #475569 !important;
+            color: #566175 !important;
         }
 
         /* Input Controls */
@@ -81,65 +87,83 @@
         .portfolio-dark input[type="date"],
         .portfolio-dark select,
         .portfolio-dark textarea {
-            background-color: #16191d !important;
-            border-color: #24282e !important;
+            background-color: #0d0f14 !important;
+            border-color: #2a3042 !important;
             color: #f1f5f9 !important;
         }
 
         .portfolio-dark input::placeholder {
-            color: #475569 !important;
+            color: #566175 !important;
         }
 
         .portfolio-dark input:focus,
         .portfolio-dark select:focus,
         .portfolio-dark textarea:focus {
             border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+        }
+
+        /* Select arrow for dark bg */
+        .portfolio-dark select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7f99' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
         }
 
         /* Checkbox */
         .portfolio-dark input[type="checkbox"] {
-            background-color: #16191d !important;
-            border-color: #374151 !important;
+            background-color: #0d0f14 !important;
+            border-color: #2a3042 !important;
         }
 
         /* Status Cards — Green */
         .portfolio-dark .bg-emerald-50\/50,
         .portfolio-dark .bg-emerald-50\/60,
         .portfolio-dark .bg-emerald-50 {
-            background-color: rgba(6, 78, 59, 0.2) !important;
-            border-color: rgba(16, 185, 129, 0.3) !important;
+            background-color: rgba(6, 95, 70, 0.15) !important;
         }
         .portfolio-dark .border-emerald-200 {
-            border-color: rgba(16, 185, 129, 0.3) !important;
+            border-color: rgba(16, 185, 129, 0.25) !important;
         }
         .portfolio-dark .text-emerald-700,
         .portfolio-dark .text-emerald-800,
         .portfolio-dark .text-emerald-900 {
             color: #34d399 !important;
         }
+        .portfolio-dark .bg-emerald-500 {
+            background-color: #10b981 !important;
+        }
 
         /* Status Cards — Rose / Red */
         .portfolio-dark .bg-rose-50\/50,
         .portfolio-dark .bg-rose-50 {
-            background-color: rgba(159, 18, 57, 0.2) !important;
-            border-color: rgba(244, 63, 94, 0.3) !important;
+            background-color: rgba(159, 18, 57, 0.15) !important;
         }
         .portfolio-dark .border-rose-200 {
-            border-color: rgba(244, 63, 94, 0.3) !important;
+            border-color: rgba(244, 63, 94, 0.25) !important;
         }
         .portfolio-dark .text-rose-700,
         .portfolio-dark .text-rose-800,
         .portfolio-dark .text-rose-900 {
-            color: #f43f5e !important;
+            color: #fb7185 !important;
         }
         .portfolio-dark .text-rose-400 {
             color: #fb7185 !important;
         }
 
+        /* Amber / Warning */
+        .portfolio-dark .bg-amber-50 {
+            background-color: rgba(120, 80, 0, 0.15) !important;
+        }
+        .portfolio-dark .border-amber-200 {
+            border-color: rgba(245, 158, 11, 0.25) !important;
+        }
+        .portfolio-dark .text-amber-700,
+        .portfolio-dark .text-amber-800 {
+            color: #fbbf24 !important;
+        }
+
         /* Brand Accent */
         .portfolio-dark .bg-brand-100 {
-            background-color: rgba(14, 165, 233, 0.2) !important;
+            background-color: rgba(14, 165, 233, 0.15) !important;
         }
         .portfolio-dark .text-brand-700 {
             color: #38bdf8 !important;
@@ -153,58 +177,95 @@
         .portfolio-dark .bg-brand-600 {
             background-color: #0ea5e9 !important;
         }
-        .portfolio-dark .bg-brand-600:hover {
+        .portfolio-dark .bg-brand-600:hover,
+        .portfolio-dark .hover\:bg-brand-700:hover {
             background-color: #0284c7 !important;
         }
 
-        /* Progress Bar */
+        /* Progress Bar bg */
         .portfolio-dark .bg-slate-200 {
-            background-color: #24282e !important;
+            background-color: #1e2231 !important;
         }
 
-        /* Nav Sub-tabs */
-        .portfolio-dark .hover\:border-slate-300:hover {
-            border-color: #475569 !important;
-        }
-        .portfolio-dark .hover\:text-slate-700:hover {
-            color: #e2e8f0 !important;
-        }
-        .portfolio-dark .hover\:bg-slate-50:hover {
-            background-color: #1f2226 !important;
-        }
-        .portfolio-dark .hover\:bg-slate-100:hover {
-            background-color: #24282e !important;
-        }
-        .portfolio-dark .hover\:bg-slate-200:hover {
-            background-color: #2b2f35 !important;
-        }
+        /* ── Buttons ───────────────────────────────────── */
 
-        /* Dark Button overrides */
-        .portfolio-dark .bg-slate-900 {
+        /* Primary dark button (bg-slate-900 text-white) → keep as-is, just lighten slightly */
+        .portfolio-dark .bg-slate-900.text-white {
             background-color: #e2e8f0 !important;
             color: #0b0c0e !important;
         }
-        .portfolio-dark .bg-slate-900:hover {
-            background-color: #f1f5f9 !important;
+        .portfolio-dark .bg-slate-900.text-white:hover,
+        .portfolio-dark .hover\:bg-slate-800:hover {
+            background-color: #f8fafc !important;
+            color: #0b0c0e !important;
         }
 
-        /* Inline edit bg */
-        .portfolio-dark .bg-slate-50\/50 {
-            background-color: #0e1014 !important;
+        /* Cancel/secondary buttons (bg-slate-200 text-slate-700) */
+        .portfolio-dark .bg-slate-200.text-slate-700 {
+            background-color: #1e2231 !important;
+            color: #cbd5e1 !important;
+        }
+
+        /* Icon add buttons (+) */
+        .portfolio-dark button.rounded-lg.border.border-slate-200 {
+            border-color: #2a3042 !important;
+            color: #8896ab !important;
+        }
+        .portfolio-dark button.rounded-lg.border.border-slate-200:hover {
+            background-color: #1e2231 !important;
+            color: #f1f5f9 !important;
+        }
+
+        /* Inline form bg */
+        .portfolio-dark .rounded-xl.bg-slate-50,
+        .portfolio-dark .bg-slate-50.p-2\.5 {
+            background-color: #0d0f14 !important;
+            border-color: #1e2231 !important;
+        }
+
+        /* Hover states */
+        .portfolio-dark .hover\:bg-slate-50:hover {
+            background-color: #181c28 !important;
+        }
+        .portfolio-dark .hover\:bg-slate-100:hover {
+            background-color: #1e2231 !important;
+        }
+        .portfolio-dark .hover\:bg-slate-200:hover {
+            background-color: #242a3a !important;
+        }
+
+        /* Nav Sub-tabs */
+        .portfolio-dark .hover\:border-slate-600:hover {
+            border-color: #475569 !important;
+        }
+        .portfolio-dark .hover\:text-slate-300:hover {
+            color: #cbd5e1 !important;
         }
 
         /* Logout button */
         .portfolio-dark .rounded-full.bg-slate-100 {
-            background-color: #1f2226 !important;
+            background-color: #1e2231 !important;
             color: #cbd5e1 !important;
         }
         .portfolio-dark .rounded-full.bg-slate-100:hover {
-            background-color: #2b2f35 !important;
+            background-color: #242a3a !important;
         }
 
         /* Ring on avatar */
-        .portfolio-dark .ring-slate-100 {
-            --tw-ring-color: #1f2226 !important;
+        .portfolio-dark .ring-slate-700 {
+            --tw-ring-color: #2a3042 !important;
+        }
+
+        /* Auto-calc badge */
+        .portfolio-dark .bg-slate-100.rounded.border.border-slate-200 {
+            background-color: #1e2231 !important;
+            border-color: #2a3042 !important;
+            color: #8896ab !important;
+        }
+
+        /* line-through items */
+        .portfolio-dark .line-through {
+            color: #3d4657 !important;
         }
 
         /* Scrollbar */
@@ -213,14 +274,14 @@
             height: 8px;
         }
         .portfolio-dark ::-webkit-scrollbar-track {
-            background: #0b0c0e;
+            background: #0a0c10;
         }
         .portfolio-dark ::-webkit-scrollbar-thumb {
-            background: #24282e;
+            background: #1e2231;
             border-radius: 4px;
         }
         .portfolio-dark ::-webkit-scrollbar-thumb:hover {
-            background: #2d323a;
+            background: #2a3042;
         }
     </style>
 </head>
