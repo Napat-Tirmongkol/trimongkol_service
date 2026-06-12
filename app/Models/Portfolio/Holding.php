@@ -87,31 +87,33 @@ class Holding extends Model
 
     public function recalculateFromTransactions(\App\Services\Portfolio\PriceFetcher $prices): void
     {
+        // Transactions are only exposed in the UI for cash / deposit / debt
+        // holdings (the dashboard's ledger link is gated on the kind).  Bail
+        // for anything else so a stray call can't blow away the live unit
+        // price on a stock / crypto / fund row by stamping a money sum on it.
+        $moneyKinds = [self::KIND_CASH, self::KIND_DEPOSIT, self::KIND_DEBT];
+        if (! in_array($this->kind, $moneyKinds, true)) {
+            return;
+        }
+
         $in = (float) $this->transactions()->where('type', 'in')->sum('amount');
         $out = (float) $this->transactions()->where('type', 'out')->sum('amount');
         $balance = $in - $out;
 
         $this->current_price = $balance;
-        
-        $moneyKinds = [self::KIND_CASH, self::KIND_DEPOSIT, self::KIND_DEBT];
-        if (in_array($this->kind, $moneyKinds, true)) {
-            $this->quantity = 1;
-            
-            // Recalculate cost basis in THB (equal to balance converted to THB)
-            $this->cost_basis = $prices->toThb($balance, 1, $this->currency) ?? $balance;
-            
-            // Also store it in metadata
-            $meta = $this->metadata ?? [];
-            $meta['cost_basis_native'] = $balance;
-            $this->metadata = $meta;
-        }
+        $this->quantity = 1;
+        $this->cost_basis = $prices->toThb($balance, 1, $this->currency) ?? $balance;
+
+        $meta = $this->metadata ?? [];
+        $meta['cost_basis_native'] = $balance;
+        $this->metadata = $meta;
 
         $this->current_value_thb = $prices->toThb(
             (float) $this->current_price,
             (float) $this->quantity,
             $this->currency,
         );
-        
+
         $this->save();
     }
 }
