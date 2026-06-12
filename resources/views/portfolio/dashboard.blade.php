@@ -249,4 +249,19 @@
             </p>
         </div>
     </div>
+
+    <script>
+        // รีเฟรชราคาอัตโนมัติทุกๆ 5 นาที (300,000 มิลลิวินาที)
+        setInterval(() => {
+            fetch("{{ route('portfolio.refresh') }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => {
+                window.location.reload();
+            }).catch(err => console.error('Auto-refresh failed:', err));
+        }, 300000);
+    </script>
 </x-portfolio-layout>
