@@ -221,6 +221,12 @@
                                             </td>
                                             <td class="px-5 py-3 text-right">
                                                 <div class="flex items-center justify-end gap-1.5">
+                                                    @if (in_array($h->kind, [\App\Models\Portfolio\Holding::KIND_CASH, \App\Models\Portfolio\Holding::KIND_DEPOSIT, \App\Models\Portfolio\Holding::KIND_DEBT], true))
+                                                        <a href="{{ route('portfolio.holdings.transactions.index', $h) }}"
+                                                           class="rounded-md px-2 py-1 text-xs font-medium text-brand-600 transition hover:bg-brand-50 hover:text-brand-700">
+                                                            {{ __('app.portfolio.transactions.ledger_link') }}
+                                                        </a>
+                                                    @endif
                                                     <a href="{{ route('portfolio.holdings.edit', $h) }}"
                                                        class="rounded-md px-2 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                                                         {{ __('app.portfolio.edit') }}

@@ -79,4 +79,39 @@ class Holding extends Model
 
         return $this->isDebt() ? -$val : $val;
     }
+
+    public function transactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Transaction::class, 'holding_id');
+    }
+
+    public function recalculateFromTransactions(\App\Services\Portfolio\PriceFetcher $prices): void
+    {
+        $in = (float) $this->transactions()->where('type', 'in')->sum('amount');
+        $out = (float) $this->transactions()->where('type', 'out')->sum('amount');
+        $balance = $in - $out;
+
+        $this->current_price = $balance;
+        
+        $moneyKinds = [self::KIND_CASH, self::KIND_DEPOSIT, self::KIND_DEBT];
+        if (in_array($this->kind, $moneyKinds, true)) {
+            $this->quantity = 1;
+            
+            // Recalculate cost basis in THB (equal to balance converted to THB)
+            $this->cost_basis = $prices->toThb($balance, 1, $this->currency) ?? $balance;
+            
+            // Also store it in metadata
+            $meta = $this->metadata ?? [];
+            $meta['cost_basis_native'] = $balance;
+            $this->metadata = $meta;
+        }
+
+        $this->current_value_thb = $prices->toThb(
+            (float) $this->current_price,
+            (float) $this->quantity,
+            $this->currency,
+        );
+        
+        $this->save();
+    }
 }

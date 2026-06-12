@@ -35,6 +35,7 @@ use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Portfolio\AuthController as PortfolioAuthController;
 use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardController;
+use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransactionController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -118,6 +119,11 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::get('/holdings/{holding}/edit', [PortfolioDashboardController::class, 'edit'])->name('holdings.edit');
         Route::patch('/holdings/{holding}', [PortfolioDashboardController::class, 'update'])->name('holdings.update');
         Route::delete('/holdings/{holding}', [PortfolioDashboardController::class, 'destroy'])->name('holdings.destroy');
+
+        // Transactions ledger
+        Route::get('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'index'])->name('holdings.transactions.index');
+        Route::post('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'store'])->name('holdings.transactions.store');
+        Route::delete('/holdings/{holding}/transactions/{transaction}', [PortfolioTransactionController::class, 'destroy'])->name('holdings.transactions.destroy');
     });
 });
 
