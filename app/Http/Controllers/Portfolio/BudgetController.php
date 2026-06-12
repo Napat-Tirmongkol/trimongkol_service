@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Portfolio;
 
 use App\Http\Controllers\Controller;
 use App\Models\Portfolio\BudgetItem;
+use App\Models\Portfolio\Debt;
+use App\Models\Portfolio\DebtPayment;
 use App\Models\Portfolio\Installment;
 use App\Models\Portfolio\Subscription;
 use App\Models\Portfolio\Income;
@@ -21,6 +23,7 @@ class BudgetController extends Controller
             ->merge(Installment::query()->forUser($userId)->pluck('month'))
             ->merge(Subscription::query()->forUser($userId)->pluck('month'))
             ->merge(Income::query()->forUser($userId)->pluck('month'))
+            ->merge(DebtPayment::query()->forUser($userId)->pluck('month'))
             ->unique()
             ->sort()
             ->reverse()
@@ -66,12 +69,25 @@ class BudgetController extends Controller
             ->orderBy('id')
             ->get();
 
-        // 7. Calculations
+        // 7. Fetch Variable Debts (persistent, not per-month) with their full payment schedule
+        $debts = Debt::query()
+            ->forUser($userId)
+            ->with(['payments' => fn ($q) => $q->orderBy('month')])
+            ->orderBy('id')
+            ->get();
+
+        // 8. Calculations
         $incomeTotal = (float) $incomes->sum('amount');
         $installmentsPaymentSum = (float) $installments->sum('monthly_payment');
         $subscriptionsPaymentSum = (float) $subscriptions->sum('monthly_payment');
+        $debtPaymentsSum = (float) $debts->map(
+            fn ($d) => $d->payments->firstWhere('month', $activeMonth)?->amount ?? 0
+        )->sum();
 
-        $fixedTotal = (float) $fixedExpensesList->sum('amount') + $installmentsPaymentSum + $subscriptionsPaymentSum;
+        $fixedTotal = (float) $fixedExpensesList->sum('amount')
+            + $installmentsPaymentSum
+            + $subscriptionsPaymentSum
+            + $debtPaymentsSum;
         $variableTotal = (float) $variableExpensesList->sum('amount');
         $savingsTotal = (float) $savingsList->sum('amount');
 
@@ -88,8 +104,10 @@ class BudgetController extends Controller
             'savingsList',
             'installments',
             'subscriptions',
+            'debts',
             'installmentsPaymentSum',
             'subscriptionsPaymentSum',
+            'debtPaymentsSum',
             'fixedTotal',
             'variableTotal',
             'savingsTotal',
@@ -295,19 +313,117 @@ class BudgetController extends Controller
         } elseif ($type === 'subscription') {
             $model = Subscription::findOrFail($id);
             $this->authorizeSubscription($model);
+        } elseif ($type === 'debt-payment') {
+            $model = DebtPayment::findOrFail($id);
+            $this->authorizeDebtPayment($model);
         } else {
             abort(400);
         }
 
-        $model->update([
-            'is_checked' => !$model->is_checked
-        ]);
+        $field = ($type === 'debt-payment') ? 'is_paid' : 'is_checked';
+        $model->update([$field => !$model->$field]);
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'is_checked' => $model->is_checked]);
+            $value = ($type === 'debt-payment') ? $model->is_paid : $model->is_checked;
+            return response()->json(['success' => true, 'is_checked' => $value]);
         }
 
         return redirect()->back();
+    }
+
+    // ── Variable Debts ─────────────────────────────────────────────
+
+    public function storeDebt(Request $request)
+    {
+        $data = $request->validate([
+            'label'        => 'required|string|max:120',
+            'total_amount' => 'nullable|numeric|min:0',
+            'notes'        => 'nullable|string|max:1000',
+        ]);
+        $data['user_id']     = (int) auth()->id();
+        $data['total_amount'] = $data['total_amount'] ?? 0;
+
+        Debt::create($data);
+
+        $month = $request->input('month', date('Y-m'));
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'เพิ่มรายการหนี้เรียบร้อยแล้ว');
+    }
+
+    public function updateDebt(Request $request, Debt $debt)
+    {
+        $this->authorizeDebt($debt);
+
+        $data = $request->validate([
+            'label'        => 'required|string|max:120',
+            'total_amount' => 'nullable|numeric|min:0',
+            'notes'        => 'nullable|string|max:1000',
+        ]);
+        $data['total_amount'] = $data['total_amount'] ?? 0;
+
+        $debt->update($data);
+
+        $month = $request->input('month', date('Y-m'));
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'อัปเดตข้อมูลหนี้เรียบร้อยแล้ว');
+    }
+
+    public function destroyDebt(Debt $debt)
+    {
+        $this->authorizeDebt($debt);
+        $month = request()->input('month', date('Y-m'));
+        $debt->delete();
+
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'ลบรายการหนี้เรียบร้อยแล้ว');
+    }
+
+    public function storeDebtPayment(Request $request)
+    {
+        $data = $request->validate([
+            'debt_id' => 'required|integer|exists:portfolio_debts,id',
+            'month'   => 'required|string|regex:/^\d{4}-\d{2}$/',
+            'amount'  => 'required|numeric|min:0',
+            'notes'   => 'nullable|string|max:1000',
+        ]);
+
+        $debt = Debt::findOrFail($data['debt_id']);
+        $this->authorizeDebt($debt);
+
+        // Prevent duplicate payment for same debt+month
+        DebtPayment::updateOrCreate(
+            ['debt_id' => $data['debt_id'], 'user_id' => auth()->id(), 'month' => $data['month']],
+            ['amount' => $data['amount'], 'notes' => $data['notes'] ?? null]
+        );
+
+        return redirect()->route('portfolio.budget.index', ['month' => $request->input('redirect_month', $data['month'])])
+            ->with('status', 'เพิ่มงวดชำระเรียบร้อยแล้ว');
+    }
+
+    public function updateDebtPayment(Request $request, DebtPayment $payment)
+    {
+        $this->authorizeDebtPayment($payment);
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'notes'  => 'nullable|string|max:1000',
+        ]);
+
+        $payment->update($data);
+
+        $month = $request->input('month', $payment->month);
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'อัปเดตงวดชำระเรียบร้อยแล้ว');
+    }
+
+    public function destroyDebtPayment(DebtPayment $payment)
+    {
+        $this->authorizeDebtPayment($payment);
+        $month = request()->input('month', $payment->month);
+        $payment->delete();
+
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'ลบงวดชำระเรียบร้อยแล้ว');
     }
 
     public function resetMonth(Request $request)
@@ -417,5 +533,15 @@ class BudgetController extends Controller
     private function authorizeSubscription(Subscription $subscription): void
     {
         abort_unless($subscription->user_id === (int) auth()->id(), 403);
+    }
+
+    private function authorizeDebt(Debt $debt): void
+    {
+        abort_unless($debt->user_id === (int) auth()->id(), 403);
+    }
+
+    private function authorizeDebtPayment(DebtPayment $payment): void
+    {
+        abort_unless($payment->user_id === (int) auth()->id(), 403);
     }
 }

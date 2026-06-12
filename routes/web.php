@@ -152,6 +152,12 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::post('/budget/subscriptions', [PortfolioBudgetController::class, 'storeSubscription'])->name('budget.subscriptions.store');
         Route::patch('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'updateSubscription'])->name('budget.subscriptions.update');
         Route::delete('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'destroySubscription'])->name('budget.subscriptions.destroy');
+        Route::post('/budget/debts', [PortfolioBudgetController::class, 'storeDebt'])->name('budget.debts.store');
+        Route::patch('/budget/debts/{debt}', [PortfolioBudgetController::class, 'updateDebt'])->name('budget.debts.update');
+        Route::delete('/budget/debts/{debt}', [PortfolioBudgetController::class, 'destroyDebt'])->name('budget.debts.destroy');
+        Route::post('/budget/debt-payments', [PortfolioBudgetController::class, 'storeDebtPayment'])->name('budget.debt-payments.store');
+        Route::patch('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'updateDebtPayment'])->name('budget.debt-payments.update');
+        Route::delete('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'destroyDebtPayment'])->name('budget.debt-payments.destroy');
     });
 });
 

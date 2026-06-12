@@ -22,7 +22,8 @@
         addVariableOpen: false,
         addSavingOpen: false,
         addInstallmentOpen: false,
-        addSubscriptionOpen: false
+        addSubscriptionOpen: false,
+        addDebtOpen: false
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             
@@ -241,6 +242,22 @@
                                     </div>
                                     <span class="text-sm font-bold text-slate-700">
                                         ฿{{ $fmtMoney($installmentsPaymentSum) }}
+                                    </span>
+                                </div>
+                            @endif
+
+                            {{-- READ-ONLY: Variable Debt Payments Sum (Auto) --}}
+                            @if($debtPaymentsSum > 0)
+                                <div class="py-2.5 flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="h-4 w-4 flex items-center justify-center text-[10px] font-bold text-slate-400 bg-slate-100 rounded border border-slate-200">A</span>
+                                        <div>
+                                            <span class="text-sm font-medium text-slate-700">ผ่อนตามตาราง (Variable)</span>
+                                            <p class="text-[10px] text-slate-400">คำนวณจากตารางผ่อนด้านขวา</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-700">
+                                        ฿{{ $fmtMoney($debtPaymentsSum) }}
                                     </span>
                                 </div>
                             @endif
@@ -760,6 +777,270 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- 3.1b VARIABLE DEBTS (ผ่อนตามตาราง) --}}
+                        @if($debts->count() > 0 || true)
+                            @php
+                                $thaiMonthsShort = [
+                                    '01'=>'ม.ค.','02'=>'ก.พ.','03'=>'มี.ค.','04'=>'เม.ย.',
+                                    '05'=>'พ.ค.','06'=>'มิ.ย.','07'=>'ก.ค.','08'=>'ส.ค.',
+                                    '09'=>'ก.ย.','10'=>'ต.ค.','11'=>'พ.ย.','12'=>'ธ.ค.'
+                                ];
+                                $thMonthLabel = function ($ym) use ($thaiMonthsShort) {
+                                    [$y, $m] = explode('-', $ym);
+                                    return ($thaiMonthsShort[$m] ?? $m) . ' ' . ((int)$y + 543);
+                                };
+                            @endphp
+                            <div class="border-t border-slate-100 pt-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">ผ่อนตามตาราง</p>
+                                    <button @click="addDebtOpen = !addDebtOpen"
+                                            class="rounded-lg border border-slate-200 p-1 text-slate-600 hover:bg-slate-50 transition"
+                                            title="เพิ่มหนี้ผ่อนตามตาราง">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Add Debt Form --}}
+                                <div x-show="addDebtOpen" x-cloak class="rounded-xl bg-slate-50 p-4 border border-slate-200 space-y-3">
+                                    <form method="POST" action="{{ route('portfolio.budget.debts.store') }}" class="space-y-3">
+                                        @csrf
+                                        <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อหนี้</label>
+                                            <input type="text" name="label" required placeholder="เช่น TikTok Paylater, SPayLater"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">ยอดหนี้รวมทั้งหมด (ไม่บังคับ)</label>
+                                            <input type="number" step="0.01" name="total_amount" placeholder="0.00"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่บังคับ)</label>
+                                            <input type="text" name="notes" placeholder="ข้อมูลเพิ่มเติม"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-1">
+                                            <button type="button" @click="addDebtOpen = false" class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">ยกเลิก</button>
+                                            <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-brand-700">เพิ่มหนี้</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {{-- List of Variable Debts --}}
+                                @forelse($debts as $debt)
+                                    @php
+                                        $currPay = $debt->payments->firstWhere('month', $activeMonth);
+                                        $paidSum = $debt->payments->where('is_paid', true)->sum('amount');
+                                        $progressPct = $debt->total_amount > 0
+                                            ? min(100, round($paidSum / $debt->total_amount * 100))
+                                            : 0;
+                                    @endphp
+                                    <div class="rounded-xl border border-slate-150 bg-slate-50/50 p-4 space-y-2"
+                                         x-data="{
+                                             scheduleOpen: false,
+                                             editing: false,
+                                             label: '{{ addslashes($debt->label) }}',
+                                             total_amount: {{ $debt->total_amount }},
+                                             notes: '{{ addslashes($debt->notes) }}'
+                                         }">
+
+                                        {{-- Read view --}}
+                                        <div x-show="!editing" class="flex items-start justify-between gap-3">
+                                            <div class="flex items-start gap-3 flex-1 min-w-0">
+                                                {{-- Checkbox for current month's payment --}}
+                                                @if($currPay)
+                                                    <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $currPay->id]) }}">
+                                                        @csrf
+                                                        <input type="checkbox" {{ $currPay->is_paid ? 'checked' : '' }}
+                                                               @change="$el.form.submit()"
+                                                               class="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                                    </form>
+                                                @else
+                                                    <div class="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-dashed border-slate-200"></div>
+                                                @endif
+
+                                                <div class="min-w-0 flex-1">
+                                                    <span class="text-sm font-bold text-slate-800 {{ ($currPay && $currPay->is_paid) ? 'line-through text-slate-400' : '' }}">
+                                                        {{ $debt->label }}
+                                                    </span>
+                                                    <p class="text-[10px] text-slate-500">
+                                                        @if($currPay)
+                                                            งวดเดือนนี้: ฿{{ $fmtMoney($currPay->amount) }}
+                                                        @else
+                                                            ไม่มีงวดชำระเดือนนี้
+                                                        @endif
+                                                    </p>
+                                                    @if($debt->notes)
+                                                        <p class="text-[10px] text-slate-400">{{ $debt->notes }}</p>
+                                                    @endif
+                                                </div>
+
+                                                @if($currPay)
+                                                    <span class="text-sm font-bold whitespace-nowrap {{ $currPay->is_paid ? 'text-slate-400' : 'text-slate-900' }}">
+                                                        ฿{{ $fmtMoney($currPay->amount) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                <button @click="scheduleOpen = !scheduleOpen"
+                                                        class="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 transition">
+                                                    <span x-text="scheduleOpen ? 'ซ่อน' : 'ตาราง'">ตาราง</span>
+                                                </button>
+                                                <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
+                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                                <form method="POST" action="{{ route('portfolio.budget.debts.destroy', $debt) }}"
+                                                      data-confirm="ลบหนี้ '{{ $debt->label }}' และตารางผ่อนทั้งหมด?"
+                                                      data-confirm-danger="1">
+                                                    @csrf @method('DELETE')
+                                                    <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                    <button type="submit" class="text-rose-400 hover:text-rose-600 p-0.5 rounded transition">
+                                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        {{-- Edit debt header --}}
+                                        <div x-show="editing" x-cloak class="w-full">
+                                            <form method="POST" action="{{ route('portfolio.budget.debts.update', $debt) }}"
+                                                  class="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                <input type="text" name="label" x-model="label" required
+                                                       class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ชื่อหนี้">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">ยอดหนี้รวม (ถ้ามี)</label>
+                                                        <input type="number" step="0.01" name="total_amount" x-model="total_amount"
+                                                               class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                    </div>
+                                                </div>
+                                                <input type="text" name="notes" x-model="notes"
+                                                       class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
+                                                <div class="flex justify-end gap-1.5">
+                                                    <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
+                                                    <button type="submit" class="rounded bg-brand-600 px-2 py-1 text-[10px] text-white font-semibold">บันทึก</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        {{-- Schedule table (expandable) --}}
+                                        <div x-show="scheduleOpen" x-cloak class="border-t border-slate-100 pt-2 space-y-1">
+                                            @foreach($debt->payments->sortBy('month') as $pay)
+                                                @php $isNow = $pay->month === $activeMonth; @endphp
+                                                <div class="flex items-center gap-2"
+                                                     x-data="{ editP: false, editAmt: {{ $pay->amount }}, editNotes: '{{ addslashes($pay->notes) }}' }">
+
+                                                    {{-- Read row --}}
+                                                    <div x-show="!editP" class="flex items-center gap-2 flex-1 min-w-0">
+                                                        @if($pay->is_paid)
+                                                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500 shrink-0">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        @elseif($isNow)
+                                                            <div class="h-3 w-3 rounded-full border-2 border-brand-500 shrink-0"></div>
+                                                        @else
+                                                            <div class="h-3 w-3 rounded-full border-2 border-slate-200 shrink-0"></div>
+                                                        @endif
+                                                        <span class="text-xs {{ $pay->is_paid ? 'text-slate-400 line-through' : ($isNow ? 'font-bold text-slate-900' : 'text-slate-600') }}">
+                                                            {{ $thMonthLabel($pay->month) }}
+                                                        </span>
+                                                        @if($isNow)
+                                                            <span class="text-[10px] text-brand-600 font-medium">(เดือนนี้)</span>
+                                                        @endif
+                                                        <span class="ml-auto text-xs {{ $pay->is_paid ? 'text-slate-400' : 'text-slate-700' }} whitespace-nowrap">
+                                                            ฿{{ $fmtMoney($pay->amount) }}
+                                                        </span>
+                                                        <button @click="editP = true" class="text-slate-400 hover:text-slate-600 shrink-0">
+                                                            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                            </svg>
+                                                        </button>
+                                                        <form method="POST" action="{{ route('portfolio.budget.debt-payments.destroy', $pay) }}"
+                                                              data-confirm="ลบงวด {{ $thMonthLabel($pay->month) }}?">
+                                                            @csrf @method('DELETE')
+                                                            <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                            <button type="submit" class="text-rose-400 hover:text-rose-500 shrink-0">
+                                                                <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+
+                                                    {{-- Edit row --}}
+                                                    <form x-show="editP" x-cloak method="POST"
+                                                          action="{{ route('portfolio.budget.debt-payments.update', $pay) }}"
+                                                          class="flex gap-1 flex-1 items-center min-w-0">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                        <span class="text-[10px] text-slate-500 shrink-0 w-14">{{ $thMonthLabel($pay->month) }}</span>
+                                                        <input type="number" step="0.01" name="amount" x-model="editAmt" required
+                                                               class="block w-full rounded border-slate-300 px-1.5 py-0.5 text-xs min-w-0">
+                                                        <input type="text" name="notes" x-model="editNotes"
+                                                               class="block w-16 rounded border-slate-300 px-1.5 py-0.5 text-xs" placeholder="หมายเหตุ">
+                                                        <button type="submit" class="rounded bg-brand-600 px-1.5 py-0.5 text-[10px] text-white font-semibold shrink-0">บันทึก</button>
+                                                        <button type="button" @click="editP = false" class="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600 font-semibold shrink-0">ยกเลิก</button>
+                                                    </form>
+                                                </div>
+                                            @endforeach
+
+                                            {{-- Add payment entry --}}
+                                            <div class="pt-1" x-data="{ addP: false, newMonth: '{{ $activeMonth }}', newAmt: '' }">
+                                                <button @click="addP = !addP"
+                                                        class="flex items-center gap-1 text-[10px] font-semibold text-brand-600 hover:text-brand-700">
+                                                    <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                    เพิ่มงวดชำระ
+                                                </button>
+                                                <div x-show="addP" x-cloak class="mt-1.5">
+                                                    <form method="POST" action="{{ route('portfolio.budget.debt-payments.store') }}"
+                                                          class="flex flex-wrap gap-1.5 items-center">
+                                                        @csrf
+                                                        <input type="hidden" name="debt_id" value="{{ $debt->id }}">
+                                                        <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                                                        <input type="month" name="month" x-model="newMonth" required
+                                                               class="rounded border-slate-300 px-1.5 py-0.5 text-xs">
+                                                        <input type="number" step="0.01" name="amount" x-model="newAmt" required
+                                                               placeholder="จำนวนเงิน"
+                                                               class="rounded border-slate-300 px-1.5 py-0.5 text-xs w-28">
+                                                        <button type="submit" class="rounded bg-brand-600 px-2 py-0.5 text-[10px] text-white font-semibold">เพิ่ม</button>
+                                                        <button type="button" @click="addP = false" class="rounded bg-slate-200 px-2 py-0.5 text-[10px] text-slate-600 font-semibold">ยกเลิก</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+
+                                            {{-- Progress bar (if total_amount set) --}}
+                                            @if($debt->total_amount > 0)
+                                                <div class="pt-2 border-t border-slate-100 space-y-1">
+                                                    <div class="w-full rounded-full overflow-hidden bg-slate-200" style="height:6px">
+                                                        <div class="bg-brand-600 h-full transition-all" style="width:{{ $progressPct }}%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between text-[10px] text-slate-500">
+                                                        <span>ชำระแล้ว {{ $progressPct }}%</span>
+                                                        <span>฿{{ $fmtMoney($paidSum) }} / ฿{{ $fmtMoney((float)$debt->total_amount) }}</span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-slate-400 text-center py-2">ยังไม่มีหนี้ผ่อนตามตาราง กดปุ่ม "+" เพื่อเพิ่ม</p>
+                                @endforelse
+                            </div>
+                        @endif
+
                     </div>
 
                     {{-- 3.2 SUBSCRIPTIONS --}}
