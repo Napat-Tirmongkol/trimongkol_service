@@ -146,6 +146,11 @@ class DashboardController extends Controller
      * inputs to 0 — the underlying columns are NOT NULL with `default(0)`
      * in the migration, but a null mass-assigned via `create()`/`update()`
      * overrides that default and trips a constraint violation.
+     *
+     * Money-shaped kinds (cash/deposit/debt) get their fields normalised
+     * to mirror the simplified form: quantity is locked at 1, and cost
+     * basis snaps to the entered amount so the gain/loss tile reads 0
+     * (cash doesn't appreciate, debts don't have a "cost basis").
      */
     private function validated(Request $request): array
     {
@@ -160,6 +165,13 @@ class DashboardController extends Controller
             'notes'         => 'nullable|string|max:1000',
             'sort_order'    => 'nullable|integer|min:0|max:9999',
         ]);
+
+        $moneyKinds = [Holding::KIND_CASH, Holding::KIND_DEPOSIT, Holding::KIND_DEBT];
+        if (in_array($data['kind'], $moneyKinds, true)) {
+            $data['quantity'] = 1;
+            $data['cost_basis'] = (float) ($data['current_price'] ?? 0);
+            $data['symbol'] = null;
+        }
 
         $data['cost_basis'] = (float) ($data['cost_basis'] ?? 0);
         $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
