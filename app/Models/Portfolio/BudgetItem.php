@@ -13,6 +13,7 @@ class BudgetItem extends Model
 
     protected $fillable = [
         'user_id',
+        'month',
         'category',
         'label',
         'amount',

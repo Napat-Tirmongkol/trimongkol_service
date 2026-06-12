@@ -12,6 +12,7 @@ return new class extends Migration
         Schema::create('portfolio_budget_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('month', 7); // YYYY-MM
             $table->string('category', 24); // fixed_expense, variable_expense, saving
             $table->string('label', 120);
             $table->decimal('amount', 18, 2);
@@ -25,6 +26,7 @@ return new class extends Migration
         Schema::create('portfolio_installments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('month', 7); // YYYY-MM
             $table->string('label', 120);
             $table->decimal('monthly_payment', 18, 2);
             $table->decimal('total_amount', 18, 2);
@@ -39,6 +41,7 @@ return new class extends Migration
         Schema::create('portfolio_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('month', 7); // YYYY-MM
             $table->string('label', 120);
             $table->decimal('monthly_payment', 18, 2);
             $table->unsignedTinyInteger('billing_day')->nullable();
@@ -47,11 +50,14 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 4. Income
+        // 4. Income Sources (Multiple sources per month)
         Schema::create('portfolio_income', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
-            $table->decimal('income_amount', 18, 2);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('month', 7); // YYYY-MM
+            $table->string('label', 120); // เช่น เงินเดือน, OT, รายได้เสริม
+            $table->decimal('amount', 18, 2);
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

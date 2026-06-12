@@ -1,10 +1,23 @@
 <x-portfolio-layout>
     @php
         $fmtMoney = fn ($n) => number_format((float) $n, 2);
+
+        $thaiMonths = [
+            1 => 'มกราคม', 2 => 'กุมภาพันธ์', 3 => 'มีนาคม', 4 => 'เมษายน',
+            5 => 'พฤษภาคม', 6 => 'มิถุนายน', 7 => 'กรกฎาคม', 8 => 'สิงหาคม',
+            9 => 'กันยายน', 10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
+        ];
+
+        $formatThaiMonth = function ($ym) use ($thaiMonths) {
+            $time = strtotime($ym . '-01');
+            $m = (int) date('m', $time);
+            $y = (int) date('Y', $time) + 543; // BE Era
+            return $thaiMonths[$m] . ' ' . $y;
+        };
     @endphp
 
     <div class="py-8" x-data="{
-        showIncomeEdit: false,
+        addIncomeOpen: false,
         addFixedOpen: false,
         addVariableOpen: false,
         addSavingOpen: false,
@@ -13,23 +26,42 @@
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             
-            {{-- Header & Summary Tiles --}}
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            {{-- Header & Dropdown & Reset --}}
+            <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-slate-900">{{ __('app.portfolio.budget.heading') }}</h1>
                     <p class="mt-1 text-sm text-slate-600">{{ __('app.portfolio.budget.subheading') }}</p>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap items-center gap-4">
+                    {{-- Dropdown history --}}
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-semibold text-slate-700">เลือกเดือน:</label>
+                        <select onchange="window.location.href = '{{ route('portfolio.budget.index') }}?month=' + this.value"
+                                class="rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            @foreach($allMonths as $m)
+                                <option value="{{ $m }}" {{ $activeMonth === $m ? 'selected' : '' }}>
+                                    {{ $formatThaiMonth($m) }}
+                                </option>
+                            @endforeach
+                            @if(!$allMonths->contains($activeMonth))
+                                <option value="{{ $activeMonth }}" selected>
+                                    {{ $formatThaiMonth($activeMonth) }} (ปัจจุบัน)
+                                </option>
+                            @endif
+                        </select>
+                    </div>
+
                     {{-- New Month Reset Button --}}
                     <form method="POST" action="{{ route('portfolio.budget.reset') }}" 
-                          data-confirm="ต้องการเริ่มเดือนใหม่? ระบบจะบวกจำนวนงวดผ่อนชำระที่ติ๊กจ่ายเงินแล้ว และล้างสถานะจ่ายเงินทั้งหมด" 
-                          data-confirm-danger="1">
+                          data-confirm="ต้องการเริ่มเดือนใหม่? ระบบจะคำนวณเดือนถัดไป คัดลอกรายการแผนงานทั้งหมด บวกรอบผ่อนชำระที่เช็คไว้ และรีเซ็ตสถานะติ๊กชำระเงิน" 
+                          data-confirm-danger="0">
                         @csrf
+                        <input type="hidden" name="current_month" value="{{ $activeMonth }}">
                         <button type="submit" 
                                 class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                             </svg>
                             เริ่มเดือนใหม่
                         </button>
@@ -40,28 +72,13 @@
             {{-- Summary Cards --}}
             <div class="grid gap-4 sm:grid-cols-3">
                 {{-- Income Card --}}
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">รายได้ประจำเดือน</span>
-                        <button @click="showIncomeEdit = !showIncomeEdit" class="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
-                            แก้ไข
-                        </button>
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-1">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">รายได้รวมประจำเดือน</div>
+                    <div class="text-3xl font-extrabold text-slate-900">
+                        ฿{{ $fmtMoney($incomeTotal) }}
                     </div>
-
-                    <div x-show="!showIncomeEdit" class="text-3xl font-extrabold text-slate-900">
-                        ฿{{ $fmtMoney($income->income_amount) }}
-                    </div>
-
-                    <div x-show="showIncomeEdit" x-cloak>
-                        <form method="POST" action="{{ route('portfolio.budget.income.update') }}" class="flex items-center gap-2">
-                            @csrf
-                            <input type="number" step="0.01" name="income_amount" value="{{ (float) $income->income_amount }}" required
-                                   class="block w-full rounded-lg border-slate-300 px-3 py-1 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1 text-xs font-semibold text-white shadow hover:bg-brand-700">บันทึก</button>
-                        </form>
+                    <div class="text-[11px] text-slate-500">
+                        จากแหล่งรายได้ทั้งหมด {{ $incomes->count() }} รายการ
                     </div>
                 </div>
 
@@ -113,6 +130,7 @@
                             <form method="POST" action="{{ route('portfolio.budget.items.store') }}" class="space-y-3">
                                 @csrf
                                 <input type="hidden" name="category" value="fixed_expense">
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">รายการ</label>
                                     <input type="text" name="label" required placeholder="เช่น ค่าเช่าบ้าน, ค่าเทอม"
@@ -254,6 +272,7 @@
                             <form method="POST" action="{{ route('portfolio.budget.items.store') }}" class="space-y-3">
                                 @csrf
                                 <input type="hidden" name="category" value="variable_expense">
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">รายการ</label>
                                     <input type="text" name="label" required placeholder="เช่น ค่าอาหาร, สังสรรค์"
@@ -345,8 +364,116 @@
                     </div>
                 </div>
 
-                {{-- COLUMN 2: SAVINGS & INVESTMENTS --}}
+                {{-- COLUMN 2: INCOME SOURCES & SAVINGS --}}
                 <div class="space-y-6">
+                    
+                    {{-- 2.1 INCOME SOURCES --}}
+                    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">แหล่งรายได้</h3>
+                                <p class="text-xs text-slate-500">เงินเดือน, OT, รายได้เสริมต่างๆ ในเดือนนี้</p>
+                            </div>
+                            <button @click="addIncomeOpen = !addIncomeOpen" class="rounded-lg border border-slate-200 p-1 text-slate-600 hover:bg-slate-50 transition">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Add Income Source Form --}}
+                        <div x-show="addIncomeOpen" x-cloak class="rounded-xl bg-slate-50 p-4 border border-slate-200 space-y-3">
+                            <form method="POST" action="{{ route('portfolio.budget.income.store') }}" class="space-y-3">
+                                @csrf
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">ประเภทรายได้</label>
+                                    <input type="text" name="label" required placeholder="เช่น เงินเดือน, OT, ขายของออนไลน์"
+                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
+                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
+                                    <input type="text" name="notes" placeholder="ข้อมูลเพิ่มเติม"
+                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                </div>
+                                <div class="flex justify-end gap-2 pt-1">
+                                    <button type="button" @click="addIncomeOpen = false" class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">ยกเลิก</button>
+                                    <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-brand-700">เพิ่มรายได้</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {{-- List of Income Sources --}}
+                        <div class="divide-y divide-slate-100">
+                            @forelse($incomes as $inc)
+                                <div class="py-2.5 flex items-center justify-between gap-3"
+                                     x-data="{ editing: false, label: '{{ addslashes($inc->label) }}', amount: {{ $inc->amount }}, notes: '{{ addslashes($inc->notes) }}' }">
+                                    
+                                    {{-- Read mode --}}
+                                    <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
+                                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                        <div class="min-w-0 flex-1">
+                                            <span class="text-sm font-medium text-slate-800">
+                                                {{ $inc->label }}
+                                            </span>
+                                            @if($inc->notes)
+                                                <p class="text-[10px] text-slate-400 truncate">{{ $inc->notes }}</p>
+                                            @endif
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap">
+                                            ฿{{ $fmtMoney($inc->amount) }}
+                                        </span>
+                                        <div class="flex items-center gap-1">
+                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                            <form method="POST" action="{{ route('portfolio.budget.income.destroy', $inc) }}" data-confirm="ต้องการลบแหล่งรายได้นี้?">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-rose-400 hover:text-rose-600 p-0.5 rounded transition">
+                                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    {{-- Edit mode --}}
+                                    <div x-show="editing" x-cloak class="w-full">
+                                        <form method="POST" action="{{ route('portfolio.budget.income.update', $inc) }}" class="space-y-2 py-1 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
+                                            <div class="flex justify-end gap-1.5">
+                                                <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
+                                                <button type="submit" class="rounded bg-brand-600 px-2 py-1 text-[10px] text-white font-semibold">บันทึก</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="py-4 text-center text-xs text-slate-400">ยังไม่มีข้อมูลรายได้ในเดือนนี้ กดปุ่ม "+" เพื่อเริ่มต้น</div>
+                            @endforelse
+                        </div>
+
+                        {{-- Total Income --}}
+                        <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
+                            <span>รายได้รวม</span>
+                            <span>฿{{ $fmtMoney($incomeTotal) }}</span>
+                        </div>
+                    </div>
+                    
+                    {{-- 2.2 SAVINGS & INVESTMENTS --}}
                     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
@@ -365,6 +492,7 @@
                             <form method="POST" action="{{ route('portfolio.budget.items.store') }}" class="space-y-3">
                                 @csrf
                                 <input type="hidden" name="category" value="saving">
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">รายการ</label>
                                     <input type="text" name="label" required placeholder="เช่น ออมเงินแต่งงาน, ฝากกับแฟน"
@@ -477,6 +605,7 @@
                         <div x-show="addInstallmentOpen" x-cloak class="rounded-xl bg-slate-50 p-4 border border-slate-200 space-y-3">
                             <form method="POST" action="{{ route('portfolio.budget.installments.store') }}" class="space-y-3">
                                 @csrf
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อรายการหนี้</label>
                                     <input type="text" name="label" required placeholder="เช่น S24 Ultra, SpayLater"
@@ -651,6 +780,7 @@
                         <div x-show="addSubscriptionOpen" x-cloak class="rounded-xl bg-slate-50 p-4 border border-slate-200 space-y-3">
                             <form method="POST" action="{{ route('portfolio.budget.subscriptions.store') }}" class="space-y-3">
                                 @csrf
+                                <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อบริการ</label>
                                     <input type="text" name="label" required placeholder="เช่น YouTube Premium, Netflix"

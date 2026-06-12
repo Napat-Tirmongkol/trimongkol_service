@@ -13,6 +13,7 @@ class Installment extends Model
 
     protected $fillable = [
         'user_id',
+        'month',
         'label',
         'monthly_payment',
         'total_amount',

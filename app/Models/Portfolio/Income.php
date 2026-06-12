@@ -13,11 +13,14 @@ class Income extends Model
 
     protected $fillable = [
         'user_id',
-        'income_amount',
+        'month',
+        'label',
+        'amount',
+        'notes',
     ];
 
     protected $casts = [
-        'income_amount' => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     public function user(): BelongsTo

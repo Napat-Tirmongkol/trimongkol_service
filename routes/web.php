@@ -138,7 +138,9 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
 
         // Monthly Budget & Debt Tracker
         Route::get('/budget', [PortfolioBudgetController::class, 'index'])->name('budget.index');
-        Route::post('/budget/income', [PortfolioBudgetController::class, 'updateIncome'])->name('budget.income.update');
+        Route::post('/budget/incomes', [PortfolioBudgetController::class, 'storeIncome'])->name('budget.income.store');
+        Route::patch('/budget/incomes/{income}', [PortfolioBudgetController::class, 'updateIncome'])->name('budget.income.update');
+        Route::delete('/budget/incomes/{income}', [PortfolioBudgetController::class, 'destroyIncome'])->name('budget.income.destroy');
         Route::post('/budget/reset', [PortfolioBudgetController::class, 'resetMonth'])->name('budget.reset');
         Route::post('/budget/items', [PortfolioBudgetController::class, 'storeBudgetItem'])->name('budget.items.store');
         Route::patch('/budget/items/{item}', [PortfolioBudgetController::class, 'updateBudgetItem'])->name('budget.items.update');
