@@ -179,7 +179,7 @@
                                             ฿{{ $fmtMoney($item->amount) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -321,7 +321,7 @@
                                             ฿{{ $fmtMoney($item->amount) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -429,7 +429,7 @@
                                             ฿{{ $fmtMoney($inc->amount) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -541,7 +541,7 @@
                                             ฿{{ $fmtMoney($item->amount) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -685,7 +685,7 @@
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-1">
-                                                <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                                <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                     </svg>
@@ -841,7 +841,7 @@
                                             ฿{{ $fmtMoney($sub->monthly_payment) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
