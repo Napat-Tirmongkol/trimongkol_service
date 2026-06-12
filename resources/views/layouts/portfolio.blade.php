@@ -54,6 +54,10 @@
                                class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.dashboard') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }}">
                                 {{ __('app.portfolio.nav.dashboard') }}
                             </a>
+                            <a href="{{ route('portfolio.budget.index') }}" 
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.budget.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }}">
+                                {{ __('app.portfolio.nav.budget') }}
+                            </a>
                             <a href="{{ route('portfolio.planner') }}" 
                                class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.planner') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }}">
                                 {{ __('app.portfolio.nav.planner') }}

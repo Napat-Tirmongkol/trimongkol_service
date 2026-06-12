@@ -37,6 +37,7 @@ use App\Http\Controllers\Portfolio\AuthController as PortfolioAuthController;
 use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardController;
 use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransactionController;
 use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerController;
+use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -134,6 +135,21 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::post('/watchlist', [PortfolioPlannerController::class, 'storeWatchlistItem'])->name('watchlist.store');
         Route::delete('/watchlist/{item}', [PortfolioPlannerController::class, 'destroyWatchlistItem'])->name('watchlist.destroy');
         Route::post('/watchlist/refresh', [PortfolioPlannerController::class, 'refreshWatchlist'])->name('watchlist.refresh');
+
+        // Monthly Budget & Debt Tracker
+        Route::get('/budget', [PortfolioBudgetController::class, 'index'])->name('budget.index');
+        Route::post('/budget/income', [PortfolioBudgetController::class, 'updateIncome'])->name('budget.income.update');
+        Route::post('/budget/reset', [PortfolioBudgetController::class, 'resetMonth'])->name('budget.reset');
+        Route::post('/budget/items', [PortfolioBudgetController::class, 'storeBudgetItem'])->name('budget.items.store');
+        Route::patch('/budget/items/{item}', [PortfolioBudgetController::class, 'updateBudgetItem'])->name('budget.items.update');
+        Route::delete('/budget/items/{item}', [PortfolioBudgetController::class, 'destroyBudgetItem'])->name('budget.items.destroy');
+        Route::post('/budget/toggle/{type}/{id}', [PortfolioBudgetController::class, 'toggleCheck'])->name('budget.toggle');
+        Route::post('/budget/installments', [PortfolioBudgetController::class, 'storeInstallment'])->name('budget.installments.store');
+        Route::patch('/budget/installments/{installment}', [PortfolioBudgetController::class, 'updateInstallment'])->name('budget.installments.update');
+        Route::delete('/budget/installments/{installment}', [PortfolioBudgetController::class, 'destroyInstallment'])->name('budget.installments.destroy');
+        Route::post('/budget/subscriptions', [PortfolioBudgetController::class, 'storeSubscription'])->name('budget.subscriptions.store');
+        Route::patch('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'updateSubscription'])->name('budget.subscriptions.update');
+        Route::delete('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'destroySubscription'])->name('budget.subscriptions.destroy');
     });
 });
 
