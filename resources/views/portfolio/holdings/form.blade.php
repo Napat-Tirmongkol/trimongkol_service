@@ -85,7 +85,11 @@
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div x-show="!isMoney()" x-cloak>
                         <label for="quantity" class="block text-sm font-medium text-slate-700">{{ __('app.portfolio.form.quantity') }}</label>
-                        <input id="quantity" name="quantity" type="number" step="0.00000001" min="0" required
+                        {{-- `required` would still be enforced when hidden, blocking submit in
+                             cash/deposit/debt mode — drop it and rely on server validation
+                             instead.  x-model keeps the value in sync (defaults to 1 for
+                             money kinds via the form's init watcher). --}}
+                        <input id="quantity" name="quantity" type="number" step="0.00000001" min="0"
                                x-model="quantity"
                                class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         @error('quantity') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
