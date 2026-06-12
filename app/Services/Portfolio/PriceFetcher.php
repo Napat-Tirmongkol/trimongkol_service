@@ -3,6 +3,7 @@
 namespace App\Services\Portfolio;
 
 use App\Models\Portfolio\Holding;
+use App\Models\Portfolio\WatchlistItem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -68,6 +69,55 @@ class PriceFetcher
                 Log::warning('portfolio.price_refresh.failed', [
                     'holding_id' => $holding->id,
                     'symbol' => $holding->symbol,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return ['updated' => $updated, 'failed' => $failed, 'errors' => $errors];
+    }
+
+    /**
+     * Refresh `current_price`, `current_price_thb` and `last_priced_at` for
+     * every item in the user's watchlist.
+     *
+     * @return array{updated:int, failed:int, errors:array<int,string>}
+     */
+    public function refreshWatchlistForUser(int $userId): array
+    {
+        $items = WatchlistItem::query()->forUser($userId)->get();
+
+        $updated = 0;
+        $failed = 0;
+        $errors = [];
+
+        foreach ($items as $item) {
+            try {
+                if ($item->isPriceable()) {
+                    $price = $this->fetchUnitPrice($item->kind, (string) $item->symbol);
+                    if ($price !== null) {
+                        $item->current_price = $price;
+                        $item->last_priced_at = now();
+
+                        // Convert to THB
+                        $item->current_price_thb = $this->toThb(
+                            (float) $price,
+                            1.0,
+                            (string) $item->currency
+                        );
+                        $item->save();
+                        $updated++;
+                    } else {
+                        $failed++;
+                        $errors[] = "{$item->symbol}: no price returned";
+                    }
+                }
+            } catch (Throwable $e) {
+                $failed++;
+                $errors[] = "{$item->symbol}: " . $e->getMessage();
+                Log::warning('portfolio.watchlist_refresh.failed', [
+                    'item_id' => $item->id,
+                    'symbol' => $item->symbol,
                     'error' => $e->getMessage(),
                 ]);
             }

@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\Portfolio\AuthController as PortfolioAuthController;
 use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardController;
 use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransactionController;
+use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -124,6 +125,15 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::get('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'index'])->name('holdings.transactions.index');
         Route::post('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'store'])->name('holdings.transactions.store');
         Route::delete('/holdings/{holding}/transactions/{transaction}', [PortfolioTransactionController::class, 'destroy'])->name('holdings.transactions.destroy');
+
+        // Investment Planner
+        Route::get('/planner', [PortfolioPlannerController::class, 'index'])->name('planner');
+        Route::post('/goals', [PortfolioPlannerController::class, 'storeGoal'])->name('goals.store');
+        Route::patch('/goals/{goal}', [PortfolioPlannerController::class, 'updateGoal'])->name('goals.update');
+        Route::delete('/goals/{goal}', [PortfolioPlannerController::class, 'destroyGoal'])->name('goals.destroy');
+        Route::post('/watchlist', [PortfolioPlannerController::class, 'storeWatchlistItem'])->name('watchlist.store');
+        Route::delete('/watchlist/{item}', [PortfolioPlannerController::class, 'destroyWatchlistItem'])->name('watchlist.destroy');
+        Route::post('/watchlist/refresh', [PortfolioPlannerController::class, 'refreshWatchlist'])->name('watchlist.refresh');
     });
 });
 

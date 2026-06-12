@@ -47,6 +47,20 @@
                         </form>
                     </div>
                 </div>
+                <div class="border-t border-slate-200 bg-slate-50/50">
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <a href="{{ route('portfolio.dashboard') }}" 
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.dashboard') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }}">
+                                {{ __('app.portfolio.nav.dashboard') }}
+                            </a>
+                            <a href="{{ route('portfolio.planner') }}" 
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.planner') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700' }}">
+                                {{ __('app.portfolio.nav.planner') }}
+                            </a>
+                        </nav>
+                    </div>
+                </div>
             </header>
         @endauth
 
