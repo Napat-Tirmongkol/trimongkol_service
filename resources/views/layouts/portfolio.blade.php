@@ -17,6 +17,13 @@
     <style>
         /* ── Portfolio Dark Mode (mirrors admin theme) ────────────── */
 
+        /* Global Backgrounds */
+        html.portfolio-dark-pre,
+        body.portfolio-dark {
+            background-color: #0a0c10 !important;
+            color: #f1f5f9 !important;
+        }
+
         /* Cards & Surfaces */
         .portfolio-dark .bg-white {
             background-color: #141720 !important;
@@ -28,8 +35,61 @@
             background-color: #0d0f14 !important;
         }
 
-        .portfolio-dark .bg-slate-100 {
+        .portfolio-dark .bg-slate-100,
+        .portfolio-dark .bg-slate-200 {
             background-color: #181c28 !important;
+        }
+
+        /* Badge colors & light container backgrounds */
+        .portfolio-dark .bg-emerald-50,
+        .portfolio-dark .bg-emerald-50\/60 {
+            background-color: rgba(16, 185, 129, 0.1) !important;
+            color: #34d399 !important;
+            border-color: rgba(16, 185, 129, 0.2) !important;
+        }
+        .portfolio-dark .bg-rose-50,
+        .portfolio-dark .bg-rose-50\/60 {
+            background-color: rgba(244, 63, 94, 0.1) !important;
+            color: #fb7185 !important;
+            border-color: rgba(244, 63, 94, 0.2) !important;
+        }
+        .portfolio-dark .bg-sky-50,
+        .portfolio-dark .bg-sky-50\/60 {
+            background-color: rgba(14, 165, 233, 0.1) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(14, 165, 233, 0.2) !important;
+        }
+        .portfolio-dark .bg-amber-50 {
+            background-color: rgba(245, 158, 11, 0.1) !important;
+            color: #fbbf24 !important;
+            border-color: rgba(245, 158, 11, 0.2) !important;
+        }
+        .portfolio-dark .bg-violet-50 {
+            background-color: rgba(139, 92, 246, 0.1) !important;
+            color: #a78bfa !important;
+            border-color: rgba(139, 92, 246, 0.2) !important;
+        }
+        .portfolio-dark .bg-indigo-50 {
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            color: #818cf8 !important;
+            border-color: rgba(99, 102, 241, 0.2) !important;
+        }
+        .portfolio-dark .bg-stone-100 {
+            background-color: rgba(120, 113, 108, 0.1) !important;
+            color: #d6d3d1 !important;
+            border-color: rgba(120, 113, 108, 0.2) !important;
+        }
+        
+        /* Table headers, hover states */
+        .portfolio-dark .bg-slate-50\/60 {
+            background-color: #0d0f14 !important;
+        }
+        .portfolio-dark .hover\:bg-brand-50:hover {
+            background-color: rgba(79, 70, 229, 0.15) !important;
+            color: #818cf8 !important;
+        }
+        .portfolio-dark .hover\:bg-rose-50:hover {
+            background-color: rgba(244, 63, 94, 0.15) !important;
         }
 
         /* Borders & Dividers */
