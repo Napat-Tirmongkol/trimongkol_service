@@ -33,6 +33,11 @@ use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
+use App\Http\Controllers\Portfolio\AuthController as PortfolioAuthController;
+use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardController;
+use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransactionController;
+use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerController;
+use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -64,6 +69,7 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'submit'])->name('contact.submit');
 Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 
 // Smart Clipboard OCR — public, free, runs entirely in the browser (Tesseract.js
 // via CDN). No upload, no auth, no server processing — just returns the page.
@@ -96,6 +102,58 @@ Route::middleware('guest')->group(function () {
 Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('admin.logout');
+
+// Personal-portfolio area — Google OAuth sign-in for the owner only.
+// Authorisation is the email allowlist in config/portfolio.php, enforced
+// by both the OAuth callback (friendly error) and the route middleware
+// (hard 403 in case session state ever drifts).
+Route::prefix('portfolio')->name('portfolio.')->group(function () {
+    Route::get('/login', [PortfolioAuthController::class, 'showLogin'])->name('login');
+    Route::get('/auth/google', [PortfolioAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [PortfolioAuthController::class, 'callback'])->name('auth.google.callback');
+    Route::post('/logout', [PortfolioAuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('portfolio.access')->group(function () {
+        Route::get('/', [PortfolioDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/refresh', [PortfolioDashboardController::class, 'refresh'])->name('refresh');
+        Route::get('/holdings/create', [PortfolioDashboardController::class, 'create'])->name('holdings.create');
+        Route::post('/holdings', [PortfolioDashboardController::class, 'store'])->name('holdings.store');
+        Route::get('/holdings/{holding}/edit', [PortfolioDashboardController::class, 'edit'])->name('holdings.edit');
+        Route::patch('/holdings/{holding}', [PortfolioDashboardController::class, 'update'])->name('holdings.update');
+        Route::delete('/holdings/{holding}', [PortfolioDashboardController::class, 'destroy'])->name('holdings.destroy');
+
+        // Transactions ledger
+        Route::get('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'index'])->name('holdings.transactions.index');
+        Route::post('/holdings/{holding}/transactions', [PortfolioTransactionController::class, 'store'])->name('holdings.transactions.store');
+        Route::delete('/holdings/{holding}/transactions/{transaction}', [PortfolioTransactionController::class, 'destroy'])->name('holdings.transactions.destroy');
+
+        // Investment Planner
+        Route::get('/planner', [PortfolioPlannerController::class, 'index'])->name('planner');
+        Route::post('/goals', [PortfolioPlannerController::class, 'storeGoal'])->name('goals.store');
+        Route::patch('/goals/{goal}', [PortfolioPlannerController::class, 'updateGoal'])->name('goals.update');
+        Route::delete('/goals/{goal}', [PortfolioPlannerController::class, 'destroyGoal'])->name('goals.destroy');
+        Route::post('/watchlist', [PortfolioPlannerController::class, 'storeWatchlistItem'])->name('watchlist.store');
+        Route::delete('/watchlist/{item}', [PortfolioPlannerController::class, 'destroyWatchlistItem'])->name('watchlist.destroy');
+        Route::post('/watchlist/refresh', [PortfolioPlannerController::class, 'refreshWatchlist'])->name('watchlist.refresh');
+
+        // Monthly Budget & Debt Tracker
+        Route::get('/budget', [PortfolioBudgetController::class, 'index'])->name('budget.index');
+        Route::post('/budget/incomes', [PortfolioBudgetController::class, 'storeIncome'])->name('budget.income.store');
+        Route::patch('/budget/incomes/{income}', [PortfolioBudgetController::class, 'updateIncome'])->name('budget.income.update');
+        Route::delete('/budget/incomes/{income}', [PortfolioBudgetController::class, 'destroyIncome'])->name('budget.income.destroy');
+        Route::post('/budget/reset', [PortfolioBudgetController::class, 'resetMonth'])->name('budget.reset');
+        Route::post('/budget/items', [PortfolioBudgetController::class, 'storeBudgetItem'])->name('budget.items.store');
+        Route::patch('/budget/items/{item}', [PortfolioBudgetController::class, 'updateBudgetItem'])->name('budget.items.update');
+        Route::delete('/budget/items/{item}', [PortfolioBudgetController::class, 'destroyBudgetItem'])->name('budget.items.destroy');
+        Route::post('/budget/toggle/{type}/{id}', [PortfolioBudgetController::class, 'toggleCheck'])->name('budget.toggle');
+        Route::post('/budget/installments', [PortfolioBudgetController::class, 'storeInstallment'])->name('budget.installments.store');
+        Route::patch('/budget/installments/{installment}', [PortfolioBudgetController::class, 'updateInstallment'])->name('budget.installments.update');
+        Route::delete('/budget/installments/{installment}', [PortfolioBudgetController::class, 'destroyInstallment'])->name('budget.installments.destroy');
+        Route::post('/budget/subscriptions', [PortfolioBudgetController::class, 'storeSubscription'])->name('budget.subscriptions.store');
+        Route::patch('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'updateSubscription'])->name('budget.subscriptions.update');
+        Route::delete('/budget/subscriptions/{subscription}', [PortfolioBudgetController::class, 'destroySubscription'])->name('budget.subscriptions.destroy');
+    });
+});
 
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {

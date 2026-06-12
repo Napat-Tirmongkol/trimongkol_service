@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'product' => \App\Http\Middleware\EnsureProductEnabled::class,
             'auth.accounting' => \App\Http\Middleware\EnsureAccountingAuth::class,
+            'portfolio.access' => \App\Http\Middleware\EnsurePortfolioAccess::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
