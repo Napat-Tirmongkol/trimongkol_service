@@ -79,6 +79,13 @@ class DashboardController extends Controller
     {
         $data = $this->validated($request);
         $data['user_id'] = (int) auth()->id();
+
+        $nativeCost = (float) ($data['cost_basis'] ?? 0);
+        $data['metadata'] = [
+            'cost_basis_native' => $nativeCost,
+        ];
+        $data['cost_basis'] = $prices->toThb($nativeCost, 1, $data['currency']) ?? $nativeCost;
+
         $data['current_value_thb'] = $prices->toThb(
             (float) ($data['current_price'] ?? 0),
             (float) $data['quantity'],
@@ -103,6 +110,13 @@ class DashboardController extends Controller
         $this->authorizeOwnership($holding);
 
         $data = $this->validated($request);
+
+        $nativeCost = (float) ($data['cost_basis'] ?? 0);
+        $data['metadata'] = array_merge((array) ($holding->metadata ?? []), [
+            'cost_basis_native' => $nativeCost,
+        ]);
+        $data['cost_basis'] = $prices->toThb($nativeCost, 1, $data['currency']) ?? $nativeCost;
+
         $data['current_value_thb'] = $prices->toThb(
             (float) ($data['current_price'] ?? 0),
             (float) $data['quantity'],
