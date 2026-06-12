@@ -69,7 +69,7 @@ class PlannerController extends Controller
 
         Goal::create($data);
 
-        return redirect()->route('portfolio.planner')
+        return redirect()->to(route('portfolio.planner') . '#goals')
             ->with('status', __('app.portfolio.planner.goal_created'));
     }
 
@@ -86,7 +86,7 @@ class PlannerController extends Controller
 
         $goal->update($data);
 
-        return redirect()->route('portfolio.planner')
+        return redirect()->to(route('portfolio.planner') . '#goals')
             ->with('status', __('app.portfolio.planner.goal_updated'));
     }
 
@@ -95,7 +95,7 @@ class PlannerController extends Controller
         $this->authorizeGoal($goal);
         $goal->delete();
 
-        return redirect()->route('portfolio.planner')
+        return redirect()->to(route('portfolio.planner') . '#goals')
             ->with('status', __('app.portfolio.planner.goal_deleted'));
     }
 
@@ -115,7 +115,7 @@ class PlannerController extends Controller
         // Fetch price immediately
         $prices->refreshWatchlistForUser((int) auth()->id());
 
-        return redirect()->route('portfolio.planner')
+        return redirect()->to(route('portfolio.planner') . '#watchlist')
             ->with('status', __('app.portfolio.planner.watchlist_created'));
     }
 
@@ -124,7 +124,7 @@ class PlannerController extends Controller
         $this->authorizeWatchlist($item);
         $item->delete();
 
-        return redirect()->route('portfolio.planner')
+        return redirect()->to(route('portfolio.planner') . '#watchlist')
             ->with('status', __('app.portfolio.planner.watchlist_deleted'));
     }
 
@@ -139,8 +139,8 @@ class PlannerController extends Controller
         ]);
 
         return $result['failed'] > 0
-            ? redirect()->route('portfolio.planner')->with('error', $msg)
-            : redirect()->route('portfolio.planner')->with('status', $msg);
+            ? redirect()->to(route('portfolio.planner') . '#watchlist')->with('error', $msg)
+            : redirect()->to(route('portfolio.planner') . '#watchlist')->with('status', $msg);
     }
 
     private function authorizeGoal(Goal $goal): void

@@ -50,7 +50,17 @@
         })->sortByDesc('pct');
     @endphp
 
-    <div class="py-8" x-data="{ activeTab: 'dca' }">
+    <div class="py-8" x-data="{ 
+        activeTab: ['dca', 'goals', 'watchlist', 'whatif', 'performance'].includes(window.location.hash.substring(1)) ? window.location.hash.substring(1) : 'dca',
+        init() {
+            window.addEventListener('hashchange', () => {
+                let h = window.location.hash.substring(1);
+                if (['dca', 'goals', 'watchlist', 'whatif', 'performance'].includes(h)) {
+                    this.activeTab = h;
+                }
+            });
+        }
+    }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             
             {{-- Header section --}}
@@ -64,27 +74,27 @@
             {{-- Planner sub-tabs navigation --}}
             <div class="border-b border-slate-200">
                 <nav class="-mb-px flex flex-wrap gap-x-6 gap-y-2" aria-label="Planner Tabs">
-                    <button @click="activeTab = 'dca'"
+                    <button @click="activeTab = 'dca'; window.location.hash = 'dca'"
                             :class="activeTab === 'dca' ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
                             class="border-b-2 px-1 py-2.5 text-sm font-medium transition whitespace-nowrap">
                         {{ __('app.portfolio.planner.tabs.dca') }}
                     </button>
-                    <button @click="activeTab = 'goals'"
+                    <button @click="activeTab = 'goals'; window.location.hash = 'goals'"
                             :class="activeTab === 'goals' ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
                             class="border-b-2 px-1 py-2.5 text-sm font-medium transition whitespace-nowrap">
                         {{ __('app.portfolio.planner.tabs.goals') }}
                     </button>
-                    <button @click="activeTab = 'watchlist'"
+                    <button @click="activeTab = 'watchlist'; window.location.hash = 'watchlist'"
                             :class="activeTab === 'watchlist' ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
                             class="border-b-2 px-1 py-2.5 text-sm font-medium transition whitespace-nowrap">
                         {{ __('app.portfolio.planner.tabs.watchlist') }}
                     </button>
-                    <button @click="activeTab = 'whatif'"
+                    <button @click="activeTab = 'whatif'; window.location.hash = 'whatif'"
                             :class="activeTab === 'whatif' ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
                             class="border-b-2 px-1 py-2.5 text-sm font-medium transition whitespace-nowrap">
                         {{ __('app.portfolio.planner.tabs.whatif') }}
                     </button>
-                    <button @click="activeTab = 'performance'"
+                    <button @click="activeTab = 'performance'; window.location.hash = 'performance'"
                             :class="activeTab === 'performance' ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
                             class="border-b-2 px-1 py-2.5 text-sm font-medium transition whitespace-nowrap">
                         {{ __('app.portfolio.planner.tabs.performance') }}
