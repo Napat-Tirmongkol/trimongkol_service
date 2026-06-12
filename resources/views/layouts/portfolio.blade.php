@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <div class="min-h-screen flex flex-col">
@@ -55,5 +56,6 @@
     </div>
 
     @include('partials.sweetalert')
+    @livewireScripts
 </body>
 </html>
