@@ -15,6 +15,21 @@
     @livewireStyles
 
     <style>
+        /* ── Tailwind utility fallbacks (compiled CSS predates budget templates) ── */
+        .h-1\.5{height:.375rem}
+        .h-3\.5{height:.875rem}
+        .w-3\.5{width:.875rem}
+        .gap-1\.5{gap:.375rem}
+        .p-0\.5{padding:.125rem}
+        .p-1\.5{padding:.375rem}
+        .p-2\.5{padding:.625rem}
+        .py-1\.5{padding-top:.375rem;padding-bottom:.375rem}
+        .py-2\.5{padding-top:.625rem;padding-bottom:.625rem}
+        .mb-0\.5{margin-bottom:.125rem}
+        .mt-0\.5{margin-top:.125rem}
+        .text-\[10px\]{font-size:10px;line-height:1.4}
+        .text-\[11px\]{font-size:11px;line-height:1.4}
+
         /* ── Portfolio Dark Mode (mirrors admin theme) ────────────── */
 
         /* Global Backgrounds */
