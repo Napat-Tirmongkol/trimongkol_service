@@ -1,23 +1,21 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Portfolio;
 
 use App\Http\Controllers\Controller;
 use App\Models\Portfolio\Holding;
 use App\Models\Portfolio\Snapshot;
-use App\Services\AuditLog;
 use App\Services\Portfolio\PriceFetcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 /**
- * Personal-portfolio dashboard for the site owner. Every action is scoped
- * to `auth()->id()`, so this is a private workspace even on a multi-admin
- * install — each admin sees only their own holdings.
+ * Personal-portfolio dashboard. Every action is scoped to `auth()->id()`,
+ * so each authorised Google account sees only its own holdings.
  */
-class PortfolioController extends Controller
+class DashboardController extends Controller
 {
-    public function dashboard()
+    public function index()
     {
         $userId = (int) auth()->id();
 
@@ -63,9 +61,9 @@ class PortfolioController extends Controller
             'debts' => (float) $s->total_debts_thb,
         ])->all();
 
-        $lastRefresh = $holdings->max('last_priced_at');
+        $lastRefresh = $holdings->whereNotNull('last_priced_at')->max('last_priced_at');
 
-        return view('admin.portfolio.dashboard', compact(
+        return view('portfolio.dashboard', compact(
             'holdings', 'byKind', 'totals', 'trend', 'lastRefresh',
         ));
     }
@@ -74,7 +72,7 @@ class PortfolioController extends Controller
     {
         $holding = new Holding(['kind' => Holding::KIND_STOCK, 'currency' => 'THB', 'quantity' => 1]);
 
-        return view('admin.portfolio.holdings.form', ['holding' => $holding]);
+        return view('portfolio.holdings.form', ['holding' => $holding]);
     }
 
     public function store(Request $request, PriceFetcher $prices)
@@ -87,18 +85,17 @@ class PortfolioController extends Controller
             $data['currency'],
         );
 
-        $holding = Holding::create($data);
-        AuditLog::record('portfolio.holding.create', null, "{$holding->kind}:{$holding->label}");
+        Holding::create($data);
 
-        return redirect()->route('admin.portfolio.dashboard')
-            ->with('status', __('app.admin.portfolio.flash_created'));
+        return redirect()->route('portfolio.dashboard')
+            ->with('status', __('app.portfolio.flash_created'));
     }
 
     public function edit(Holding $holding)
     {
         $this->authorizeOwnership($holding);
 
-        return view('admin.portfolio.holdings.form', ['holding' => $holding]);
+        return view('portfolio.holdings.form', ['holding' => $holding]);
     }
 
     public function update(Request $request, Holding $holding, PriceFetcher $prices)
@@ -113,22 +110,18 @@ class PortfolioController extends Controller
         );
 
         $holding->update($data);
-        AuditLog::record('portfolio.holding.update', null, "{$holding->kind}:{$holding->label}");
 
-        return redirect()->route('admin.portfolio.dashboard')
-            ->with('status', __('app.admin.portfolio.flash_updated'));
+        return redirect()->route('portfolio.dashboard')
+            ->with('status', __('app.portfolio.flash_updated'));
     }
 
     public function destroy(Holding $holding)
     {
         $this->authorizeOwnership($holding);
-
-        $label = "{$holding->kind}:{$holding->label}";
         $holding->delete();
-        AuditLog::record('portfolio.holding.delete', null, $label);
 
-        return redirect()->route('admin.portfolio.dashboard')
-            ->with('status', __('app.admin.portfolio.flash_deleted'));
+        return redirect()->route('portfolio.dashboard')
+            ->with('status', __('app.portfolio.flash_deleted'));
     }
 
     public function refresh(PriceFetcher $prices)
@@ -137,16 +130,15 @@ class PortfolioController extends Controller
         $result = $prices->refreshForUser($userId);
 
         $this->saveSnapshot($userId);
-        AuditLog::record('portfolio.refresh', null, "updated={$result['updated']} failed={$result['failed']}");
 
-        $msg = __('app.admin.portfolio.flash_refreshed', [
+        $msg = __('app.portfolio.flash_refreshed', [
             'updated' => $result['updated'],
             'failed' => $result['failed'],
         ]);
 
         return $result['failed'] > 0
-            ? redirect()->route('admin.portfolio.dashboard')->with('error', $msg)
-            : redirect()->route('admin.portfolio.dashboard')->with('status', $msg);
+            ? redirect()->route('portfolio.dashboard')->with('error', $msg)
+            : redirect()->route('portfolio.dashboard')->with('status', $msg);
     }
 
     /** Validation shared by store + update. */

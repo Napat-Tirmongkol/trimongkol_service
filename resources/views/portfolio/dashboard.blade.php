@@ -1,10 +1,4 @@
-<x-admin-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('app.admin.portfolio.heading') }}
-        </h2>
-    </x-slot>
-
+<x-portfolio-layout>
     @php
         // Tailwind JIT can only see literal class strings, so keep the kind
         // colour palette in a plain associative map instead of building class
@@ -31,54 +25,55 @@
     <div class="py-8">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
 
-            {{-- Header row: subtitle + actions --}}
+            {{-- Header row: title + actions --}}
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p class="text-sm text-slate-600">{{ __('app.admin.portfolio.subheading') }}</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">{{ __('app.portfolio.heading') }}</h1>
+                    <p class="mt-1 text-sm text-slate-600">{{ __('app.portfolio.subheading') }}</p>
                     <p class="mt-1 text-xs text-slate-500">
-                        {{ __('app.admin.portfolio.last_refresh') }}:
+                        {{ __('app.portfolio.last_refresh') }}:
                         @if ($lastRefresh)
                             <span class="font-medium text-slate-700">{{ \Carbon\Carbon::parse($lastRefresh)->diffForHumans() }}</span>
                         @else
-                            <span class="italic">{{ __('app.admin.portfolio.never_refreshed') }}</span>
+                            <span class="italic">{{ __('app.portfolio.never_refreshed') }}</span>
                         @endif
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <form method="POST" action="{{ route('admin.portfolio.refresh') }}">
+                    <form method="POST" action="{{ route('portfolio.refresh') }}">
                         @csrf
                         <button type="submit"
-                                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-60">
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            {{ __('app.admin.portfolio.refresh') }}
+                            {{ __('app.portfolio.refresh') }}
                         </button>
                     </form>
-                    <a href="{{ route('admin.portfolio.holdings.create') }}"
-                       class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
+                    <a href="{{ route('portfolio.holdings.create') }}"
+                       class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                        {{ __('app.admin.portfolio.add') }}
+                        {{ __('app.portfolio.add') }}
                     </a>
                 </div>
             </div>
 
             {{-- Summary tiles --}}
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5">
-                    <div class="text-xs font-medium uppercase tracking-wider text-emerald-700">{{ __('app.admin.portfolio.tile_assets') }}</div>
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5">
+                    <div class="text-xs font-medium uppercase tracking-wider text-emerald-700">{{ __('app.portfolio.tile_assets') }}</div>
                     <div class="mt-2 text-2xl font-bold text-emerald-800">฿{{ $fmtMoney($totals['assets']) }}</div>
                 </div>
-                <div class="rounded-xl border border-rose-200 bg-rose-50/50 p-5">
-                    <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.admin.portfolio.tile_debts') }}</div>
+                <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
+                    <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.portfolio.tile_debts') }}</div>
                     <div class="mt-2 text-2xl font-bold text-rose-800">฿{{ $fmtMoney($totals['debts']) }}</div>
                 </div>
-                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div class="text-xs font-medium uppercase tracking-wider text-slate-500">{{ __('app.admin.portfolio.tile_net') }}</div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-500">{{ __('app.portfolio.tile_net') }}</div>
                     <div class="mt-2 text-3xl font-bold {{ $totals['net'] >= 0 ? 'text-slate-900' : 'text-rose-700' }}">
                         ฿{{ $fmtMoney($totals['net']) }}
                     </div>
                 </div>
-                <div class="rounded-xl border border-sky-200 bg-sky-50/50 p-5">
-                    <div class="text-xs font-medium uppercase tracking-wider text-sky-700">{{ __('app.admin.portfolio.tile_gain') }}</div>
+                <div class="rounded-2xl border border-sky-200 bg-sky-50/60 p-5">
+                    <div class="text-xs font-medium uppercase tracking-wider text-sky-700">{{ __('app.portfolio.tile_gain') }}</div>
                     @php
                         $gainColor = $totals['gain'] >= 0 ? 'text-emerald-700' : 'text-rose-700';
                         $gainSign = $totals['gain'] >= 0 ? '+' : '';
@@ -93,14 +88,14 @@
             </div>
 
             {{-- Trend chart (90-day net-worth line) --}}
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-baseline justify-between">
-                    <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.portfolio.trend_heading') }}</h3>
-                    <span class="text-xs text-slate-500">{{ __('app.admin.portfolio.trend_subtitle') }}</span>
+                    <h3 class="text-sm font-semibold text-slate-900">{{ __('app.portfolio.trend_heading') }}</h3>
+                    <span class="text-xs text-slate-500">{{ __('app.portfolio.trend_subtitle') }}</span>
                 </div>
 
                 @if (count($trend) < 2)
-                    <p class="mt-6 text-center text-sm italic text-slate-500">{{ __('app.admin.portfolio.trend_empty') }}</p>
+                    <p class="mt-6 text-center text-sm italic text-slate-500">{{ __('app.portfolio.trend_empty') }}</p>
                 @else
                     @php
                         $values = array_column($trend, 'net');
@@ -118,7 +113,6 @@
                             $points[] = round($x, 2) . ',' . round($y, 2);
                         }
                         $polyline = implode(' ', $points);
-                        // Close the shape under the line so the gradient fill has area.
                         $area = '0,' . $height . ' ' . $polyline . ' ' . $width . ',' . $height;
                     @endphp
                     <div class="mt-4">
@@ -142,8 +136,8 @@
 
             {{-- Holdings, grouped by kind --}}
             @if ($holdings->isEmpty())
-                <div class="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">
-                    {{ __('app.admin.portfolio.no_holdings') }}
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500">
+                    {{ __('app.portfolio.no_holdings') }}
                 </div>
             @else
                 @foreach ($kindOrder as $kind)
@@ -155,11 +149,11 @@
                         $isDebtGroup = $kind === \App\Models\Portfolio\Holding::KIND_DEBT;
                     @endphp
 
-                    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
                             <div class="flex items-center gap-2">
                                 <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 {{ $kindBadge[$kind] }}">
-                                    {{ __("app.admin.portfolio.kinds.{$kind}") }}
+                                    {{ __("app.portfolio.kinds.{$kind}") }}
                                 </span>
                                 <span class="text-xs text-slate-500">{{ $group->count() }}</span>
                             </div>
@@ -172,13 +166,13 @@
                             <table class="min-w-full divide-y divide-slate-100 text-sm">
                                 <thead class="bg-slate-50/60 text-xs uppercase tracking-wide text-slate-500">
                                     <tr>
-                                        <th class="px-5 py-2 text-left font-medium">{{ __('app.admin.portfolio.col_label') }}</th>
-                                        <th class="px-5 py-2 text-left font-medium">{{ __('app.admin.portfolio.col_symbol') }}</th>
-                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.admin.portfolio.col_qty') }}</th>
-                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.admin.portfolio.col_price') }}</th>
-                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.admin.portfolio.col_value') }}</th>
-                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.admin.portfolio.col_gain') }}</th>
-                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.admin.portfolio.col_updated') }}</th>
+                                        <th class="px-5 py-2 text-left font-medium">{{ __('app.portfolio.col_label') }}</th>
+                                        <th class="px-5 py-2 text-left font-medium">{{ __('app.portfolio.col_symbol') }}</th>
+                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.portfolio.col_qty') }}</th>
+                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.portfolio.col_price') }}</th>
+                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.portfolio.col_value') }}</th>
+                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.portfolio.col_gain') }}</th>
+                                        <th class="px-5 py-2 text-right font-medium">{{ __('app.portfolio.col_updated') }}</th>
                                         <th class="px-5 py-2"></th>
                                     </tr>
                                 </thead>
@@ -227,16 +221,16 @@
                                             </td>
                                             <td class="px-5 py-3 text-right">
                                                 <div class="flex items-center justify-end gap-1.5">
-                                                    <a href="{{ route('admin.portfolio.holdings.edit', $h) }}"
-                                                       class="rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900">
-                                                        {{ __('app.admin.portfolio.edit') }}
+                                                    <a href="{{ route('portfolio.holdings.edit', $h) }}"
+                                                       class="rounded-md px-2 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
+                                                        {{ __('app.portfolio.edit') }}
                                                     </a>
-                                                    <form method="POST" action="{{ route('admin.portfolio.holdings.destroy', $h) }}"
-                                                          data-confirm="{{ __('app.admin.portfolio.form.delete_confirm') }}" data-confirm-danger="1">
+                                                    <form method="POST" action="{{ route('portfolio.holdings.destroy', $h) }}"
+                                                          data-confirm="{{ __('app.portfolio.form.delete_confirm') }}" data-confirm-danger="1">
                                                         @csrf @method('DELETE')
                                                         <button type="submit"
-                                                                class="rounded-md px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50">
-                                                            {{ __('app.admin.portfolio.delete') }}
+                                                                class="rounded-md px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50">
+                                                            {{ __('app.portfolio.delete') }}
                                                         </button>
                                                     </form>
                                                 </div>
@@ -251,8 +245,8 @@
             @endif
 
             <p class="text-center text-xs text-slate-500">
-                {{ __('app.admin.portfolio.refreshing_hint') }}
+                {{ __('app.portfolio.refreshing_hint') }}
             </p>
         </div>
     </div>
-</x-admin-layout>
+</x-portfolio-layout>

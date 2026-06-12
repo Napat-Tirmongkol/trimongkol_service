@@ -69,4 +69,13 @@ return [
         'key' => env('GEMINI_API_KEY'),
     ],
 
+    // Google OAuth (Socialite) — sign-in for the personal portfolio at
+    // /portfolio/login. Credentials come from a Google Cloud OAuth client;
+    // the redirect URI must exactly match what's registered in the console.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
 ];

@@ -31,9 +31,10 @@ use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerControl
 use App\Http\Controllers\Admin\Products\SocialController as AdminSocialController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
-use App\Http\Controllers\Admin\PortfolioController as AdminPortfolioController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
+use App\Http\Controllers\Portfolio\AuthController as PortfolioAuthController;
+use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -97,6 +98,27 @@ Route::middleware('guest')->group(function () {
 Route::post('/admin/logout', [AdminLoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('admin.logout');
+
+// Personal-portfolio area — Google OAuth sign-in for the owner only.
+// Authorisation is the email allowlist in config/portfolio.php, enforced
+// by both the OAuth callback (friendly error) and the route middleware
+// (hard 403 in case session state ever drifts).
+Route::prefix('portfolio')->name('portfolio.')->group(function () {
+    Route::get('/login', [PortfolioAuthController::class, 'showLogin'])->name('login');
+    Route::get('/auth/google', [PortfolioAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [PortfolioAuthController::class, 'callback'])->name('auth.google.callback');
+    Route::post('/logout', [PortfolioAuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('portfolio.access')->group(function () {
+        Route::get('/', [PortfolioDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/refresh', [PortfolioDashboardController::class, 'refresh'])->name('refresh');
+        Route::get('/holdings/create', [PortfolioDashboardController::class, 'create'])->name('holdings.create');
+        Route::post('/holdings', [PortfolioDashboardController::class, 'store'])->name('holdings.store');
+        Route::get('/holdings/{holding}/edit', [PortfolioDashboardController::class, 'edit'])->name('holdings.edit');
+        Route::patch('/holdings/{holding}', [PortfolioDashboardController::class, 'update'])->name('holdings.update');
+        Route::delete('/holdings/{holding}', [PortfolioDashboardController::class, 'destroy'])->name('holdings.destroy');
+    });
+});
 
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -203,19 +225,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs')->middleware('can:audit.view');
         Route::get('/security', [AdminController::class, 'security'])->name('security')->middleware('can:security.view');
-
-        // Personal-portfolio dashboard — admin-only, scoped to auth()->id() inside
-        // the controller. Every admin role gets it; isolation comes from user_id,
-        // not from a granular permission.
-        Route::prefix('portfolio')->name('portfolio.')->group(function () {
-            Route::get('/', [AdminPortfolioController::class, 'dashboard'])->name('dashboard');
-            Route::post('/refresh', [AdminPortfolioController::class, 'refresh'])->name('refresh');
-            Route::get('/holdings/create', [AdminPortfolioController::class, 'create'])->name('holdings.create');
-            Route::post('/holdings', [AdminPortfolioController::class, 'store'])->name('holdings.store');
-            Route::get('/holdings/{holding}/edit', [AdminPortfolioController::class, 'edit'])->name('holdings.edit');
-            Route::patch('/holdings/{holding}', [AdminPortfolioController::class, 'update'])->name('holdings.update');
-            Route::delete('/holdings/{holding}', [AdminPortfolioController::class, 'destroy'])->name('holdings.destroy');
-        });
 
         Route::middleware('can:workspaces.view')->group(function () {
             Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');
