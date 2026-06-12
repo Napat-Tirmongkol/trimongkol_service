@@ -141,10 +141,15 @@ class DashboardController extends Controller
             : redirect()->route('portfolio.dashboard')->with('status', $msg);
     }
 
-    /** Validation shared by store + update. */
+    /**
+     * Validation shared by store + update. Coerces nullable money/order
+     * inputs to 0 — the underlying columns are NOT NULL with `default(0)`
+     * in the migration, but a null mass-assigned via `create()`/`update()`
+     * overrides that default and trips a constraint violation.
+     */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'kind'          => 'required|in:' . implode(',', Holding::KINDS),
             'label'         => 'required|string|max:120',
             'symbol'        => 'nullable|string|max:32',
@@ -155,6 +160,11 @@ class DashboardController extends Controller
             'notes'         => 'nullable|string|max:1000',
             'sort_order'    => 'nullable|integer|min:0|max:9999',
         ]);
+
+        $data['cost_basis'] = (float) ($data['cost_basis'] ?? 0);
+        $data['sort_order'] = (int) ($data['sort_order'] ?? 0);
+
+        return $data;
     }
 
     private function authorizeOwnership(Holding $holding): void
