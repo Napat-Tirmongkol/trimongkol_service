@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerControl
 use App\Http\Controllers\Admin\Products\SocialController as AdminSocialController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
+use App\Http\Controllers\Admin\PortfolioController as AdminPortfolioController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
 use App\Http\Controllers\Admin\WorkspaceController as AdminWorkspaceController;
 use App\Http\Controllers\AdminController;
@@ -202,6 +203,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/logs', [AdminController::class, 'logs'])->name('logs')->middleware('can:audit.view');
         Route::get('/security', [AdminController::class, 'security'])->name('security')->middleware('can:security.view');
+
+        // Personal-portfolio dashboard — admin-only, scoped to auth()->id() inside
+        // the controller. Every admin role gets it; isolation comes from user_id,
+        // not from a granular permission.
+        Route::prefix('portfolio')->name('portfolio.')->group(function () {
+            Route::get('/', [AdminPortfolioController::class, 'dashboard'])->name('dashboard');
+            Route::post('/refresh', [AdminPortfolioController::class, 'refresh'])->name('refresh');
+            Route::get('/holdings/create', [AdminPortfolioController::class, 'create'])->name('holdings.create');
+            Route::post('/holdings', [AdminPortfolioController::class, 'store'])->name('holdings.store');
+            Route::get('/holdings/{holding}/edit', [AdminPortfolioController::class, 'edit'])->name('holdings.edit');
+            Route::patch('/holdings/{holding}', [AdminPortfolioController::class, 'update'])->name('holdings.update');
+            Route::delete('/holdings/{holding}', [AdminPortfolioController::class, 'destroy'])->name('holdings.destroy');
+        });
 
         Route::middleware('can:workspaces.view')->group(function () {
             Route::get('/workspaces', [AdminWorkspaceController::class, 'index'])->name('workspaces.index');

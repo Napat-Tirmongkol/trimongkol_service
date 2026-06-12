@@ -7,6 +7,7 @@
             'label' => __('app.admin.portalTitle') ?: 'Platform',
             'items' => array_values(array_filter([
                 ['route' => 'admin.dashboard', 'label' => __('app.admin.tab_overview'), 'pattern' => 'admin.dashboard', 'perm' => null, 'icon' => 'squares'],
+                ['route' => 'admin.portfolio.dashboard', 'label' => __('app.admin.tab_portfolio'), 'pattern' => 'admin.portfolio.*', 'perm' => null, 'icon' => 'wallet'],
                 ['route' => 'admin.leads.index', 'label' => __('app.admin.tab_leads'), 'pattern' => 'admin.leads.*', 'perm' => 'leads.view', 'icon' => 'chat'],
                 ['route' => 'admin.users', 'label' => __('app.admin.tab_users'), 'pattern' => 'admin.users*', 'perm' => 'users.view', 'icon' => 'users'],
                 ['route' => 'admin.workspaces.index', 'label' => __('app.admin.tab_workspaces'), 'pattern' => 'admin.workspaces.*', 'perm' => 'workspaces.view', 'icon' => 'briefcase'],
@@ -77,6 +78,8 @@
                     $svg = '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
                 } elseif ($item['icon'] === 'server') {
                     $svg = '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>';
+                } elseif ($item['icon'] === 'wallet') {
+                    $svg = '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2 2 0 00-2-2h-2a2 2 0 00-2 2v0a2 2 0 002 2h2a2 2 0 002-2zM3 7a2 2 0 012-2h13a2 2 0 012 2v2H5a2 2 0 00-2 2v6a2 2 0 002 2h13a2 2 0 002-2v-2"/></svg>';
                 }
                 
                 $output .= '<a href="' . route($item['route']) . '" class="' . $linkClass . '">';

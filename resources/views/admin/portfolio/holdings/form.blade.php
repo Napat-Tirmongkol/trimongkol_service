@@ -1,0 +1,150 @@
+<x-admin-layout>
+    <x-slot name="header">
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">
+            {{ $holding->exists ? __('app.admin.portfolio.form.edit_title') : __('app.admin.portfolio.form.create_title') }}
+        </h2>
+    </x-slot>
+
+    @php
+        $isEdit = $holding->exists;
+        $action = $isEdit
+            ? route('admin.portfolio.holdings.update', $holding)
+            : route('admin.portfolio.holdings.store');
+
+        $kinds = [
+            'stock', 'fund', 'crypto',
+            'deposit', 'cash', 'gold', 'realestate', 'debt', 'other',
+        ];
+
+        $symbolHints = [
+            'stock' => __('app.admin.portfolio.form.symbol_hint_stock'),
+            'fund' => __('app.admin.portfolio.form.symbol_hint_fund'),
+            'crypto' => __('app.admin.portfolio.form.symbol_hint_crypto'),
+        ];
+    @endphp
+
+    <div class="py-8">
+        <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+            <form method="POST" action="{{ $action }}" class="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                @csrf
+                @if ($isEdit) @method('PATCH') @endif
+
+                {{-- Kind --}}
+                <div>
+                    <label for="kind" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.kind') }}</label>
+                    <select id="kind" name="kind" required
+                            x-data="{ kind: '{{ old('kind', $holding->kind) }}' }"
+                            x-model="kind"
+                            @change="$dispatch('kind-changed', { kind: $event.target.value })"
+                            class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        @foreach ($kinds as $k)
+                            <option value="{{ $k }}" @selected(old('kind', $holding->kind) === $k)>
+                                {{ __("app.admin.portfolio.kinds.{$k}") }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('kind') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Label --}}
+                <div>
+                    <label for="label" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.label') }}</label>
+                    <input id="label" name="label" type="text" required maxlength="120"
+                           value="{{ old('label', $holding->label) }}"
+                           class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.portfolio.form.label_hint') }}</p>
+                    @error('label') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Symbol — hint swaps with kind via Alpine --}}
+                <div x-data="{ kind: '{{ old('kind', $holding->kind) }}' }"
+                     @kind-changed.window="kind = $event.detail.kind">
+                    <label for="symbol" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.symbol') }}</label>
+                    <input id="symbol" name="symbol" type="text" maxlength="32"
+                           value="{{ old('symbol', $holding->symbol) }}"
+                           class="mt-1 block w-full rounded-lg border-slate-300 font-mono text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <p class="mt-1 text-xs text-slate-500">
+                        <span x-show="kind === 'stock'" x-cloak>{{ $symbolHints['stock'] }}</span>
+                        <span x-show="kind === 'fund'" x-cloak>{{ $symbolHints['fund'] }}</span>
+                        <span x-show="kind === 'crypto'" x-cloak>{{ $symbolHints['crypto'] }}</span>
+                        <span x-show="!['stock','fund','crypto'].includes(kind)" x-cloak>{{ __('app.admin.portfolio.form.symbol_hint_other') }}</span>
+                    </p>
+                    @error('symbol') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                    {{-- Quantity --}}
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.quantity') }}</label>
+                        <input id="quantity" name="quantity" type="number" step="0.00000001" min="0" required
+                               value="{{ old('quantity', $holding->quantity) }}"
+                               class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.portfolio.form.quantity_hint_money') }}</p>
+                        @error('quantity') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Currency --}}
+                    <div>
+                        <label for="currency" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.currency') }}</label>
+                        <select id="currency" name="currency" required
+                                class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            @foreach (['THB', 'USD', 'EUR', 'JPY', 'GBP', 'SGD', 'HKD', 'CNY'] as $c)
+                                <option value="{{ $c }}" @selected(old('currency', $holding->currency ?? 'THB') === $c)>{{ $c }}</option>
+                            @endforeach
+                        </select>
+                        @error('currency') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                    {{-- Current price --}}
+                    <div>
+                        <label for="current_price" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.current_price') }}</label>
+                        <input id="current_price" name="current_price" type="number" step="0.00000001" min="0"
+                               value="{{ old('current_price', $holding->current_price) }}"
+                               class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.portfolio.form.current_price_hint') }}</p>
+                        @error('current_price') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    {{-- Cost basis --}}
+                    <div>
+                        <label for="cost_basis" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.cost_basis') }}</label>
+                        <input id="cost_basis" name="cost_basis" type="number" step="0.01" min="0"
+                               value="{{ old('cost_basis', $holding->cost_basis) }}"
+                               class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.admin.portfolio.form.cost_basis_hint') }}</p>
+                        @error('cost_basis') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                {{-- Notes --}}
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.notes') }}</label>
+                    <textarea id="notes" name="notes" rows="2" maxlength="1000"
+                              class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">{{ old('notes', $holding->notes) }}</textarea>
+                    @error('notes') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Sort order (compact) --}}
+                <div class="max-w-[8rem]">
+                    <label for="sort_order" class="block text-sm font-medium text-slate-700">{{ __('app.admin.portfolio.form.sort_order') }}</label>
+                    <input id="sort_order" name="sort_order" type="number" min="0" max="9999"
+                           value="{{ old('sort_order', $holding->sort_order ?? 0) }}"
+                           class="mt-1 block w-full rounded-lg border-slate-300 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                </div>
+
+                <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+                    <a href="{{ route('admin.portfolio.dashboard') }}"
+                       class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                        {{ __('app.admin.portfolio.form.cancel') }}
+                    </a>
+                    <button type="submit"
+                            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 disabled:opacity-60">
+                        {{ __('app.admin.portfolio.form.save') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</x-admin-layout>
