@@ -23,10 +23,14 @@
             @endif
 
             {{-- Totals --}}
-            <div class="grid gap-4 sm:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
                 <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.payroll_gross') }}</div>
                     <div class="mt-1 text-lg font-bold tabular-nums text-slate-800">฿{{ number_format((float) $payrollRun->total_gross, 2) }}</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.payroll_overtime') }} + {{ __('app.accounting.payroll_ot') }}</div>
+                    <div class="mt-1 text-lg font-bold tabular-nums text-slate-800">฿{{ number_format((float) $payrollRun->total_overtime + (float) $payrollRun->total_ot, 2) }}</div>
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div class="text-xs uppercase tracking-wider text-slate-500">{{ __('app.accounting.payroll_ss') }}</div>
@@ -53,6 +57,8 @@
                             <tr>
                                 <th class="px-3 py-2 text-left">{{ __('app.accounting.employee_name') }}</th>
                                 <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_gross') }}</th>
+                                <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_overtime') }}</th>
+                                <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_ot') }}</th>
                                 <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_ss') }}</th>
                                 <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_wht') }}</th>
                                 <th class="px-3 py-2 text-right">{{ __('app.accounting.payroll_other') }}</th>
@@ -69,6 +75,8 @@
                                             <div class="font-mono text-xs text-slate-400">{{ $item->employee->code }}</div>
                                         </td>
                                         <td class="px-3 py-2 text-right tabular-nums">฿{{ number_format((float) $item->gross, 2) }}</td>
+                                        <td class="px-3 py-2 text-right tabular-nums">฿{{ number_format((float) $item->overtime, 2) }}</td>
+                                        <td class="px-3 py-2 text-right tabular-nums">฿{{ number_format((float) $item->ot, 2) }}</td>
                                         <td class="px-3 py-2 text-right tabular-nums text-rose-600">฿{{ number_format((float) $item->ss_employee, 2) }}</td>
                                         <td class="px-3 py-2 text-right tabular-nums text-rose-600">฿{{ number_format((float) $item->wht, 2) }}</td>
                                         <td class="px-3 py-2 text-right tabular-nums text-rose-600">฿{{ number_format((float) $item->other_deductions, 2) }}</td>
@@ -87,6 +95,14 @@
                                             <td class="px-3 py-2 text-right">
                                                 <input type="number" name="gross" value="{{ (float) $item->gross }}" step="0.01" min="0"
                                                        class="w-24 rounded border border-slate-300 px-2 py-1 text-right text-sm focus:ring-brand-400">
+                                            </td>
+                                            <td class="px-3 py-2 text-right">
+                                                <input type="number" name="overtime" value="{{ (float) $item->overtime }}" step="0.01" min="0"
+                                                       class="w-20 rounded border border-slate-300 px-2 py-1 text-right text-sm focus:ring-brand-400">
+                                            </td>
+                                            <td class="px-3 py-2 text-right">
+                                                <input type="number" name="ot" value="{{ (float) $item->ot }}" step="0.01" min="0"
+                                                       class="w-20 rounded border border-slate-300 px-2 py-1 text-right text-sm focus:ring-brand-400">
                                             </td>
                                             <td class="px-3 py-2 text-right tabular-nums text-rose-600">฿{{ number_format((float) $item->ss_employee, 2) }}</td>
                                             <td class="px-3 py-2 text-right">

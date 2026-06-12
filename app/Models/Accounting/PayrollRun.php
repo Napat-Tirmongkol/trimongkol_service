@@ -18,7 +18,8 @@ class PayrollRun extends Model
 
     protected $fillable = [
         'workspace_id', 'no', 'period', 'payment_date', 'status',
-        'total_gross', 'total_ss_employee', 'total_ss_employer',
+        'total_gross', 'total_overtime', 'total_ot',
+        'total_ss_employee', 'total_ss_employer',
         'total_wht', 'total_net', 'journal_id',
         'salary_expense_account_id', 'ss_expense_account_id',
         'ss_payable_account_id', 'wht_payable_account_id', 'cash_account_id',

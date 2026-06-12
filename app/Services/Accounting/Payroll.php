@@ -98,6 +98,8 @@ class Payroll
                     'payroll_run_id' => $run->id,
                     'employee_id' => $employee->id,
                     'gross' => $gross,
+                    'overtime' => 0,
+                    'ot' => 0,
                     'ss_employee' => $ssEmployee,
                     'ss_employer' => $ssEmployer,
                     'wht' => 0,
@@ -120,13 +122,18 @@ class Payroll
         }
 
         $gross = isset($attributes['gross']) ? (float) $attributes['gross'] : (float) $item->gross;
+        $overtime = (float) ($attributes['overtime'] ?? $item->overtime);
+        $ot = (float) ($attributes['ot'] ?? $item->ot);
+        // SS is calculated on the regular wage only — OT is not subject to SS under Thai labor law.
         [$ssEmployee, $ssEmployer] = self::socialSecurity($gross);
         $wht = (float) ($attributes['wht'] ?? $item->wht);
         $other = (float) ($attributes['other_deductions'] ?? $item->other_deductions);
-        $net = $gross - $ssEmployee - $wht - $other;
+        $net = $gross + $overtime + $ot - $ssEmployee - $wht - $other;
 
         $item->update([
             'gross' => $gross,
+            'overtime' => $overtime,
+            'ot' => $ot,
             'ss_employee' => $ssEmployee,
             'ss_employer' => $ssEmployer,
             'wht' => $wht,
@@ -156,17 +163,20 @@ class Payroll
             $run->refresh();
 
             $gross = (float) $run->total_gross;
+            $overtime = (float) $run->total_overtime;
+            $ot = (float) $run->total_ot;
+            $earnings = $gross + $overtime + $ot;
             $ssEmp = (float) $run->total_ss_employee;
             $ssCo = (float) $run->total_ss_employer;
             $wht = (float) $run->total_wht;
             $net = (float) $run->total_net;
 
-            if ($gross <= 0) {
-                throw new LedgerException('Total gross must be positive.');
+            if ($earnings <= 0) {
+                throw new LedgerException('Total earnings must be positive.');
             }
 
             $lines = [
-                ['account_id' => $run->salary_expense_account_id, 'debit' => Money::fromMinor(Money::toMinor($gross)), 'credit' => 0, 'description' => "เงินเดือนพนักงาน {$run->period}"],
+                ['account_id' => $run->salary_expense_account_id, 'debit' => Money::fromMinor(Money::toMinor($earnings)), 'credit' => 0, 'description' => "เงินเดือนพนักงาน {$run->period}"],
             ];
             if ($ssCo > 0) {
                 $lines[] = ['account_id' => $run->ss_expense_account_id, 'debit' => Money::fromMinor(Money::toMinor($ssCo)), 'credit' => 0, 'description' => 'ประกันสังคมส่วนนายจ้าง'];
@@ -222,6 +232,8 @@ class Payroll
 
         $run->update([
             'total_gross' => $items->sum('gross'),
+            'total_overtime' => $items->sum('overtime'),
+            'total_ot' => $items->sum('ot'),
             'total_ss_employee' => $items->sum('ss_employee'),
             'total_ss_employer' => $items->sum('ss_employer'),
             'total_wht' => $items->sum('wht'),

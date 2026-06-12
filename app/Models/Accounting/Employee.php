@@ -12,7 +12,7 @@ class Employee extends Model
     protected $table = 'accounting_employees';
 
     protected $fillable = [
-        'workspace_id', 'code', 'name', 'tax_id', 'social_security_id',
+        'workspace_id', 'code', 'name', 'email', 'tax_id', 'social_security_id',
         'base_salary', 'bank_account', 'position', 'hired_on', 'is_active',
     ];
 
