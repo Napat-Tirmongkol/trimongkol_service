@@ -23,7 +23,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('debt_id')->constrained('portfolio_debts')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('month', 7)->after('user_id'); // YYYY-MM
+            $table->string('month', 7); // YYYY-MM
             $table->decimal('amount', 14, 2);
             $table->boolean('is_paid')->default(false);
             $table->text('notes')->nullable();
