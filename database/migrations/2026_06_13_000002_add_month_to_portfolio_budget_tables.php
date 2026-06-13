@@ -36,32 +36,34 @@ return new class extends Migration
 
         // 4. Rebuild portfolio_income table to support multiple sources per month
         if (Schema::hasTable('portfolio_income')) {
-            // Backup existing income data
-            $existingIncomes = DB::table('portfolio_income')->get();
+            if (Schema::hasColumn('portfolio_income', 'income_amount')) {
+                // Backup existing income data
+                $existingIncomes = DB::table('portfolio_income')->get();
 
-            Schema::dropIfExists('portfolio_income');
+                Schema::dropIfExists('portfolio_income');
 
-            Schema::create('portfolio_income', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-                $table->string('month', 7);
-                $table->string('label', 120);
-                $table->decimal('amount', 18, 2);
-                $table->text('notes')->nullable();
-                $table->timestamps();
-            });
+                Schema::create('portfolio_income', function (Blueprint $table) {
+                    $table->id();
+                    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                    $table->string('month', 7);
+                    $table->string('label', 120);
+                    $table->decimal('amount', 18, 2);
+                    $table->text('notes')->nullable();
+                    $table->timestamps();
+                });
 
-            // Migrate old data: each old row becomes a "เงินเดือน" entry
-            foreach ($existingIncomes as $old) {
-                DB::table('portfolio_income')->insert([
-                    'user_id' => $old->user_id,
-                    'month' => date('Y-m'),
-                    'label' => 'เงินเดือน',
-                    'amount' => $old->income_amount,
-                    'notes' => null,
-                    'created_at' => $old->created_at ?? now(),
-                    'updated_at' => now(),
-                ]);
+                // Migrate old data: each old row becomes a "เงินเดือน" entry
+                foreach ($existingIncomes as $old) {
+                    DB::table('portfolio_income')->insert([
+                        'user_id' => $old->user_id,
+                        'month' => date('Y-m'),
+                        'label' => 'เงินเดือน',
+                        'amount' => $old->income_amount,
+                        'notes' => null,
+                        'created_at' => $old->created_at ?? now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
         } else {
             // Table doesn't exist yet, create it fresh
