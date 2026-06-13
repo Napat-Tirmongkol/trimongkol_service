@@ -2021,6 +2021,7 @@ return [
         'no_holdings' => 'No holdings yet — click "Add holding" to get started',
         'tile_assets' => 'Total assets',
         'tile_debts' => 'Total debts',
+        'tile_budget_debts' => 'Remaining unpaid debts (Budget)',
         'tile_net' => 'Net worth',
         'tile_gain' => 'Gain / loss vs. cost',
         'trend_heading' => 'Net worth trend',

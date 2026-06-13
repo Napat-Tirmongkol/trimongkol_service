@@ -65,6 +65,12 @@
                 <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
                     <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.portfolio.tile_debts') }}</div>
                     <div class="mt-2 text-2xl font-bold text-rose-800">฿{{ $fmtMoney($totals['debts']) }}</div>
+                    @if (isset($totals['budget_debts']) && $totals['budget_debts'] > 0)
+                        <div class="mt-3 border-t border-rose-200/60 pt-2 flex justify-between items-center text-[11px] text-rose-800/80">
+                            <span>{{ __('app.portfolio.tile_budget_debts') }}</span>
+                            <span class="font-bold">฿{{ $fmtMoney($totals['budget_debts']) }}</span>
+                        </div>
+                    @endif
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="text-xs font-medium uppercase tracking-wider text-slate-500">{{ __('app.portfolio.tile_net') }}</div>

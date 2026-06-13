@@ -48,6 +48,37 @@ class DashboardController extends Controller
             ? ($totals['gain'] / $totals['cost']) * 100
             : 0;
 
+        // Calculate remaining unpaid variable debts from budget
+        $variableDebtsUnpaid = 0.0;
+        if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_debts')) {
+            $variableDebts = \App\Models\Portfolio\Debt::query()
+                ->forUser($userId)
+                ->with('payments')
+                ->get();
+            foreach ($variableDebts as $d) {
+                if ($d->total_amount > 0) {
+                    $paidSum = $d->payments->where('is_paid', true)->sum('amount');
+                    $variableDebtsUnpaid += max(0.0, (float) $d->total_amount - $paidSum);
+                }
+            }
+        }
+
+        // Calculate remaining unpaid installments from budget
+        $installmentsUnpaid = 0.0;
+        if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_installments')) {
+            $installments = \Illuminate\Support\Facades\DB::table('portfolio_installments')
+                ->where('user_id', $userId)
+                ->get();
+            foreach ($installments as $ins) {
+                if ($ins->total_amount > 0) {
+                    $paidAmount = (float) $ins->monthly_payment * (int) $ins->paid_months;
+                    $installmentsUnpaid += max(0.0, (float) $ins->total_amount - $paidAmount);
+                }
+            }
+        }
+
+        $totals['budget_debts'] = $variableDebtsUnpaid + $installmentsUnpaid;
+
         $snapshots = Snapshot::query()
             ->forUser($userId)
             ->where('snapshot_date', '>=', now()->subDays(90)->toDateString())
