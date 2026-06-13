@@ -50,6 +50,7 @@ class DashboardController extends Controller
 
         // Calculate remaining unpaid variable debts from budget
         $variableDebtsUnpaid = 0.0;
+        $koyosoDebtsUnpaid = 0.0;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_debts')) {
             $variableDebts = \App\Models\Portfolio\Debt::query()
                 ->forUser($userId)
@@ -58,13 +59,19 @@ class DashboardController extends Controller
             foreach ($variableDebts as $d) {
                 if ($d->total_amount > 0) {
                     $paidSum = $d->payments->where('is_paid', true)->sum('amount');
-                    $variableDebtsUnpaid += max(0.0, (float) $d->total_amount - $paidSum);
+                    $unpaid = max(0.0, (float) $d->total_amount - $paidSum);
+                    if (str_contains(strtolower($d->label), 'กยศ') || str_contains($d->label, 'กยศ')) {
+                        $koyosoDebtsUnpaid += $unpaid;
+                    } else {
+                        $variableDebtsUnpaid += $unpaid;
+                    }
                 }
             }
         }
 
         // Calculate remaining unpaid installments from budget
         $installmentsUnpaid = 0.0;
+        $koyosoInstallmentsUnpaid = 0.0;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_installments')) {
             $installments = \Illuminate\Support\Facades\DB::table('portfolio_installments')
                 ->where('user_id', $userId)
@@ -72,12 +79,18 @@ class DashboardController extends Controller
             foreach ($installments as $ins) {
                 if ($ins->total_amount > 0) {
                     $paidAmount = (float) $ins->monthly_payment * (int) $ins->paid_months;
-                    $installmentsUnpaid += max(0.0, (float) $ins->total_amount - $paidAmount);
+                    $unpaid = max(0.0, (float) $ins->total_amount - $paidAmount);
+                    if (str_contains(strtolower($ins->label), 'กยศ') || str_contains($ins->label, 'กยศ')) {
+                        $koyosoInstallmentsUnpaid += $unpaid;
+                    } else {
+                        $installmentsUnpaid += $unpaid;
+                    }
                 }
             }
         }
 
         $totals['budget_debts'] = $variableDebtsUnpaid + $installmentsUnpaid;
+        $totals['koyoso_total'] = $koyosoDebtsUnpaid + $koyosoInstallmentsUnpaid;
 
         $snapshots = Snapshot::query()
             ->forUser($userId)

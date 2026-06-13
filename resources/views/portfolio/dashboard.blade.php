@@ -65,8 +65,20 @@
                 <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
                     <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.portfolio.tile_debts') }}</div>
                     <div class="mt-2 text-2xl font-bold text-rose-800">฿{{ $fmtMoney($totals['debts']) }}</div>
+                    @php $hasUpperDetail = false; @endphp
+                    @if (isset($totals['koyoso_total']) && $totals['koyoso_total'] > 0)
+                        @php $hasUpperDetail = true; @endphp
+                        <div class="mt-3 border-t border-rose-200/60 pt-2 flex justify-between items-center text-[11px] text-rose-900">
+                            <span class="flex items-center gap-1.5 font-semibold">
+                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                หนี้ กยศ. คงเหลือ
+                            </span>
+                            <span class="font-bold">฿{{ $fmtMoney($totals['koyoso_total']) }}</span>
+                        </div>
+                    @endif
+                    
                     @if (isset($totals['budget_debts']) && $totals['budget_debts'] > 0)
-                        <div class="mt-3 border-t border-rose-200/60 pt-2 flex justify-between items-center text-[11px] text-rose-800/80">
+                        <div class="{{ $hasUpperDetail ? 'mt-1.5' : 'mt-3 border-t border-rose-200/60 pt-2' }} flex justify-between items-center text-[11px] text-rose-800/80">
                             <span>{{ __('app.portfolio.tile_budget_debts') }}</span>
                             <span class="font-bold">฿{{ $fmtMoney($totals['budget_debts']) }}</span>
                         </div>
