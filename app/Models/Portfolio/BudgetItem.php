@@ -17,6 +17,7 @@ class BudgetItem extends Model
         'category',
         'label',
         'amount',
+        'actual_amount',
         'is_checked',
         'sort_order',
         'notes',
@@ -24,6 +25,7 @@ class BudgetItem extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'actual_amount' => 'decimal:2',
         'is_checked' => 'boolean',
         'sort_order' => 'integer',
     ];

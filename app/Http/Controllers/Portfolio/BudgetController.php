@@ -94,6 +94,32 @@ class BudgetController extends Controller
         $totalExpenses = $fixedTotal + $variableTotal + $savingsTotal;
         $remainingAmount = $incomeTotal - $totalExpenses;
 
+        // Calculate actual amounts spent/saved
+        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+        $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
+        $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
+        $actualDebtPaymentsSum = (float) $debts->map(
+            function ($d) use ($activeMonth) {
+                $payment = $d->payments->firstWhere('month', $activeMonth);
+                return ($payment && $payment->is_paid) ? $payment->amount : 0;
+            }
+        )->sum();
+
+        $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
+
+        $actualVariableTotal = (float) $variableExpensesList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+
+        $actualSavingsTotal = (float) $savingsList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+
+        $actualExpensesTotal = $actualFixedTotal + $actualVariableTotal + $actualSavingsTotal;
+        $actualRemainingAmount = $incomeTotal - $actualExpensesTotal;
+
         return view('portfolio.budget', compact(
             'activeMonth',
             'allMonths',
@@ -112,7 +138,12 @@ class BudgetController extends Controller
             'variableTotal',
             'savingsTotal',
             'totalExpenses',
-            'remainingAmount'
+            'remainingAmount',
+            'actualFixedTotal',
+            'actualVariableTotal',
+            'actualSavingsTotal',
+            'actualExpensesTotal',
+            'actualRemainingAmount'
         ));
     }
 
@@ -164,6 +195,7 @@ class BudgetController extends Controller
             'category' => 'required|string|in:fixed_expense,variable_expense,saving',
             'label' => 'required|string|max:120',
             'amount' => 'required|numeric|min:0',
+            'actual_amount' => 'nullable|numeric|min:0',
             'month' => 'required|string|regex:/^\d{4}-\d{2}$/',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -182,6 +214,7 @@ class BudgetController extends Controller
         $data = $request->validate([
             'label' => 'required|string|max:120',
             'amount' => 'required|numeric|min:0',
+            'actual_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 

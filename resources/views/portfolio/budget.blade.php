@@ -85,23 +85,23 @@
 
                 {{-- Total Expenses Card --}}
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-1">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">แผนรายจ่ายรวม</div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">ใช้จริง / แผนรายจ่าย</div>
                     <div class="text-3xl font-extrabold text-slate-900">
-                        ฿{{ $fmtMoney($totalExpenses) }}
+                        ฿{{ $fmtMoney($actualExpensesTotal) }} <span class="text-lg font-normal text-slate-400">/ ฿{{ $fmtMoney($totalExpenses) }}</span>
                     </div>
                     <div class="text-[11px] text-slate-500">
-                        Fixed: ฿{{ $fmtMoney($fixedTotal) }} | Variable: ฿{{ $fmtMoney($variableTotal) }} | Savings: ฿{{ $fmtMoney($savingsTotal) }}
+                        ใช้จริง: Fixed ฿{{ $fmtMoney($actualFixedTotal) }} | Var ฿{{ $fmtMoney($actualVariableTotal) }} | Save ฿{{ $fmtMoney($actualSavingsTotal) }}
                     </div>
                 </div>
 
                 {{-- Remaining Balance Card --}}
-                <div class="rounded-2xl border {{ $remainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50' }} p-5 space-y-1">
-                    <div class="text-xs font-semibold uppercase tracking-wider {{ $remainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">คงเหลือตามแผน</div>
-                    <div class="text-3xl font-extrabold {{ $remainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900' }}">
-                        ฿{{ $fmtMoney($remainingAmount) }}
+                <div class="rounded-2xl border {{ $actualRemainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50' }} p-5 space-y-1">
+                    <div class="text-xs font-semibold uppercase tracking-wider {{ $actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">คงเหลือจริง / ตามแผน</div>
+                    <div class="text-3xl font-extrabold {{ $actualRemainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900' }}">
+                        ฿{{ $fmtMoney($actualRemainingAmount) }} <span class="text-lg font-normal {{ $actualRemainingAmount >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70' }}">/ ฿{{ $fmtMoney($remainingAmount) }}</span>
                     </div>
-                    <div class="text-[11px] {{ $remainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
-                        {{ $remainingAmount >= 0 ? 'งบประมาณสมดุลดี' : 'แผนรายจ่ายเกินกว่ารายได้!' }}
+                    <div class="text-[11px] {{ $actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                        {{ $actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!' }}
                     </div>
                 </div>
             </div>
@@ -137,10 +137,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ค่าเช่าบ้าน, ค่าเทอม"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ใช้จริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -158,7 +165,7 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($fixedExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
@@ -176,9 +183,14 @@
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
                                             <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -203,7 +215,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -265,8 +286,8 @@
 
                         {{-- Total Fixed Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมค่าใช้จ่ายคงที่</span>
-                            <span>฿{{ $fmtMoney($fixedTotal) }}</span>
+                            <span>รวมค่าใช้จ่ายคงที่ (ใช้จริง / งบ)</span>
+                            <span>฿{{ $fmtMoney($actualFixedTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($fixedTotal) }}</span></span>
                         </div>
                     </div>
 
@@ -295,10 +316,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ค่าอาหาร, สังสรรค์"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ใช้จริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -316,7 +344,7 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($variableExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
@@ -334,9 +362,14 @@
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
                                             <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -361,7 +394,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -375,8 +417,8 @@
 
                         {{-- Total Variable Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมค่าใช้จ่ายผันแปร</span>
-                            <span>฿{{ $fmtMoney($variableTotal) }}</span>
+                            <span>รวมค่าใช้จ่ายผันแปร (ใช้จริง / งบ)</span>
+                            <span>฿{{ $fmtMoney($actualVariableTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($variableTotal) }}</span></span>
                         </div>
                     </div>
                 </div>
@@ -515,10 +557,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ออมเงินแต่งงาน, ฝากกับแฟน"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ออมจริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -536,7 +585,7 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($savingsList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
@@ -554,9 +603,14 @@
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
                                             <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -581,7 +635,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -595,8 +658,8 @@
 
                         {{-- Total Savings --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมเงินออม/ลงทุน</span>
-                            <span>฿{{ $fmtMoney($savingsTotal) }}</span>
+                            <span>รวมเงินออม/ลงทุน (ออมจริง / เป้า)</span>
+                            <span>฿{{ $fmtMoney($actualSavingsTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($savingsTotal) }}</span></span>
                         </div>
                     </div>
                 </div>
