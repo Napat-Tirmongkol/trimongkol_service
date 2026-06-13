@@ -19,22 +19,24 @@ class BudgetController extends Controller
     {
         $userId = $this->resolvePortfolioUserId();
 
-        // 1. Get all months that contain records to populate history dropdown
+        // 1. Months for the dropdown = only months with real budget activity.
+        //    DebtPayment entries are a pre-seeded schedule stretching years into
+        //    the future — including them would flood the list with 100+ months.
         $allMonths = collect()
             ->merge(BudgetItem::query()->forUser($userId)->pluck('month'))
             ->merge(Installment::query()->forUser($userId)->pluck('month'))
             ->merge(Subscription::query()->forUser($userId)->pluck('month'))
             ->merge(Income::query()->forUser($userId)->pluck('month'))
-            ->merge(DebtPayment::query()->forUser($userId)->pluck('month'))
             ->unique()
             ->sort()
             ->reverse()
             ->values();
 
-        // 2. Determine active month
+        // 2. Always default to the current calendar month so the page opens
+        //    on "now" regardless of how far debt schedules extend.
         $activeMonth = $request->query('month');
         if (!$activeMonth || !preg_match('/^\d{4}-\d{2}$/', $activeMonth)) {
-            $activeMonth = $allMonths->first() ?: date('Y-m');
+            $activeMonth = date('Y-m');
         }
 
         // 3. Fetch Income Sources for active month
