@@ -712,6 +712,14 @@ class BudgetController extends Controller
             'actualSavingsTotal' => $actualSavingsTotal,
             'actualExpensesTotal' => $actualExpensesTotal,
             'actualRemainingAmount' => $actualRemainingAmount,
+            'plannedFixedItem' => (float) $fixedExpensesList->sum('amount'),
+            'plannedInstallments' => $installmentsPaymentSum,
+            'plannedSubscriptions' => $subscriptionsPaymentSum,
+            'plannedDebts' => $debtPaymentsSum,
+            'actualFixedItem' => $actualFixedBudgetItemSum,
+            'actualInstallments' => $actualInstallmentsPaymentSum,
+            'actualSubscriptions' => $actualSubscriptionsPaymentSum,
+            'actualDebts' => $actualDebtPaymentsSum,
         ];
     }
 

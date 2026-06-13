@@ -35,8 +35,17 @@
             actualVariableTotal: {{ $actualVariableTotal }},
             actualSavingsTotal: {{ $actualSavingsTotal }},
             actualExpensesTotal: {{ $actualExpensesTotal }},
-            actualRemainingAmount: {{ $actualRemainingAmount }}
+            actualRemainingAmount: {{ $actualRemainingAmount }},
+            plannedFixedItem: {{ (float) $fixedExpensesList->sum('amount') }},
+            plannedInstallments: {{ $installmentsPaymentSum }},
+            plannedSubscriptions: {{ $subscriptionsPaymentSum }},
+            plannedDebts: {{ $debtPaymentsSum }},
+            actualFixedItem: {{ $actualFixedBudgetItemSum }},
+            actualInstallments: {{ $actualInstallmentsPaymentSum }},
+            actualSubscriptions: {{ $actualSubscriptionsPaymentSum }},
+            actualDebts: {{ $actualDebtPaymentsSum }}
         },
+        chartType: 'planned',
         fmtMoney(val) {
             return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
         },
@@ -60,6 +69,45 @@
             } catch (err) {
                 console.error(err);
             }
+        },
+        getSegments(type) {
+            let rawData = [
+                { label: 'ค่าใช้จ่ายคงที่ทั่วไป', val: parseFloat(this.totals.plannedFixedItem || 0), actualVal: parseFloat(this.totals.actualFixedItem || 0), color: '#6366f1' },
+                { label: 'รายจ่ายผันแปร', val: parseFloat(this.totals.variableTotal || 0), actualVal: parseFloat(this.totals.actualVariableTotal || 0), color: '#f59e0b' },
+                { label: 'เงินออม / ลงทุน', val: parseFloat(this.totals.savingsTotal || 0), actualVal: parseFloat(this.totals.actualSavingsTotal || 0), color: '#10b981' },
+                { label: 'ผ่อนชำระ', val: parseFloat(this.totals.plannedInstallments || 0), actualVal: parseFloat(this.totals.actualInstallments || 0), color: '#3b82f6' },
+                { label: 'บริการรายเดือน', val: parseFloat(this.totals.plannedSubscriptions || 0), actualVal: parseFloat(this.totals.actualSubscriptions || 0), color: '#ec4899' },
+                { label: 'ชำระหนี้สิน', val: parseFloat(this.totals.plannedDebts || 0), actualVal: parseFloat(this.totals.actualDebts || 0), color: '#ef4444' }
+            ];
+
+            let items = rawData.map(item => {
+                return {
+                    label: item.label,
+                    value: type === 'planned' ? item.val : item.actualVal,
+                    color: item.color
+                };
+            }).filter(item => item.value > 0);
+
+            let total = items.reduce((sum, item) => sum + item.value, 0);
+            if (total === 0) {
+                return [];
+            }
+
+            let accumulatedOffset = 0;
+            const circumference = 314.16;
+
+            return items.map(item => {
+                let pct = item.value / total;
+                let strokeLength = pct * circumference;
+                let offset = accumulatedOffset;
+                accumulatedOffset += strokeLength;
+                return {
+                    ...item,
+                    pct: pct * 100,
+                    dashArray: strokeLength.toFixed(2) + ' ' + circumference,
+                    dashOffset: (-offset).toFixed(2)
+                };
+            });
         }
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
@@ -147,6 +195,85 @@
                          :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'"
                          x-text="totals.actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!'">
                         {{ $actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!' }}
+                    </div>
+                </div>
+            </div>
+
+            {{-- Chart Card --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">สัดส่วนค่าใช้จ่ายรายเดือน</h3>
+                        <p class="text-xs text-slate-500">แสดงสัดส่วนการใช้จ่ายแบ่งตามกลุ่มรายจ่ายต่าง ๆ</p>
+                    </div>
+                    
+                    {{-- Toggle Button Group --}}
+                    <div class="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 self-start">
+                        <button type="button" 
+                                @click="chartType = 'planned'"
+                                :class="chartType === 'planned' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold transition">
+                            ตามแผนที่ตั้งไว้
+                        </button>
+                        <button type="button" 
+                                @click="chartType = 'actual'"
+                                :class="chartType === 'actual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold transition">
+                            ตามที่ใช้จริง
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Empty State --}}
+                <div x-show="getSegments(chartType).length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <svg class="h-12 w-12 stroke-current" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <p class="mt-2 text-sm font-medium">ยังไม่มีข้อมูลรายจ่ายประจำเดือนนี้</p>
+                </div>
+
+                {{-- Chart Content --}}
+                <div x-show="getSegments(chartType).length > 0" class="grid items-center gap-8 md:grid-cols-2">
+                    {{-- SVG Donut Chart container --}}
+                    <div class="relative flex justify-center">
+                        <svg class="h-56 w-56 -rotate-90 transform" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="50" class="stroke-slate-100" stroke-width="10" fill="none" />
+                            
+                            <template x-for="(seg, idx) in getSegments(chartType)" :key="idx">
+                                <circle cx="60"
+                                        cy="60"
+                                        r="50"
+                                        fill="none"
+                                        :stroke="seg.color"
+                                        stroke-width="10"
+                                        :stroke-dasharray="seg.dashArray"
+                                        :stroke-dashoffset="seg.dashOffset"
+                                        class="transition-all duration-300 ease-in-out hover:stroke-[12px] cursor-pointer" />
+                            </template>
+                        </svg>
+                        
+                        {{-- Text in the center --}}
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
+                            <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                        </div>
+                    </div>
+
+                    {{-- Legend List --}}
+                    <div class="divide-y divide-slate-100">
+                        <template x-for="(seg, idx) in getSegments(chartType)" :key="idx">
+                            <div class="flex items-center justify-between py-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="h-3.5 w-3.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                    <span class="text-sm font-semibold text-slate-700" x-text="seg.label"></span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-slate-900" x-text="'฿' + fmtMoney(seg.value)"></span>
+                                    <span class="ml-1.5 text-xs text-slate-500" x-text="'(' + fmtMoney(seg.pct) + '%)'"></span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
