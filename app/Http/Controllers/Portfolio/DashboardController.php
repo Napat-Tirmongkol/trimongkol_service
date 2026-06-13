@@ -73,17 +73,24 @@ class DashboardController extends Controller
         $installmentsUnpaid = 0.0;
         $koyosoInstallmentsUnpaid = 0.0;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_installments')) {
-            $installments = \Illuminate\Support\Facades\DB::table('portfolio_installments')
+            $latestInstallmentMonth = \Illuminate\Support\Facades\DB::table('portfolio_installments')
                 ->where('user_id', $userId)
-                ->get();
-            foreach ($installments as $ins) {
-                if ($ins->total_amount > 0) {
-                    $paidAmount = (float) $ins->monthly_payment * (int) $ins->paid_months;
-                    $unpaid = max(0.0, (float) $ins->total_amount - $paidAmount);
-                    if (str_contains(strtolower($ins->label), 'กยศ') || str_contains($ins->label, 'กยศ')) {
-                        $koyosoInstallmentsUnpaid += $unpaid;
-                    } else {
-                        $installmentsUnpaid += $unpaid;
+                ->max('month');
+
+            if ($latestInstallmentMonth) {
+                $installments = \Illuminate\Support\Facades\DB::table('portfolio_installments')
+                    ->where('user_id', $userId)
+                    ->where('month', $latestInstallmentMonth)
+                    ->get();
+                foreach ($installments as $ins) {
+                    if ($ins->total_amount > 0) {
+                        $paidAmount = (float) $ins->monthly_payment * (int) $ins->paid_months;
+                        $unpaid = max(0.0, (float) $ins->total_amount - $paidAmount);
+                        if (str_contains(strtolower($ins->label), 'กยศ') || str_contains($ins->label, 'กยศ')) {
+                            $koyosoInstallmentsUnpaid += $unpaid;
+                        } else {
+                            $installmentsUnpaid += $unpaid;
+                        }
                     }
                 }
             }
