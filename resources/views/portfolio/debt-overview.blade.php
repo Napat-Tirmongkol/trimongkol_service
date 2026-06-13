@@ -126,10 +126,12 @@
     <div class="rounded-2xl border bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 class="text-sm font-semibold text-slate-700">แผนการจ่ายรายเดือน</h2>
+            @if (count($schedule) > 12)
             <button @click="showAll = !showAll" type="button"
                     class="text-xs font-medium text-brand-600 hover:text-brand-700 transition">
                 <span x-text="showAll ? '{{ __('app.portfolio.debts.show_less') }}' : '{{ __('app.portfolio.debts.show_all') }} ({{ count($schedule) }} เดือน)'"></span>
             </button>
+            @endif
         </div>
 
         <div class="overflow-x-auto">
