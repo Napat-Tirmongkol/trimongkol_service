@@ -438,16 +438,15 @@ class BudgetController extends Controller
         $time = strtotime($currentMonth . '-01');
         $nextMonth = date('Y-m', strtotime('+1 month', $time));
 
-        // Check if next month already has records. If so, just redirect.
-        $exists = BudgetItem::query()->forUser($userId)->where('month', $nextMonth)->exists()
-            || Installment::query()->forUser($userId)->where('month', $nextMonth)->exists()
-            || Subscription::query()->forUser($userId)->where('month', $nextMonth)->exists()
-            || Income::query()->forUser($userId)->where('month', $nextMonth)->exists();
-
-        if (!$exists) {
-            // 1. Copy Income sources
-            $incomes = Income::query()->forUser($userId)->where('month', $currentMonth)->get();
-            foreach ($incomes as $inc) {
+        // 1. Copy Income sources
+        $incomes = Income::query()->forUser($userId)->where('month', $currentMonth)->get();
+        foreach ($incomes as $inc) {
+            $existsInNext = Income::query()
+                ->forUser($userId)
+                ->where('month', $nextMonth)
+                ->where('label', $inc->label)
+                ->exists();
+            if (!$existsInNext) {
                 Income::create([
                     'user_id' => $userId,
                     'month' => $nextMonth,
@@ -456,10 +455,18 @@ class BudgetController extends Controller
                     'notes' => $inc->notes,
                 ]);
             }
+        }
 
-            // 2. Copy Budget Items (Fixed, Variable, Savings)
-            $items = BudgetItem::query()->forUser($userId)->where('month', $currentMonth)->get();
-            foreach ($items as $item) {
+        // 2. Copy Budget Items (Fixed, Variable, Savings)
+        $items = BudgetItem::query()->forUser($userId)->where('month', $currentMonth)->get();
+        foreach ($items as $item) {
+            $existsInNext = BudgetItem::query()
+                ->forUser($userId)
+                ->where('month', $nextMonth)
+                ->where('category', $item->category)
+                ->where('label', $item->label)
+                ->exists();
+            if (!$existsInNext) {
                 BudgetItem::create([
                     'user_id' => $userId,
                     'month' => $nextMonth,
@@ -471,10 +478,17 @@ class BudgetController extends Controller
                     'notes' => $item->notes,
                 ]);
             }
+        }
 
-            // 3. Copy Subscriptions
-            $subs = Subscription::query()->forUser($userId)->where('month', $currentMonth)->get();
-            foreach ($subs as $sub) {
+        // 3. Copy Subscriptions
+        $subs = Subscription::query()->forUser($userId)->where('month', $currentMonth)->get();
+        foreach ($subs as $sub) {
+            $existsInNext = Subscription::query()
+                ->forUser($userId)
+                ->where('month', $nextMonth)
+                ->where('label', $sub->label)
+                ->exists();
+            if (!$existsInNext) {
                 Subscription::create([
                     'user_id' => $userId,
                     'month' => $nextMonth,
@@ -485,29 +499,32 @@ class BudgetController extends Controller
                     'notes' => $sub->notes,
                 ]);
             }
+        }
 
-            // 4. Copy Installments (incrementing paid_months if checked)
-            $insts = Installment::query()->forUser($userId)->where('month', $currentMonth)->get();
-            foreach ($insts as $inst) {
+        // 4. Copy Installments (incrementing paid_months if checked)
+        $insts = Installment::query()->forUser($userId)->where('month', $currentMonth)->get();
+        foreach ($insts as $inst) {
+            $existsInNext = Installment::query()
+                ->forUser($userId)
+                ->where('month', $nextMonth)
+                ->where('label', $inst->label)
+                ->exists();
+            if (!$existsInNext && $inst->paid_months < $inst->total_months) {
                 $newPaid = $inst->paid_months;
                 if ($inst->is_checked) {
                     $newPaid = min($inst->total_months, $inst->paid_months + 1);
                 }
-
-                // Copy the installment only if it's not fully paid in the previous month
-                if ($inst->paid_months < $inst->total_months) {
-                    Installment::create([
-                        'user_id' => $userId,
-                        'month' => $nextMonth,
-                        'label' => $inst->label,
-                        'monthly_payment' => $inst->monthly_payment,
-                        'total_amount' => $inst->total_amount,
-                        'total_months' => $inst->total_months,
-                        'paid_months' => $newPaid,
-                        'is_checked' => false,
-                        'notes' => $inst->notes,
-                    ]);
-                }
+                Installment::create([
+                    'user_id' => $userId,
+                    'month' => $nextMonth,
+                    'label' => $inst->label,
+                    'monthly_payment' => $inst->monthly_payment,
+                    'total_amount' => $inst->total_amount,
+                    'total_months' => $inst->total_months,
+                    'paid_months' => $newPaid,
+                    'is_checked' => false,
+                    'notes' => $inst->notes,
+                ]);
             }
         }
 
