@@ -44,18 +44,31 @@ class LedgerController extends Controller
 
         $byDate = $entries->groupBy(fn ($e) => $e->date->format('Y-m-d'));
 
-        $budgetItems = \Illuminate\Support\Facades\Schema::hasTable('portfolio_budget_items')
-            ? BudgetItem::query()
-                ->forUser($userId)
-                ->where('month', $activeMonth)
-                ->orderBy('category')
-                ->orderBy('label')
-                ->get()
-            : collect();
+        // Load budget items for the dropdown.
+        // Try the active month first; if that month has no items (e.g. viewing
+        // a future month or a month where no budget was ever set up), fall back
+        // to the most recent month that does have items.
+        $budgetItems       = collect();
+        $budgetItemMonth   = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_budget_items')) {
+            $hasActive = BudgetItem::query()->forUser($userId)->where('month', $activeMonth)->exists();
+            $budgetItemMonth = $hasActive
+                ? $activeMonth
+                : BudgetItem::query()->forUser($userId)->orderBy('month', 'desc')->value('month');
+
+            if ($budgetItemMonth) {
+                $budgetItems = BudgetItem::query()
+                    ->forUser($userId)
+                    ->where('month', $budgetItemMonth)
+                    ->orderBy('category')
+                    ->orderBy('label')
+                    ->get();
+            }
+        }
 
         return view('portfolio.ledger', compact(
             'allMonths', 'activeMonth', 'entries', 'byDate',
-            'totalIncome', 'totalExpense', 'net', 'budgetItems'
+            'totalIncome', 'totalExpense', 'net', 'budgetItems', 'budgetItemMonth'
         ));
     }
 
