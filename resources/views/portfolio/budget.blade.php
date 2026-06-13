@@ -108,6 +108,19 @@
                     dashOffset: (-offset).toFixed(2)
                 };
             });
+        },
+        donutGradient(type) {
+            let segs = this.getSegments(type);
+            if (!segs.length) return '#f1f5f9';
+            let parts = [];
+            let acc = 0;
+            segs.forEach((seg, i) => {
+                let start = acc;
+                // pin the final stop to 100% so float rounding leaves no sliver
+                acc = (i === segs.length - 1) ? 100 : acc + seg.pct;
+                parts.push(seg.color + ' ' + start + '% ' + acc + '%');
+            });
+            return 'conic-gradient(' + parts.join(', ') + ')';
         }
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
@@ -235,28 +248,22 @@
 
                 {{-- Chart Content --}}
                 <div x-show="getSegments(chartType).length > 0" class="grid items-center gap-8 md:grid-cols-2">
-                    {{-- SVG Donut Chart container --}}
-                    <div class="relative flex justify-center">
-                        <svg class="h-56 w-56 -rotate-90 transform" viewBox="0 0 120 120">
-                            <circle cx="60" cy="60" r="50" class="stroke-slate-100" stroke-width="10" fill="none" />
-                            
-                            <template x-for="(seg, idx) in getSegments(chartType)" :key="idx">
-                                <circle cx="60"
-                                        cy="60"
-                                        r="50"
-                                        fill="none"
-                                        :stroke="seg.color"
-                                        stroke-width="10"
-                                        :stroke-dasharray="seg.dashArray"
-                                        :stroke-dashoffset="seg.dashOffset"
-                                        class="transition-all duration-300 ease-in-out hover:stroke-[12px] cursor-pointer" />
-                            </template>
-                        </svg>
-                        
-                        {{-- Text in the center --}}
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
-                            <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                    {{-- Donut chart — CSS conic-gradient. Alpine's <template x-for> can't
+                         create SVG-namespaced <circle> nodes, so an SVG donut renders nothing.
+                         Sizes/gradient are inlined via :style so they don't depend on the
+                         compiled Tailwind build (h-56 / stroke-slate-100 are missing there). --}}
+                    <div class="flex justify-center">
+                        <div class="relative rounded-full transition-all duration-300 ease-in-out"
+                             style="width: 14rem; height: 14rem;"
+                             :style="{ background: donutGradient(chartType) }">
+                            {{-- donut hole (inherits the card background) --}}
+                            <div class="absolute rounded-full bg-white" style="inset: 16%;"></div>
+
+                            {{-- Text in the center --}}
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
+                                <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                            </div>
                         </div>
                     </div>
 
