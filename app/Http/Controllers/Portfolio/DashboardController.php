@@ -48,23 +48,57 @@ class DashboardController extends Controller
             ? ($totals['gain'] / $totals['cost']) * 100
             : 0;
 
-        // Calculate remaining unpaid variable debts from budget
+        // Calculate remaining unpaid variable debts from budget + build กยศ widget data
         $variableDebtsUnpaid = 0.0;
-        $koyosoDebtsUnpaid = 0.0;
+        $koyosoDebtsUnpaid   = 0.0;
+        $koyoso              = null;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_debts')) {
             $variableDebts = \App\Models\Portfolio\Debt::query()
                 ->forUser($userId)
                 ->with('payments')
                 ->get();
             foreach ($variableDebts as $d) {
+                $isKoyoso = str_contains($d->label, 'กยศ');
                 if ($d->total_amount > 0) {
-                    $paidSum = $d->payments->where('is_paid', true)->sum('amount');
-                    $unpaid = max(0.0, (float) $d->total_amount - $paidSum);
-                    if (str_contains(strtolower($d->label), 'กยศ') || str_contains($d->label, 'กยศ')) {
+                    $paidSumD = (float) $d->payments->where('is_paid', true)->sum('amount');
+                    $unpaid   = max(0.0, (float) $d->total_amount - $paidSumD);
+                    if ($isKoyoso) {
                         $koyosoDebtsUnpaid += $unpaid;
                     } else {
                         $variableDebtsUnpaid += $unpaid;
                     }
+                }
+
+                if ($isKoyoso && $koyoso === null) {
+                    $today      = now();
+                    $curMonth   = $today->format('Y-m');
+                    $curYear    = (int) $today->format('Y');
+                    $curM       = (int) $today->format('m');
+                    $paid       = (float) $d->payments->where('is_paid', true)->sum('amount');
+                    $nextJuly   = sprintf('%04d-07', $curM <= 7 ? $curYear : $curYear + 1);
+
+                    // Payments whose period-end July matches $nextJuly
+                    $periodPays = $d->payments->filter(function ($p) use ($nextJuly) {
+                        [$py, $pm] = array_map('intval', explode('-', $p->month));
+                        $end = $pm <= 7
+                            ? sprintf('%04d-07', $py)
+                            : sprintf('%04d-07', $py + 1);
+                        return $end === $nextJuly;
+                    });
+
+                    $koyoso = [
+                        'debt'            => $d,
+                        'paidAmount'      => $paid,
+                        'remainingAmount' => max(0.0, (float) $d->total_amount - $paid),
+                        'progressPct'     => $d->total_amount > 0
+                            ? min(100, round($paid / (float) $d->total_amount * 100, 1))
+                            : 0,
+                        'currentPay'      => $d->payments->firstWhere('month', $curMonth),
+                        'nextJulyMonth'   => $nextJuly,
+                        'installmentNo'   => (int) explode('-', $nextJuly)[0] - 2025,
+                        'periodPaid'      => $periodPays->where('is_paid', true)->count(),
+                        'periodTotal'     => $periodPays->count(),
+                    ];
                 }
             }
         }
@@ -115,7 +149,7 @@ class DashboardController extends Controller
         $lastRefresh = $holdings->whereNotNull('last_priced_at')->max('last_priced_at');
 
         return view('portfolio.dashboard', compact(
-            'holdings', 'byKind', 'totals', 'trend', 'lastRefresh',
+            'holdings', 'byKind', 'totals', 'trend', 'lastRefresh', 'koyoso',
         ));
     }
 
