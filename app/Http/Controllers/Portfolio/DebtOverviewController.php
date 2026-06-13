@@ -15,20 +15,30 @@ class DebtOverviewController extends Controller
         $userId    = $this->resolvePortfolioUserId();
         $currentYM = date('Y-m');
 
-        // ── Installments: snapshot from current month, or most recent ─────
+        // ── Installments: most-recent record per label ────────────────────
+        // Using a single snapMonth misses installments added after the last
+        // "new month" copy (e.g. SEasyCash has no 2026-06 row if it was added
+        // mid-month). Taking the newest record per label is always correct.
         $installments = collect();
         if (Schema::hasTable('portfolio_installments')) {
-            $snapMonth = Installment::forUser($userId)->where('month', $currentYM)->exists()
-                ? $currentYM
-                : Installment::forUser($userId)->orderBy('month', 'desc')->value('month');
+            $installments = Installment::forUser($userId)
+                ->where('total_months', '>', 0)
+                ->orderBy('month', 'desc')
+                ->get()
+                ->unique('label')
+                ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0)
+                ->sortBy('label')
+                ->values();
 
-            if ($snapMonth) {
-                $installments = Installment::forUser($userId)
-                    ->where('month', $snapMonth)
-                    ->where('total_months', '>', 0)
-                    ->orderBy('label')
-                    ->get()
-                    ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0);
+            // Overlay is_checked with current-month data where available
+            if ($installments->isNotEmpty()) {
+                $checkedMap = Installment::forUser($userId)
+                    ->where('month', $currentYM)
+                    ->pluck('is_checked', 'label');
+
+                $installments = $installments->each(
+                    fn ($i) => $i->is_checked = $checkedMap[$i->label] ?? false
+                );
             }
         }
 
