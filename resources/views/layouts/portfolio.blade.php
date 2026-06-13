@@ -414,6 +414,8 @@
                             </svg>
                         </button>
 
+
+
                         @if (auth()->user()->avatar_url)
                             <img src="{{ auth()->user()->avatar_url }}" alt="" referrerpolicy="no-referrer"
                                  class="h-8 w-8 rounded-full ring-2" :class="dark ? 'ring-slate-700' : 'ring-slate-100'">

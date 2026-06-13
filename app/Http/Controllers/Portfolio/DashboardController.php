@@ -17,7 +17,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
 
         $holdings = Holding::query()
             ->forUser($userId)
@@ -109,7 +109,7 @@ class DashboardController extends Controller
     public function store(Request $request, PriceFetcher $prices)
     {
         $data = $this->validated($request);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         $nativeUnitCost = (float) ($data['cost_basis'] ?? 0);
         $data['metadata'] = [
@@ -175,7 +175,7 @@ class DashboardController extends Controller
 
     public function refresh(PriceFetcher $prices)
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
         $result = $prices->refreshForUser($userId);
 
         $this->saveSnapshot($userId);
@@ -230,7 +230,7 @@ class DashboardController extends Controller
 
     private function authorizeOwnership(Holding $holding): void
     {
-        abort_unless($holding->user_id === (int) auth()->id(), 403);
+        abort_unless($holding->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     /** Roll a single net-worth snapshot for today (upsert keyed on date). */
@@ -260,5 +260,18 @@ class DashboardController extends Controller
                 'net_worth_thb' => round($assets - $debts, 2),
             ],
         );
+    }
+
+    private function resolvePortfolioUserId(): int
+    {
+        $allowed = (array) config('portfolio.allowed_emails', []);
+        $primaryEmail = !empty($allowed) ? strtolower($allowed[0]) : null;
+        if ($primaryEmail) {
+            $owner = \App\Models\User::where('email', $primaryEmail)->first();
+            if ($owner) {
+                return $owner->id;
+            }
+        }
+        return (int) auth()->id();
     }
 }

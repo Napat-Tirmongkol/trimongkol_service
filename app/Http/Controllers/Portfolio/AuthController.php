@@ -60,7 +60,9 @@ class AuthController extends Controller
             ->orWhere('email', $email)
             ->first();
 
+        $isNew = false;
         if (! $user) {
+            $isNew = true;
             $user = new User();
             $user->name = $googleUser->getName() ?: $email;
             $user->email = $email;
@@ -72,6 +74,10 @@ class AuthController extends Controller
         $user->avatar_url = $googleUser->getAvatar();
         $user->last_login_at = now();
         $user->save();
+
+        if ($isNew) {
+            event(new \Illuminate\Auth\Events\Registered($user));
+        }
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();

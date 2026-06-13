@@ -17,7 +17,7 @@ class BudgetController extends Controller
 {
     public function index(Request $request)
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
 
         // 1. Get all months that contain records to populate history dropdown
         $allMonths = collect()
@@ -157,7 +157,7 @@ class BudgetController extends Controller
             'month' => 'required|string|regex:/^\d{4}-\d{2}$/',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         Income::create($data);
 
@@ -201,7 +201,7 @@ class BudgetController extends Controller
             'month' => 'required|string|regex:/^\d{4}-\d{2}$/',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         $item = BudgetItem::create($data);
         $this->syncSavingToHolding($item);
@@ -261,7 +261,7 @@ class BudgetController extends Controller
             $data['paid_months'] = $data['total_months'];
         }
         
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         Installment::create($data);
 
@@ -311,7 +311,7 @@ class BudgetController extends Controller
             'month' => 'required|string|regex:/^\d{4}-\d{2}$/',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         Subscription::create($data);
 
@@ -392,7 +392,7 @@ class BudgetController extends Controller
             'total_amount' => 'nullable|numeric|min:0',
             'notes'        => 'nullable|string|max:1000',
         ]);
-        $data['user_id']     = (int) auth()->id();
+        $data['user_id']     = $this->resolvePortfolioUserId();
         $data['total_amount'] = $data['total_amount'] ?? 0;
 
         Debt::create($data);
@@ -444,7 +444,7 @@ class BudgetController extends Controller
 
         // Prevent duplicate payment for same debt+month
         DebtPayment::updateOrCreate(
-            ['debt_id' => $data['debt_id'], 'user_id' => auth()->id(), 'month' => $data['month']],
+            ['debt_id' => $data['debt_id'], 'user_id' => $this->resolvePortfolioUserId(), 'month' => $data['month']],
             ['amount' => $data['amount'], 'notes' => $data['notes'] ?? null]
         );
 
@@ -480,7 +480,7 @@ class BudgetController extends Controller
 
     public function resetMonth(Request $request)
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
         $currentMonth = $request->input('current_month');
         if (!$currentMonth || !preg_match('/^\d{4}-\d{2}$/', $currentMonth)) {
             $currentMonth = date('Y-m');
@@ -586,37 +586,37 @@ class BudgetController extends Controller
 
     private function authorizeIncome(Income $income): void
     {
-        abort_unless($income->user_id === (int) auth()->id(), 403);
+        abort_unless($income->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeItem(BudgetItem $item): void
     {
-        abort_unless($item->user_id === (int) auth()->id(), 403);
+        abort_unless($item->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeInstallment(Installment $installment): void
     {
-        abort_unless($installment->user_id === (int) auth()->id(), 403);
+        abort_unless($installment->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeSubscription(Subscription $subscription): void
     {
-        abort_unless($subscription->user_id === (int) auth()->id(), 403);
+        abort_unless($subscription->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeDebt(Debt $debt): void
     {
-        abort_unless($debt->user_id === (int) auth()->id(), 403);
+        abort_unless($debt->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeDebtPayment(DebtPayment $payment): void
     {
-        abort_unless($payment->user_id === (int) auth()->id(), 403);
+        abort_unless($payment->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function getBudgetTotals(string $activeMonth): array
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
 
         // 1. Incomes
         $incomes = Income::query()
@@ -767,5 +767,18 @@ class BudgetController extends Controller
                 $holding->recalculateFromTransactions($prices);
             }
         }
+    }
+
+    private function resolvePortfolioUserId(): int
+    {
+        $allowed = (array) config('portfolio.allowed_emails', []);
+        $primaryEmail = !empty($allowed) ? strtolower($allowed[0]) : null;
+        if ($primaryEmail) {
+            $owner = \App\Models\User::where('email', $primaryEmail)->first();
+            if ($owner) {
+                return $owner->id;
+            }
+        }
+        return (int) auth()->id();
     }
 }
