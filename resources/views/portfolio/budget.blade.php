@@ -23,7 +23,44 @@
         addSavingOpen: false,
         addInstallmentOpen: false,
         addSubscriptionOpen: false,
-        addDebtOpen: false
+        addDebtOpen: false,
+        totals: {
+            incomeTotal: {{ $incomeTotal }},
+            fixedTotal: {{ $fixedTotal }},
+            variableTotal: {{ $variableTotal }},
+            savingsTotal: {{ $savingsTotal }},
+            totalExpenses: {{ $totalExpenses }},
+            remainingAmount: {{ $remainingAmount }},
+            actualFixedTotal: {{ $actualFixedTotal }},
+            actualVariableTotal: {{ $actualVariableTotal }},
+            actualSavingsTotal: {{ $actualSavingsTotal }},
+            actualExpensesTotal: {{ $actualExpensesTotal }},
+            actualRemainingAmount: {{ $actualRemainingAmount }}
+        },
+        fmtMoney(val) {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+        },
+        async toggleCheck(url) {
+            try {
+                let response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    let data = await response.json();
+                    if (data.success && data.totals) {
+                        this.totals = data.totals;
+                    }
+                    return data.is_checked;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             
@@ -87,20 +124,28 @@
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-1">
                     <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">ใช้จริง / แผนรายจ่าย</div>
                     <div class="text-3xl font-extrabold text-slate-900">
-                        ฿{{ $fmtMoney($actualExpensesTotal) }} <span class="text-lg font-normal text-slate-400">/ ฿{{ $fmtMoney($totalExpenses) }}</span>
+                        <span x-text="'฿' + fmtMoney(totals.actualExpensesTotal)">฿{{ $fmtMoney($actualExpensesTotal) }}</span>
+                        <span class="text-lg font-normal text-slate-400">/ ฿{{ $fmtMoney($totalExpenses) }}</span>
                     </div>
-                    <div class="text-[11px] text-slate-500">
+                    <div class="text-[11px] text-slate-500" x-text="'ใช้จริง: Fixed ฿' + fmtMoney(totals.actualFixedTotal) + ' | Var ฿' + fmtMoney(totals.actualVariableTotal) + ' | Save ฿' + fmtMoney(totals.actualSavingsTotal)">
                         ใช้จริง: Fixed ฿{{ $fmtMoney($actualFixedTotal) }} | Var ฿{{ $fmtMoney($actualVariableTotal) }} | Save ฿{{ $fmtMoney($actualSavingsTotal) }}
                     </div>
                 </div>
 
                 {{-- Remaining Balance Card --}}
-                <div class="rounded-2xl border {{ $actualRemainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50' }} p-5 space-y-1">
-                    <div class="text-xs font-semibold uppercase tracking-wider {{ $actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">คงเหลือจริง / ตามแผน</div>
-                    <div class="text-3xl font-extrabold {{ $actualRemainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900' }}">
-                        ฿{{ $fmtMoney($actualRemainingAmount) }} <span class="text-lg font-normal {{ $actualRemainingAmount >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70' }}">/ ฿{{ $fmtMoney($remainingAmount) }}</span>
+                <div class="rounded-2xl border p-5 space-y-1"
+                     :class="totals.actualRemainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'">
+                    <div class="text-xs font-semibold uppercase tracking-wider"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'">คงเหลือจริง / ตามแผน</div>
+                    <div class="text-3xl font-extrabold"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900'">
+                        <span x-text="'฿' + fmtMoney(totals.actualRemainingAmount)">฿{{ $fmtMoney($actualRemainingAmount) }}</span>
+                        <span class="text-lg font-normal"
+                              :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'">/ ฿{{ $fmtMoney($remainingAmount) }}</span>
                     </div>
-                    <div class="text-[11px] {{ $actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
+                    <div class="text-[11px]"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'"
+                         x-text="totals.actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!'">
                         {{ $actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!' }}
                     </div>
                 </div>
@@ -165,18 +210,24 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($fixedExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
@@ -184,7 +235,8 @@
                                             @endif
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
                                                 ฿{{ $fmtMoney($item->amount) }}
                                             </span>
                                             @if($item->actual_amount !== null)
@@ -287,7 +339,10 @@
                         {{-- Total Fixed Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
                             <span>รวมค่าใช้จ่ายคงที่ (ใช้จริง / งบ)</span>
-                            <span>฿{{ $fmtMoney($actualFixedTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($fixedTotal) }}</span></span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualFixedTotal)">฿{{ $fmtMoney($actualFixedTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($fixedTotal) }}</span>
+                            </span>
                         </div>
                     </div>
 
@@ -344,18 +399,24 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($variableExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
@@ -363,7 +424,8 @@
                                             @endif
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
                                                 ฿{{ $fmtMoney($item->amount) }}
                                             </span>
                                             @if($item->actual_amount !== null)
@@ -418,7 +480,10 @@
                         {{-- Total Variable Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
                             <span>รวมค่าใช้จ่ายผันแปร (ใช้จริง / งบ)</span>
-                            <span>฿{{ $fmtMoney($actualVariableTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($variableTotal) }}</span></span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualVariableTotal)">฿{{ $fmtMoney($actualVariableTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($variableTotal) }}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -585,18 +650,24 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($savingsList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, actual_amount: {{ $item->actual_amount ?? 'null' }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
@@ -604,7 +675,8 @@
                                             @endif
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
                                                 ฿{{ $fmtMoney($item->amount) }}
                                             </span>
                                             @if($item->actual_amount !== null)
@@ -659,7 +731,10 @@
                         {{-- Total Savings --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
                             <span>รวมเงินออม/ลงทุน (ออมจริง / เป้า)</span>
-                            <span>฿{{ $fmtMoney($actualSavingsTotal) }} <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($savingsTotal) }}</span></span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualSavingsTotal)">฿{{ $fmtMoney($actualSavingsTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($savingsTotal) }}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -742,21 +817,21 @@
                                          total_amount: {{ $inst->total_amount }}, 
                                          total_months: {{ $inst->total_months }}, 
                                          paid_months: {{ $inst->paid_months }}, 
-                                         notes: '{{ addslashes($inst->notes) }}' 
+                                         notes: '{{ addslashes($inst->notes) }}',
+                                         checked: {{ $inst->is_checked ? 'true' : 'false' }}
                                      }">
                                     
                                     {{-- Standard read-only view --}}
                                     <div x-show="!editing" class="space-y-2">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="flex items-center gap-3">
-                                                <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'installment', 'id' => $inst->id]) }}">
-                                                    @csrf
-                                                    <input type="checkbox" {{ $inst->is_checked ? 'checked' : '' }}
-                                                           @change="$el.form.submit()"
-                                                           class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                                </form>
+                                                <input type="checkbox" 
+                                                       :checked="checked"
+                                                       @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'installment', 'id' => $inst->id]) }}')"
+                                                       class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                                 <div>
-                                                    <span class="text-sm font-bold text-slate-800 {{ $inst->is_checked ? 'line-through text-slate-400' : '' }}">
+                                                    <span class="text-sm font-bold text-slate-800"
+                                                          :class="checked ? 'line-through text-slate-400' : ''">
                                                         {{ $inst->label }}
                                                     </span>
                                                     <p class="text-[10px] text-slate-500">
@@ -908,7 +983,8 @@
                                              editing: false,
                                              label: '{{ addslashes($debt->label) }}',
                                              total_amount: {{ $debt->total_amount }},
-                                             notes: '{{ addslashes($debt->notes) }}'
+                                             notes: '{{ addslashes($debt->notes) }}',
+                                             checked: {{ ($currPay && $currPay->is_paid) ? 'true' : 'false' }}
                                          }">
 
                                         {{-- Read view --}}
@@ -916,18 +992,17 @@
                                             <div class="flex items-start gap-3 flex-1 min-w-0">
                                                 {{-- Checkbox for current month's payment --}}
                                                 @if($currPay)
-                                                    <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $currPay->id]) }}">
-                                                        @csrf
-                                                        <input type="checkbox" {{ $currPay->is_paid ? 'checked' : '' }}
-                                                               @change="$el.form.submit()"
-                                                               class="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                                    </form>
+                                                    <input type="checkbox" 
+                                                           :checked="checked"
+                                                           @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $currPay->id]) }}')"
+                                                           class="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                                 @else
                                                     <div class="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-dashed border-slate-200"></div>
                                                 @endif
 
                                                 <div class="min-w-0 flex-1">
-                                                    <span class="text-sm font-bold text-slate-800 {{ ($currPay && $currPay->is_paid) ? 'line-through text-slate-400' : '' }}">
+                                                    <span class="text-sm font-bold text-slate-800"
+                                                          :class="checked ? 'line-through text-slate-400' : ''">
                                                         {{ $debt->label }}
                                                     </span>
                                                     <p class="text-[10px] text-slate-500">
@@ -943,7 +1018,8 @@
                                                 </div>
 
                                                 @if($currPay)
-                                                    <span class="text-sm font-bold whitespace-nowrap {{ $currPay->is_paid ? 'text-slate-400' : 'text-slate-900' }}">
+                                                    <span class="text-sm font-bold whitespace-nowrap"
+                                                          :class="checked ? 'text-slate-400' : 'text-slate-900'">
                                                         ฿{{ $fmtMoney($currPay->amount) }}
                                                     </span>
                                                 @endif
@@ -1158,18 +1234,24 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($subscriptions as $sub)
                                 <div class="py-3 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($sub->label) }}', monthly_payment: {{ $sub->monthly_payment }}, billing_day: '{{ $sub->billing_day }}', notes: '{{ addslashes($sub->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($sub->label) }}', 
+                                         monthly_payment: {{ $sub->monthly_payment }}, 
+                                         billing_day: '{{ $sub->billing_day }}', 
+                                         notes: '{{ addslashes($sub->notes) }}',
+                                         checked: {{ $sub->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'subscription', 'id' => $sub->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $sub->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'subscription', 'id' => $sub->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $sub->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $sub->label }}
                                             </span>
                                             <div class="flex flex-col text-[10px] text-slate-500 mt-0.5">
@@ -1181,7 +1263,8 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $sub->is_checked ? 'text-slate-400' : '' }}">
+                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                              :class="checked ? 'text-slate-400' : ''">
                                             ฿{{ $fmtMoney($sub->monthly_payment) }}
                                         </span>
                                         <div class="flex items-center gap-1">

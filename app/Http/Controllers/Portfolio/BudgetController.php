@@ -358,7 +358,11 @@ class BudgetController extends Controller
 
         if ($request->wantsJson()) {
             $value = ($type === 'debt-payment') ? $model->is_paid : $model->is_checked;
-            return response()->json(['success' => true, 'is_checked' => $value]);
+            return response()->json([
+                'success' => true,
+                'is_checked' => $value,
+                'totals' => $this->getBudgetTotals($model->month)
+            ]);
         }
 
         return redirect()->back();
@@ -593,5 +597,106 @@ class BudgetController extends Controller
     private function authorizeDebtPayment(DebtPayment $payment): void
     {
         abort_unless($payment->user_id === (int) auth()->id(), 403);
+    }
+
+    private function getBudgetTotals(string $activeMonth): array
+    {
+        $userId = (int) auth()->id();
+
+        // 1. Incomes
+        $incomes = Income::query()
+            ->forUser($userId)
+            ->where('month', $activeMonth)
+            ->orderBy('id')
+            ->get();
+
+        // 2. Budget Items
+        $items = BudgetItem::query()
+            ->forUser($userId)
+            ->where('month', $activeMonth)
+            ->get();
+
+        $fixedExpensesList = $items->where('category', BudgetItem::CATEGORY_FIXED);
+        $variableExpensesList = $items->where('category', BudgetItem::CATEGORY_VARIABLE);
+        $savingsList = $items->where('category', BudgetItem::CATEGORY_SAVING);
+
+        // 3. Installments
+        $installments = Installment::query()
+            ->forUser($userId)
+            ->where('month', $activeMonth)
+            ->orderBy('id')
+            ->get();
+
+        // 4. Subscriptions
+        $subscriptions = Subscription::query()
+            ->forUser($userId)
+            ->where('month', $activeMonth)
+            ->orderBy('id')
+            ->get();
+
+        // 5. Debts
+        $debts = Debt::query()
+            ->forUser($userId)
+            ->whereHas('payments', fn ($q) => $q->where('month', $activeMonth))
+            ->with(['payments' => fn ($q) => $q->orderBy('month')])
+            ->orderBy('id')
+            ->get();
+
+        $incomeTotal = (float) $incomes->sum('amount');
+        $installmentsPaymentSum = (float) $installments->sum('monthly_payment');
+        $subscriptionsPaymentSum = (float) $subscriptions->sum('monthly_payment');
+        $debtPaymentsSum = (float) $debts->map(
+            fn ($d) => $d->payments->firstWhere('month', $activeMonth)?->amount ?? 0
+        )->sum();
+
+        $fixedTotal = (float) $fixedExpensesList->sum('amount')
+            + $installmentsPaymentSum
+            + $subscriptionsPaymentSum
+            + $debtPaymentsSum;
+        $variableTotal = (float) $variableExpensesList->sum('amount');
+        $savingsTotal = (float) $savingsList->sum('amount');
+
+        $totalExpenses = $fixedTotal + $variableTotal + $savingsTotal;
+        $remainingAmount = $incomeTotal - $totalExpenses;
+
+        // Calculate actual amounts spent/saved
+        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+        $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
+        $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
+        $actualDebtPaymentsSum = (float) $debts->map(
+            function ($d) use ($activeMonth) {
+                $payment = $d->payments->firstWhere('month', $activeMonth);
+                return ($payment && $payment->is_paid) ? $payment->amount : 0;
+            }
+        )->sum();
+
+        $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
+
+        $actualVariableTotal = (float) $variableExpensesList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+
+        $actualSavingsTotal = (float) $savingsList->sum(
+            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
+        );
+
+        $actualExpensesTotal = $actualFixedTotal + $actualVariableTotal + $actualSavingsTotal;
+        $actualRemainingAmount = $incomeTotal - $actualExpensesTotal;
+
+        return [
+            'incomeTotal' => $incomeTotal,
+            'fixedTotal' => $fixedTotal,
+            'variableTotal' => $variableTotal,
+            'savingsTotal' => $savingsTotal,
+            'totalExpenses' => $totalExpenses,
+            'remainingAmount' => $remainingAmount,
+            'actualFixedTotal' => $actualFixedTotal,
+            'actualVariableTotal' => $actualVariableTotal,
+            'actualSavingsTotal' => $actualSavingsTotal,
+            'actualExpensesTotal' => $actualExpensesTotal,
+            'actualRemainingAmount' => $actualRemainingAmount,
+        ];
     }
 }
