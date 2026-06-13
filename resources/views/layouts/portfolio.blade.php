@@ -358,6 +358,21 @@
         .portfolio-dark ::-webkit-scrollbar-thumb:hover {
             background: #2a3042;
         }
+
+        /* ── Select element: remove native browser arrow to prevent Chromium
+              dark-mode double-arrow rendering bug ──────────────────────────── */
+        select:not([multiple]):not([size]) {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.1rem;
+            padding-right: 2.25rem;
+        }
+        .portfolio-dark select:not([multiple]):not([size]) {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+        }
     </style>
 
     <script>
