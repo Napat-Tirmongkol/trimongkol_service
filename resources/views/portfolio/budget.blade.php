@@ -1212,26 +1212,42 @@
                                             @foreach($debt->payments->sortBy('month') as $pay)
                                                 @php $isNow = $pay->month === $activeMonth; @endphp
                                                 <div class="flex items-center gap-2"
-                                                     x-data="{ editP: false, editAmt: {{ $pay->amount }}, editNotes: '{{ addslashes($pay->notes) }}' }">
+                                                     x-data="{
+                                                         editP: false,
+                                                         editAmt: {{ $pay->amount }},
+                                                         editNotes: '{{ addslashes($pay->notes) }}',
+                                                         isPaid: {{ $pay->is_paid ? 'true' : 'false' }},
+                                                         async toggle() {
+                                                             try {
+                                                                 const r = await fetch('{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $pay->id]) }}', {
+                                                                     method: 'POST',
+                                                                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                                                                 });
+                                                                 if (r.ok) { const d = await r.json(); if (d.success) this.isPaid = d.is_checked; }
+                                                             } catch(e) { console.error(e); }
+                                                         }
+                                                     }">
 
                                                     {{-- Read row --}}
                                                     <div x-show="!editP" class="flex items-center gap-2 flex-1 min-w-0">
-                                                        @if($pay->is_paid)
-                                                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500 shrink-0">
+                                                        {{-- Clickable paid toggle --}}
+                                                        <button type="button" @click="toggle()"
+                                                                class="shrink-0 flex items-center justify-center w-4 h-4 cursor-pointer focus:outline-none">
+                                                            <svg x-show="isPaid" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                                             </svg>
-                                                        @elseif($isNow)
-                                                            <div class="h-3 w-3 rounded-full border-2 border-brand-500 shrink-0"></div>
-                                                        @else
-                                                            <div class="h-3 w-3 rounded-full border-2 border-slate-200 shrink-0"></div>
-                                                        @endif
-                                                        <span class="text-xs {{ $pay->is_paid ? 'text-slate-400 line-through' : ($isNow ? 'font-bold text-slate-900' : 'text-slate-600') }}">
+                                                            <div x-show="!isPaid"
+                                                                 class="h-3 w-3 rounded-full border-2 {{ $isNow ? 'border-brand-500' : 'border-slate-200' }}"></div>
+                                                        </button>
+                                                        <span class="text-xs"
+                                                              :class="isPaid ? 'text-slate-400 line-through' : '{{ $isNow ? 'font-bold text-slate-900' : 'text-slate-600' }}'">
                                                             {{ $thMonthLabel($pay->month) }}
                                                         </span>
                                                         @if($isNow)
                                                             <span class="text-[10px] text-brand-600 font-medium">(เดือนนี้)</span>
                                                         @endif
-                                                        <span class="ml-auto text-xs {{ $pay->is_paid ? 'text-slate-400' : 'text-slate-700' }} whitespace-nowrap">
+                                                        <span class="ml-auto text-xs whitespace-nowrap"
+                                                              :class="isPaid ? 'text-slate-400' : 'text-slate-700'">
                                                             ฿{{ $fmtMoney($pay->amount) }}
                                                         </span>
                                                         <button @click="editP = true" class="text-slate-400 hover:text-slate-600 shrink-0">
