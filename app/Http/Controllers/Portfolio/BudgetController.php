@@ -145,7 +145,11 @@ class BudgetController extends Controller
             'actualVariableTotal',
             'actualSavingsTotal',
             'actualExpensesTotal',
-            'actualRemainingAmount'
+            'actualRemainingAmount',
+            'actualFixedBudgetItemSum',
+            'actualInstallmentsPaymentSum',
+            'actualSubscriptionsPaymentSum',
+            'actualDebtPaymentsSum'
         ));
     }
 
