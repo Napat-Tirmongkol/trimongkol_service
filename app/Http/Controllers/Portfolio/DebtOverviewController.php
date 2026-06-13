@@ -12,8 +12,11 @@ class DebtOverviewController extends Controller
 {
     public function index()
     {
-        $userId    = $this->resolvePortfolioUserId();
-        $currentYM = date('Y-m');
+        $userId = $this->resolvePortfolioUserId();
+
+        // Plan starts NEXT month. The current month is tracked in the budget
+        // worksheet, so it is intentionally excluded from this forward plan.
+        $startYM = Carbon::parse(date('Y-m') . '-01')->addMonth()->format('Y-m');
 
         // ── Installments: most-recent record per label ────────────────────
         // Using a single snapMonth misses installments added after the last
@@ -29,24 +32,13 @@ class DebtOverviewController extends Controller
                 ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0)
                 ->sortBy('label')
                 ->values();
-
-            // Overlay is_checked with current-month data where available
-            if ($installments->isNotEmpty()) {
-                $checkedMap = Installment::forUser($userId)
-                    ->where('month', $currentYM)
-                    ->pluck('is_checked', 'label');
-
-                $installments = $installments->each(
-                    fn ($i) => $i->is_checked = $checkedMap[$i->label] ?? false
-                );
-            }
         }
 
         // ── Debts with future payment schedule only ───────────────────────
         $debts = collect();
         if (Schema::hasTable('portfolio_debts')) {
             $debts = Debt::forUser($userId)
-                ->with(['payments' => fn ($q) => $q->where('month', '>=', $currentYM)->orderBy('month')])
+                ->with(['payments' => fn ($q) => $q->where('month', '>=', $startYM)->orderBy('month')])
                 ->get()
                 ->filter(fn ($d) => $d->payments->isNotEmpty());
         }
@@ -60,18 +52,17 @@ class DebtOverviewController extends Controller
 
         $horizonMonths = min(max($maxInstallmentHorizon, $maxDebtHorizon, 12), 240);
 
-        // ── Build month-by-month schedule ─────────────────────────────────
+        // ── Build month-by-month schedule (from next month onward) ────────
         $schedule        = [];
         $maxMonthlyTotal = 1.0;
 
         for ($i = 0; $i < $horizonMonths; $i++) {
-            $ym  = Carbon::parse($currentYM . '-01')->addMonths($i)->format('Y-m');
+            $ym  = Carbon::parse($startYM . '-01')->addMonths($i)->format('Y-m');
             $row = [
                 'month'         => $ym,
                 'installments'  => [],
                 'debt_payments' => [],
                 'total'         => 0.0,
-                'paid_total'    => 0.0,
             ];
 
             // Installments: active for the next `remaining` months
@@ -79,17 +70,13 @@ class DebtOverviewController extends Controller
                 $remaining = (int) $ins->total_months - (int) $ins->paid_months;
                 if ($i < $remaining) {
                     $amt = (float) $ins->monthly_payment;
-                    // Current-month installment reflects is_checked state
-                    $isPaid = ($i === 0) && (bool) $ins->is_checked;
                     $row['installments'][] = [
-                        'id'      => $ins->id,
-                        'label'   => $ins->label,
-                        'amount'  => $amt,
-                        'is_paid' => $isPaid,
+                        'id'          => $ins->id,
+                        'label'       => $ins->label,
+                        'amount'      => $amt,
                         'months_left' => $remaining - $i,
                     ];
                     $row['total'] += $amt;
-                    if ($isPaid) $row['paid_total'] += $amt;
                 }
             }
 
@@ -103,10 +90,8 @@ class DebtOverviewController extends Controller
                         'debt_id'    => $debt->id,
                         'debt_label' => $debt->label,
                         'amount'     => $amt,
-                        'is_paid'    => (bool) $payment->is_paid,
                     ];
                     $row['total'] += $amt;
-                    if ($payment->is_paid) $row['paid_total'] += $amt;
                 }
             }
 
@@ -121,19 +106,19 @@ class DebtOverviewController extends Controller
         $totalRemainingDebts = $debts->sum(
             fn ($d) => (float) $d->payments->where('is_paid', false)->sum('amount')
         );
-        $totalRemaining  = $totalRemainingInstallments + $totalRemainingDebts;
-        $thisMonthData   = $schedule[$currentYM] ?? null;
-        $thisMonthTotal  = $thisMonthData['total'] ?? 0.0;
+        $totalRemaining   = $totalRemainingInstallments + $totalRemainingDebts;
+        $firstMonthData   = $schedule[$startYM] ?? null;
+        $firstMonthTotal  = $firstMonthData['total'] ?? 0.0;
 
-        // Average monthly payment over next 12 months
+        // Average monthly payment over the next 12 scheduled months
         $next12 = array_slice(array_values($schedule), 0, 12);
         $avgMonthly = count($next12) > 0
             ? collect($next12)->avg('total')
             : 0.0;
 
         return view('portfolio.debt-overview', compact(
-            'installments', 'debts', 'schedule', 'currentYM',
-            'thisMonthData', 'thisMonthTotal', 'totalRemaining',
+            'installments', 'debts', 'schedule', 'startYM',
+            'firstMonthData', 'firstMonthTotal', 'totalRemaining',
             'maxMonthlyTotal', 'avgMonthly'
         ));
     }

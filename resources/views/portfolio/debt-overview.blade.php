@@ -18,22 +18,13 @@
             </p>
         </div>
 
-        {{-- This month --}}
+        {{-- Next month (plan starts next month; current month excluded) --}}
         <div class="rounded-2xl border bg-white p-5 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.tile_this_month') }}</p>
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.tile_next_month') }}</p>
             <p class="mt-2 text-2xl font-bold text-amber-600">
-                ฿{{ number_format($thisMonthTotal, 0) }}
+                ฿{{ number_format($firstMonthTotal, 0) }}
             </p>
-            @if ($thisMonthData)
-                @php
-                    $paidThisMonth = $thisMonthData['paid_total'] ?? 0;
-                    $pctPaid = $thisMonthTotal > 0 ? round(($paidThisMonth / $thisMonthTotal) * 100) : 0;
-                @endphp
-                <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div class="h-1.5 rounded-full bg-emerald-500 transition-all" style="width: {{ $pctPaid }}%"></div>
-                </div>
-                <p class="mt-1 text-[11px] text-slate-500">จ่ายแล้ว {{ $pctPaid }}% (฿{{ number_format($paidThisMonth, 0) }})</p>
-            @endif
+            <p class="mt-1 text-[11px] text-slate-500">{{ \Illuminate\Support\Carbon::parse($startYM . '-01')->locale('th')->isoFormat('MMMM YY') }}</p>
         </div>
 
         {{-- 12-month average --}}
@@ -148,18 +139,17 @@
                     @php $rowIndex = 0; @endphp
                     @foreach ($schedule as $ym => $row)
                     @php
-                        $isCurrentMonth = ($ym === $currentYM);
+                        $isFirstMonth = ($ym === $startYM);
                         $barPct = $maxMonthlyTotal > 0 ? round(($row['total'] / $maxMonthlyTotal) * 100) : 0;
                         $rowIndex++;
                     @endphp
-                    <tr class="{{ $isCurrentMonth ? 'bg-brand-50/30' : 'hover:bg-slate-50/60' }} transition"
+                    <tr class="{{ $isFirstMonth ? 'bg-brand-50/30' : 'hover:bg-slate-50/60' }} transition"
                         x-show="showAll || {{ $rowIndex }} <= 12">
                         <td class="px-5 py-3 whitespace-nowrap">
-                            <div class="flex items-center gap-2">
-                                @if ($isCurrentMonth)
-                                    <span class="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold text-brand-700">{{ __('app.portfolio.debts.current_month') }}</span>
-                                @else
-                                    <span class="font-medium text-slate-700">{{ \Illuminate\Support\Carbon::parse($ym . '-01')->locale('th')->isoFormat('MMM YY') }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-medium {{ $isFirstMonth ? 'text-brand-700' : 'text-slate-700' }}">{{ \Illuminate\Support\Carbon::parse($ym . '-01')->locale('th')->isoFormat('MMM YY') }}</span>
+                                @if ($isFirstMonth)
+                                    <span class="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">{{ __('app.portfolio.debts.next_month') }}</span>
                                 @endif
                             </div>
                         </td>
@@ -167,12 +157,9 @@
                             @if (!empty($row['installments']))
                                 <div class="flex flex-wrap gap-1">
                                     @foreach ($row['installments'] as $ins)
-                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] {{ $ins['is_paid'] ? 'bg-emerald-50 text-emerald-700 line-through' : 'bg-slate-100 text-slate-700' }}">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
                                         {{ $ins['label'] }}
                                         <span class="font-medium">฿{{ number_format($ins['amount'], 0) }}</span>
-                                        @if ($ins['is_paid'])
-                                            <svg class="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                        @endif
                                     </span>
                                     @endforeach
                                 </div>
@@ -184,12 +171,9 @@
                             @if (!empty($row['debt_payments']))
                                 <div class="flex flex-wrap gap-1">
                                     @foreach ($row['debt_payments'] as $dp)
-                                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] {{ $dp['is_paid'] ? 'bg-emerald-50 text-emerald-700 line-through' : 'bg-rose-50 text-rose-700' }}">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] text-rose-700">
                                         {{ $dp['debt_label'] }}
                                         <span class="font-medium">฿{{ number_format($dp['amount'], 0) }}</span>
-                                        @if ($dp['is_paid'])
-                                            <svg class="h-3 w-3 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                        @endif
                                     </span>
                                     @endforeach
                                 </div>
@@ -201,9 +185,9 @@
                             <div class="flex items-center justify-end gap-2">
                                 {{-- Bar visual --}}
                                 <div class="hidden sm:block h-1.5 w-20 overflow-hidden rounded-full bg-slate-200">
-                                    <div class="h-1.5 rounded-full {{ $isCurrentMonth ? 'bg-brand-500' : 'bg-slate-400' }} transition-all" style="width: {{ $barPct }}%"></div>
+                                    <div class="h-1.5 rounded-full {{ $isFirstMonth ? 'bg-brand-500' : 'bg-slate-400' }} transition-all" style="width: {{ $barPct }}%"></div>
                                 </div>
-                                <span class="text-right font-semibold {{ $isCurrentMonth ? 'text-brand-700' : 'text-slate-900' }}">
+                                <span class="text-right font-semibold {{ $isFirstMonth ? 'text-brand-700' : 'text-slate-900' }}">
                                     ฿{{ number_format($row['total'], 0) }}
                                 </span>
                             </div>
