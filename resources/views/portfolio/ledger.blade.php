@@ -451,108 +451,156 @@ document.addEventListener('alpine:init', () => {
 </div>{{-- /max-w-5xl --}}
 
 {{-- ════════════════════════════════════════════════════════
-     CALCULATOR MODAL — shared singleton, controlled by calcOpen
+     CALCULATOR MODAL — always-dark design (iOS-inspired)
+     Uses explicit inline styles to bypass .portfolio-dark overrides.
      ════════════════════════════════════════════════════════ --}}
-<div x-show="calcOpen" x-cloak
-     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+<style>
+/* Scoped to .lc- prefix — unaffected by .portfolio-dark overrides */
+.lc-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 1rem;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+}
+.lc-card {
+    position: relative; width: 18rem;
+    background: #1c1c1e;
+    border-radius: 1.5rem;
+    box-shadow: 0 30px 60px -10px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06);
+    overflow: hidden;
+}
+.lc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem .5rem;
+}
+.lc-title {
+    font-size: .65rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: #636366;
+}
+.lc-close {
+    background: #3a3a3c; border: none; border-radius: 9999px;
+    width: 1.625rem; height: 1.625rem; display: flex; align-items: center; justify-content: center;
+    color: #aeaeb2; cursor: pointer; font-size: .75rem; transition: background .15s;
+}
+.lc-close:hover { background: #48484a; color: #fff; }
+
+/* Display */
+.lc-display-wrap { padding: .25rem 1rem .75rem; }
+.lc-expr {
+    text-align: right; font-size: .7rem; color: #48484a;
+    font-family: ui-monospace, 'SF Mono', monospace;
+    height: 1.1rem; overflow: hidden; white-space: nowrap;
+}
+.lc-display {
+    background: #2c2c2e; border-radius: .875rem;
+    padding: .75rem 1rem; text-align: right;
+    font-family: ui-monospace, 'SF Mono', monospace;
+    font-size: 2.25rem; font-weight: 700; color: #fff;
+    letter-spacing: -.025em; overflow: hidden; white-space: nowrap;
+    min-height: 3.75rem; display: flex; align-items: center; justify-content: flex-end;
+}
+.lc-display span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* Button grid */
+.lc-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: .5rem; padding: .5rem 1rem 1rem;
+}
+.lcb {
+    height: 3.25rem; border: none; border-radius: 9999px;
+    font-size: 1.1rem; font-weight: 500; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: filter .12s, transform .08s;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.lcb:active { filter: brightness(1.25); transform: scale(.92); }
+
+.lcb-num { background: #2c2c2e; color: #fff; }
+.lcb-fn  { background: #636366; color: #fff; font-weight: 600; }
+.lcb-op  { background: #0a84ff; color: #fff; font-weight: 700; font-size: 1.2rem; }
+.lcb-eq  { background: #0a84ff; color: #fff; font-weight: 800; font-size: 1.35rem; }
+
+/* Use result */
+.lc-use {
+    margin: 0 1rem 1rem; display: flex; align-items: center; justify-content: center; gap: .5rem;
+    background: #30d158; color: #fff; border: none; border-radius: 9999px;
+    width: calc(100% - 2rem); padding: .9rem 1rem;
+    font-size: .875rem; font-weight: 700; cursor: pointer;
+    transition: filter .15s;
+}
+.lc-use:hover { filter: brightness(1.08); }
+.lc-use-amount { font-family: ui-monospace, 'SF Mono', monospace; font-size: .95rem; }
+</style>
+
+<div x-show="calcOpen" x-cloak class="lc-overlay"
      @click.self="calcOpen = false"
      x-transition:enter="transition ease-out duration-150"
      x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
      x-transition:leave="transition ease-in duration-100"
      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
 
-    {{-- Backdrop --}}
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-
-    {{-- Calculator card --}}
-    <div class="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl"
-         :class="dark ? 'bg-slate-900 ring-1 ring-slate-700' : 'bg-white ring-1 ring-slate-200'"
-         x-transition:enter="transition ease-out duration-150"
-         x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+    <div class="lc-card"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-90 -translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
 
         {{-- Header --}}
-        <div class="flex items-center justify-between px-4 py-3"
-             :class="dark ? 'bg-slate-800' : 'bg-slate-50'">
-            <span class="text-xs font-semibold uppercase tracking-wider"
-                  :class="dark ? 'text-slate-400' : 'text-slate-500'">
-                เครื่องคิดเลข
-            </span>
-            <button type="button" @click="calcOpen = false"
-                    class="rounded p-0.5 text-slate-400 transition hover:text-slate-700">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+        <div class="lc-header">
+            <span class="lc-title">เครื่องคิดเลข</span>
+            <button type="button" @click="calcOpen = false" class="lc-close" title="ปิด (Esc)">✕</button>
         </div>
 
         {{-- Display --}}
-        <div class="px-4 pb-3 pt-4">
-            {{-- Expression line --}}
-            <div class="mb-1 h-5 text-right text-sm tabular-nums"
-                 :class="dark ? 'text-slate-500' : 'text-slate-400'"
-                 x-text="calcExpr || '&nbsp;'">
-            </div>
-            {{-- Main display --}}
-            <div class="overflow-hidden rounded-xl px-4 py-3 text-right font-mono text-3xl font-bold tabular-nums tracking-tight"
-                 :class="dark ? 'bg-slate-800 text-slate-100' : 'bg-slate-50 text-slate-900'">
-                <span x-text="calcDisplay" class="block overflow-x-auto whitespace-nowrap"></span>
+        <div class="lc-display-wrap">
+            <div class="lc-expr" x-text="calcExpr || ' '"></div>
+            <div class="lc-display">
+                <span x-text="calcDisplay"></span>
             </div>
         </div>
 
         {{-- Button grid --}}
-        <div class="grid grid-cols-4 gap-1.5 px-4 pb-4">
-            @php
-            // Button definitions: [label, action, style]
-            // styles: num | op | fn | eq
-            $buttons = [
-                ['C',  "calcDisplay='0';calcExpr='';calcPrev=null;calcOp=null;calcWaiting=false;", 'fn'],
-                ['⌫',  "cb()",   'fn'],
-                ['%',  "calcDisplay=String(parseFloat(calcDisplay)/100)", 'fn'],
-                ['÷',  "co('÷')", 'op'],
-                ['7',  "cn('7')", 'num'],
-                ['8',  "cn('8')", 'num'],
-                ['9',  "cn('9')", 'num'],
-                ['×',  "co('×')", 'op'],
-                ['4',  "cn('4')", 'num'],
-                ['5',  "cn('5')", 'num'],
-                ['6',  "cn('6')", 'num'],
-                ['−',  "co('−')", 'op'],
-                ['1',  "cn('1')", 'num'],
-                ['2',  "cn('2')", 'num'],
-                ['3',  "cn('3')", 'num'],
-                ['+',  "co('+')", 'op'],
-                ['±',  "cs()",   'fn'],
-                ['0',  "cn('0')", 'num'],
-                ['.',  "cd()",   'num'],
-                ['=',  "ce()",   'eq'],
-            ];
-            $styleMap = [
-                'num' => 'bg-white border border-slate-200 text-slate-800 hover:bg-slate-50',
-                'op'  => 'bg-brand-50 border border-brand-100 text-brand-700 hover:bg-brand-100 font-semibold',
-                'fn'  => 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200',
-                'eq'  => 'bg-brand-600 text-white hover:bg-brand-700 font-bold',
-            ];
-            @endphp
+        @php
+        $buttons = [
+            ['C',  "calcDisplay='0';calcExpr='';calcPrev=null;calcOp=null;calcWaiting=false;", 'fn'],
+            ['⌫',  "cb()",   'fn'],
+            ['%',  "calcDisplay=String(parseFloat(calcDisplay)/100)", 'fn'],
+            ['÷',  "co('÷')", 'op'],
+            ['7',  "cn('7')", 'num'],
+            ['8',  "cn('8')", 'num'],
+            ['9',  "cn('9')", 'num'],
+            ['×',  "co('×')", 'op'],
+            ['4',  "cn('4')", 'num'],
+            ['5',  "cn('5')", 'num'],
+            ['6',  "cn('6')", 'num'],
+            ['−',  "co('−')", 'op'],
+            ['1',  "cn('1')", 'num'],
+            ['2',  "cn('2')", 'num'],
+            ['3',  "cn('3')", 'num'],
+            ['+',  "co('+')", 'op'],
+            ['±',  "cs()",   'fn'],
+            ['0',  "cn('0')", 'num'],
+            ['.',  "cd()",   'num'],
+            ['=',  "ce()",   'eq'],
+        ];
+        @endphp
 
+        <div class="lc-grid">
             @foreach ($buttons as [$label, $action, $style])
-                <button type="button" @click="{{ $action }}"
-                        class="flex h-12 items-center justify-center rounded-xl text-base transition {{ $styleMap[$style] }}">
+                <button type="button" @click="{{ $action }}" class="lcb lcb-{{ $style }}">
                     {{ $label }}
                 </button>
             @endforeach
         </div>
 
-        {{-- Use result button --}}
-        <div class="px-4 pb-4">
-            <button type="button" @click="cu()"
-                    class="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>ใส่ยอดนี้</span>
-                <span class="font-mono tabular-nums" x-text="'฿' + parseFloat(calcDisplay).toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2})"></span>
-            </button>
-        </div>
+        {{-- Use result --}}
+        <button type="button" @click="cu()" class="lc-use">
+            <svg style="width:1rem;height:1rem;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>ใส่ยอดนี้</span>
+            <span class="lc-use-amount"
+                  x-text="'฿ ' + parseFloat(calcDisplay).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})">
+            </span>
+        </button>
 
     </div>
 </div>
