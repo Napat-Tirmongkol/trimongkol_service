@@ -1986,6 +1986,7 @@ return [
             'budget' => 'Monthly Budget',
             'planner' => 'Investment Planner',
             'ledger' => 'Income & Expenses',
+            'debts'  => 'Debt Overview',
         ],
         'planner' => [
             'heading' => 'Future Investment Planner',
@@ -2086,6 +2087,25 @@ return [
             'error_not_allowed' => 'This Google account is not authorised for the portfolio.',
         ],
 
+        'debts' => [
+            'heading'             => 'Debt Overview',
+            'subheading'          => 'Monthly payment plan across all debts and installments',
+            'tile_remaining'      => 'Total remaining balance',
+            'tile_this_month'     => 'Due this month',
+            'tile_avg_12'         => '12-month average',
+            'installments'        => 'Installments',
+            'debts'               => 'Debts',
+            'months_left'         => ':n months left',
+            'col_month'           => 'Month',
+            'col_installments'    => 'Installments',
+            'col_debts'           => 'Debts',
+            'col_total'           => 'Total',
+            'show_all'            => 'Show all',
+            'show_less'           => 'Show less',
+            'no_data'             => 'No debts or installment plans found.',
+            'paid_badge'          => 'Paid',
+            'current_month'       => 'This month',
+        ],
         'ledger' => [
             'heading'       => 'Income & Expense Log',
             'subheading'    => 'Track daily income and expenses, linked to your budget categories',

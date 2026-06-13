@@ -39,6 +39,7 @@ use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransaction
 use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerController;
 use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
 use App\Http\Controllers\Portfolio\LedgerController as PortfolioLedgerController;
+use App\Http\Controllers\Portfolio\DebtOverviewController as PortfolioDebtOverviewController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -165,6 +166,9 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::post('/ledger', [PortfolioLedgerController::class, 'store'])->name('ledger.store');
         Route::patch('/ledger/{entry}', [PortfolioLedgerController::class, 'update'])->name('ledger.update');
         Route::delete('/ledger/{entry}', [PortfolioLedgerController::class, 'destroy'])->name('ledger.destroy');
+
+        // Debt Overview
+        Route::get('/debts', [PortfolioDebtOverviewController::class, 'index'])->name('debts.index');
     });
 });
 

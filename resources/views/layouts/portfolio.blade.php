@@ -474,6 +474,10 @@
                                class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.ledger.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
                                 {{ __('app.portfolio.nav.ledger') }}
                             </a>
+                            <a href="{{ route('portfolio.debts.index') }}"
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.debts.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
+                                {{ __('app.portfolio.nav.debts') }}
+                            </a>
                         </nav>
                     </div>
                 </div>
