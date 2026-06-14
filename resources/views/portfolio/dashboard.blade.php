@@ -158,28 +158,29 @@
                         </div>
                     </div>
 
-                    {{-- Period + current month --}}
+                    {{-- Current งวด progress + remaining --}}
                     <div class="grid grid-cols-2 gap-3">
                         <div class="rounded-xl bg-slate-50 p-3">
                             <div class="text-[10px] font-semibold text-slate-500">
                                 งวดที่ {{ $koyoso['installmentNo'] }} ({{ $nextJulyLabel }})
                             </div>
                             <div class="mt-1 text-base font-bold text-slate-900 leading-none">
-                                {{ $koyoso['periodPaid'] }}<span class="text-sm font-normal text-slate-400">/{{ $koyoso['periodTotal'] }} เดือน</span>
+                                ฿{{ $fmtMoney($koyoso['curPaid']) }}<span class="text-sm font-normal text-slate-400">/฿{{ $fmtMoney($koyoso['curTarget']) }}</span>
                             </div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">ที่ติ๊กเก็บแล้วในงวดนี้</div>
+                            <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div class="h-1.5 rounded-full bg-emerald-500" style="width: {{ $koyoso['curPct'] }}%"></div>
+                            </div>
                         </div>
                         <div class="rounded-xl bg-sky-50 p-3">
-                            <div class="text-[10px] font-semibold text-sky-600">เดือนนี้ต้องเก็บ</div>
-                            @if($koyoso['currentPay'])
-                                <div class="mt-1 text-base font-bold text-sky-900 leading-none">
-                                    ฿{{ $fmtMoney($koyoso['currentPay']->amount) }}
-                                </div>
-                                <div class="text-[10px] mt-0.5 {{ $koyoso['currentPay']->is_paid ? 'text-emerald-600 font-semibold' : 'text-slate-400' }}">
-                                    {{ $koyoso['currentPay']->is_paid ? '✓ ติ๊กแล้ว' : 'ยังไม่ติ๊ก' }}
-                                </div>
+                            <div class="text-[10px] font-semibold text-sky-600">เหลือต้องจ่ายงวดนี้</div>
+                            @if($koyoso['curIsPaid'])
+                                <div class="mt-1 text-base font-bold text-emerald-700 leading-none">ครบแล้ว ✓</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">รอรอบถัดไป</div>
                             @else
-                                <div class="mt-1 text-sm text-slate-400">ไม่มีรายการ</div>
+                                <div class="mt-1 text-base font-bold text-sky-900 leading-none">
+                                    ฿{{ $fmtMoney($koyoso['curRemaining']) }}
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">ครบกำหนด 5 {{ $nextJulyLabel }}</div>
                             @endif
                         </div>
                     </div>

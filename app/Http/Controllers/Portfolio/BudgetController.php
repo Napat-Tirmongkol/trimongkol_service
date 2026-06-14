@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Portfolio\BudgetItem;
 use App\Models\Portfolio\Debt;
 use App\Models\Portfolio\DebtPayment;
+use App\Models\Portfolio\DebtPaymentLog;
 use App\Models\Portfolio\Installment;
 use App\Models\Portfolio\Subscription;
 use App\Models\Portfolio\Income;
@@ -76,7 +77,10 @@ class BudgetController extends Controller
         // 7. Fetch Variable Debts (persistent, not per-month) with their full payment schedule
         $debts = Debt::query()
             ->forUser($userId)
-            ->with(['payments' => fn ($q) => $q->orderBy('month')])
+            ->with([
+                'payments' => fn ($q) => $q->orderBy('month'),
+                'payments.logs' => fn ($q) => $q->orderBy('paid_on', 'desc'),
+            ])
             ->orderBy('id')
             ->get();
 
@@ -84,9 +88,9 @@ class BudgetController extends Controller
         $incomeTotal = (float) $incomes->sum('amount');
         $installmentsPaymentSum = (float) $installments->sum('monthly_payment');
         $subscriptionsPaymentSum = (float) $subscriptions->sum('monthly_payment');
-        $debtPaymentsSum = (float) $debts->map(
-            fn ($d) => $d->payments->firstWhere('month', $activeMonth)?->amount ?? 0
-        )->sum();
+        $debtPaymentsSum = (float) $debts->sum(
+            fn ($d) => $this->debtMonthlyAmount($d, $activeMonth)
+        );
 
         $fixedTotal = (float) $fixedExpensesList->sum('amount')
             + $installmentsPaymentSum
@@ -104,12 +108,9 @@ class BudgetController extends Controller
         );
         $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
         $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
-        $actualDebtPaymentsSum = (float) $debts->map(
-            function ($d) use ($activeMonth) {
-                $payment = $d->payments->firstWhere('month', $activeMonth);
-                return ($payment && $payment->is_paid) ? $payment->amount : 0;
-            }
-        )->sum();
+        $actualDebtPaymentsSum = (float) $debts->sum(
+            fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
+        );
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -484,6 +485,52 @@ class BudgetController extends Controller
             ->with('status', 'ลบงวดชำระเรียบร้อยแล้ว');
     }
 
+    /** Record one real payment toward a per-งวด target (กยศ-style). */
+    public function storeDebtPaymentLog(Request $request)
+    {
+        $data = $request->validate([
+            'debt_payment_id' => 'required|integer|exists:portfolio_debt_payments,id',
+            'paid_on'         => 'required|date',
+            'amount'          => 'required|numeric|min:0.01',
+            'reference'       => 'nullable|string|max:60',
+            'notes'           => 'nullable|string|max:1000',
+        ]);
+
+        $payment = DebtPayment::findOrFail($data['debt_payment_id']);
+        $this->authorizeDebtPayment($payment);
+
+        DebtPaymentLog::create([
+            'debt_payment_id' => $payment->id,
+            'user_id'         => $this->resolvePortfolioUserId(),
+            'paid_on'         => $data['paid_on'],
+            'amount'          => $data['amount'],
+            'reference'       => $data['reference'] ?? null,
+            'notes'           => $data['notes'] ?? null,
+        ]);
+
+        $this->recalcDebtPayment($payment);
+
+        $month = $request->input('redirect_month', date('Y-m'));
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'บันทึกการจ่ายเรียบร้อยแล้ว');
+    }
+
+    public function destroyDebtPaymentLog(DebtPaymentLog $log)
+    {
+        abort_unless($log->user_id === $this->resolvePortfolioUserId(), 403);
+
+        $payment = $log->payment;
+        $month   = request()->input('redirect_month', date('Y-m'));
+        $log->delete();
+
+        if ($payment) {
+            $this->recalcDebtPayment($payment);
+        }
+
+        return redirect()->route('portfolio.budget.index', ['month' => $month])
+            ->with('status', 'ลบรายการจ่ายเรียบร้อยแล้ว');
+    }
+
     public function resetMonth(Request $request)
     {
         $userId = $this->resolvePortfolioUserId();
@@ -620,6 +667,43 @@ class BudgetController extends Controller
         abort_unless($payment->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
+    /**
+     * กยศ-style debts are paid flexibly via dated logs; every other debt uses
+     * its fixed monthly schedule row. Returns the cash for the given month.
+     */
+    private function debtMonthlyAmount(Debt $debt, string $month): float
+    {
+        if (str_contains($debt->label, 'กยศ')) {
+            return (float) $debt->payments
+                ->flatMap->logs
+                ->filter(fn ($log) => $log->paid_on->format('Y-m') === $month)
+                ->sum('amount');
+        }
+
+        return (float) ($debt->payments->firstWhere('month', $month)?->amount ?? 0);
+    }
+
+    /** Actual cash out this month (กยศ logs are already real payments). */
+    private function debtMonthlyActual(Debt $debt, string $month): float
+    {
+        if (str_contains($debt->label, 'กยศ')) {
+            return $this->debtMonthlyAmount($debt, $month);
+        }
+
+        $payment = $debt->payments->firstWhere('month', $month);
+        return ($payment && $payment->is_paid) ? (float) $payment->amount : 0.0;
+    }
+
+    /** Re-sum a งวด's logs into paid_amount / is_paid after a log changes. */
+    private function recalcDebtPayment(DebtPayment $payment): void
+    {
+        $paid = (float) $payment->logs()->sum('amount');
+        $payment->update([
+            'paid_amount' => $paid,
+            'is_paid'     => $paid >= (float) $payment->amount,
+        ]);
+    }
+
     private function getBudgetTotals(string $activeMonth): array
     {
         $userId = $this->resolvePortfolioUserId();
@@ -658,17 +742,19 @@ class BudgetController extends Controller
         // 5. Debts
         $debts = Debt::query()
             ->forUser($userId)
-            ->whereHas('payments', fn ($q) => $q->where('month', $activeMonth))
-            ->with(['payments' => fn ($q) => $q->orderBy('month')])
+            ->with([
+                'payments' => fn ($q) => $q->orderBy('month'),
+                'payments.logs' => fn ($q) => $q->orderBy('paid_on', 'desc'),
+            ])
             ->orderBy('id')
             ->get();
 
         $incomeTotal = (float) $incomes->sum('amount');
         $installmentsPaymentSum = (float) $installments->sum('monthly_payment');
         $subscriptionsPaymentSum = (float) $subscriptions->sum('monthly_payment');
-        $debtPaymentsSum = (float) $debts->map(
-            fn ($d) => $d->payments->firstWhere('month', $activeMonth)?->amount ?? 0
-        )->sum();
+        $debtPaymentsSum = (float) $debts->sum(
+            fn ($d) => $this->debtMonthlyAmount($d, $activeMonth)
+        );
 
         $fixedTotal = (float) $fixedExpensesList->sum('amount')
             + $installmentsPaymentSum
@@ -686,12 +772,9 @@ class BudgetController extends Controller
         );
         $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
         $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
-        $actualDebtPaymentsSum = (float) $debts->map(
-            function ($d) use ($activeMonth) {
-                $payment = $d->payments->firstWhere('month', $activeMonth);
-                return ($payment && $payment->is_paid) ? $payment->amount : 0;
-            }
-        )->sum();
+        $actualDebtPaymentsSum = (float) $debts->sum(
+            fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
+        );
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 

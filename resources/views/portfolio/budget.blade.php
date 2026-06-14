@@ -1104,6 +1104,9 @@
 
                                 {{-- List of Variable Debts --}}
                                 @forelse($debts as $debt)
+                                    @if(str_contains($debt->label, 'กยศ'))
+                                        @include('portfolio.partials.koyoso-debt-card', ['debt' => $debt])
+                                    @else
                                     @php
                                         $currPay = $debt->payments->firstWhere('month', $activeMonth);
                                         $paidSum = $debt->payments->where('is_paid', true)->sum('amount');
@@ -1324,6 +1327,7 @@
                                             @endif
                                         </div>
                                     </div>
+                                    @endif
                                 @empty
                                     <p class="text-xs text-slate-400 text-center py-2">ยังไม่มีหนี้ผ่อนตามตาราง กดปุ่ม "+" เพื่อเพิ่ม</p>
                                 @endforelse

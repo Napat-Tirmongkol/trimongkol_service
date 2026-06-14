@@ -160,6 +160,9 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::post('/budget/debt-payments', [PortfolioBudgetController::class, 'storeDebtPayment'])->name('budget.debt-payments.store');
         Route::patch('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'updateDebtPayment'])->name('budget.debt-payments.update');
         Route::delete('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'destroyDebtPayment'])->name('budget.debt-payments.destroy');
+        // กยศ-style per-งวด payment logs (flexible actual payments toward a yearly target)
+        Route::post('/budget/debt-payment-logs', [PortfolioBudgetController::class, 'storeDebtPaymentLog'])->name('budget.debt-payment-logs.store');
+        Route::delete('/budget/debt-payment-logs/{log}', [PortfolioBudgetController::class, 'destroyDebtPaymentLog'])->name('budget.debt-payment-logs.destroy');
 
         // Daily Income / Expense Ledger
         Route::get('/ledger', [PortfolioLedgerController::class, 'index'])->name('ledger.index');

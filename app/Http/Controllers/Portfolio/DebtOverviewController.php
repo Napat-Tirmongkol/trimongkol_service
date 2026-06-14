@@ -97,11 +97,17 @@ class DebtOverviewController extends Controller
                 }
             }
 
-            // Debt payment schedule (pre-seeded rows)
+            // Debt payment schedule (pre-seeded rows). กยศ rows are yearly lumps
+            // (due each July) paid flexibly, so plan the outstanding remainder.
             foreach ($debts as $debt) {
                 $payment = $debt->payments->firstWhere('month', $ym);
                 if ($payment) {
-                    $amt = (float) $payment->amount;
+                    $amt = str_contains($debt->label, 'กยศ')
+                        ? max(0.0, (float) $payment->amount - (float) $payment->paid_amount)
+                        : (float) $payment->amount;
+                    if ($amt <= 0) {
+                        continue;
+                    }
                     $row['debt_payments'][] = [
                         'id'         => $payment->id,
                         'debt_id'    => $debt->id,
@@ -120,9 +126,14 @@ class DebtOverviewController extends Controller
 
         // ── Summary numbers ───────────────────────────────────────────────
         $totalRemainingInstallments = $installments->sum(fn ($i) => $i->remainingBalance());
-        $totalRemainingDebts = $debts->sum(
-            fn ($d) => (float) $d->payments->where('is_paid', false)->sum('amount')
-        );
+        $totalRemainingDebts = $debts->sum(function ($d) {
+            if (str_contains($d->label, 'กยศ')) {
+                return (float) $d->payments->sum(
+                    fn ($p) => max(0.0, (float) $p->amount - (float) $p->paid_amount)
+                );
+            }
+            return (float) $d->payments->where('is_paid', false)->sum('amount');
+        });
         $totalRemaining   = $totalRemainingInstallments + $totalRemainingDebts;
         $firstMonthData   = $schedule[$startYM] ?? null;
         $firstMonthTotal  = $firstMonthData['total'] ?? 0.0;

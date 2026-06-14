@@ -60,7 +60,11 @@ class DashboardController extends Controller
             foreach ($variableDebts as $d) {
                 $isKoyoso = str_contains($d->label, 'กยศ');
                 if ($d->total_amount > 0) {
-                    $paidSumD = (float) $d->payments->where('is_paid', true)->sum('amount');
+                    // กยศ tracks partial progress via paid_amount per งวด; other
+                    // debts mark whole monthly rows paid.
+                    $paidSumD = $isKoyoso
+                        ? (float) $d->payments->sum('paid_amount')
+                        : (float) $d->payments->where('is_paid', true)->sum('amount');
                     $unpaid   = max(0.0, (float) $d->total_amount - $paidSumD);
                     if ($isKoyoso) {
                         $koyosoDebtsUnpaid += $unpaid;
@@ -69,35 +73,33 @@ class DashboardController extends Controller
                     }
                 }
 
-                if ($isKoyoso && $koyoso === null) {
-                    $today      = now();
-                    $curMonth   = $today->format('Y-m');
-                    $curYear    = (int) $today->format('Y');
-                    $curM       = (int) $today->format('m');
-                    $paid       = (float) $d->payments->where('is_paid', true)->sum('amount');
-                    $nextJuly   = sprintf('%04d-07', $curM <= 7 ? $curYear : $curYear + 1);
+                if ($isKoyoso && $koyoso === null && $d->payments->isNotEmpty()) {
+                    // Per-งวด model: 15 yearly targets (month = YYYY-07 due date),
+                    // each accruing flexible logged payments into paid_amount.
+                    $periods     = $d->payments->sortBy('month')->values();
+                    $paid        = (float) $periods->sum('paid_amount');
+                    $totalTarget = (float) $d->total_amount;
 
-                    // Payments whose period-end July matches $nextJuly
-                    $periodPays = $d->payments->filter(function ($p) use ($nextJuly) {
-                        [$py, $pm] = array_map('intval', explode('-', $p->month));
-                        $end = $pm <= 7
-                            ? sprintf('%04d-07', $py)
-                            : sprintf('%04d-07', $py + 1);
-                        return $end === $nextJuly;
-                    });
+                    // Focus งวด = earliest not-fully-paid (fall back to last).
+                    $current    = $periods->firstWhere('is_paid', false) ?? $periods->last();
+                    $curMonthYM = $current?->month;               // YYYY-07
+                    $curTarget  = $current ? (float) $current->amount : 0.0;
+                    $curPaid    = $current ? (float) $current->paid_amount : 0.0;
 
                     $koyoso = [
                         'debt'            => $d,
                         'paidAmount'      => $paid,
-                        'remainingAmount' => max(0.0, (float) $d->total_amount - $paid),
-                        'progressPct'     => $d->total_amount > 0
-                            ? min(100, round($paid / (float) $d->total_amount * 100, 1))
+                        'remainingAmount' => max(0.0, $totalTarget - $paid),
+                        'progressPct'     => $totalTarget > 0
+                            ? min(100, round($paid / $totalTarget * 100, 1))
                             : 0,
-                        'currentPay'      => $d->payments->firstWhere('month', $curMonth),
-                        'nextJulyMonth'   => $nextJuly,
-                        'installmentNo'   => (int) explode('-', $nextJuly)[0] - 2025,
-                        'periodPaid'      => $periodPays->where('is_paid', true)->count(),
-                        'periodTotal'     => $periodPays->count(),
+                        'nextJulyMonth'   => $curMonthYM,
+                        'installmentNo'   => $curMonthYM ? (int) substr($curMonthYM, 0, 4) - 2025 : 0,
+                        'curTarget'       => $curTarget,
+                        'curPaid'         => $curPaid,
+                        'curRemaining'    => max(0.0, $curTarget - $curPaid),
+                        'curPct'          => $curTarget > 0 ? min(100, round($curPaid / $curTarget * 100)) : 0,
+                        'curIsPaid'       => (bool) ($current?->is_paid),
                     ];
                 }
             }
