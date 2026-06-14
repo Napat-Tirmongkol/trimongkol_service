@@ -203,12 +203,16 @@
         .portfolio-dark .text-emerald-900 {
             color: #34d399 !important;
         }
+        .portfolio-dark .text-emerald-600 {
+            color: #34d399 !important;
+        }
         .portfolio-dark .bg-emerald-500 {
             background-color: #10b981 !important;
         }
 
         /* Status Cards — Rose / Red */
         .portfolio-dark .bg-rose-50\/50,
+        .portfolio-dark .bg-rose-50\/30,
         .portfolio-dark .bg-rose-50 {
             background-color: rgba(159, 18, 57, 0.15) !important;
         }
@@ -218,6 +222,9 @@
         .portfolio-dark .text-rose-700,
         .portfolio-dark .text-rose-800,
         .portfolio-dark .text-rose-900 {
+            color: #fb7185 !important;
+        }
+        .portfolio-dark .text-rose-600 {
             color: #fb7185 !important;
         }
         .portfolio-dark .text-rose-400 {
@@ -240,6 +247,20 @@
         .portfolio-dark .bg-brand-100 {
             background-color: rgba(14, 165, 233, 0.15) !important;
         }
+        .portfolio-dark .bg-brand-50\/50,
+        .portfolio-dark .bg-brand-50\/30,
+        .portfolio-dark .bg-brand-50 {
+            background-color: rgba(14, 165, 233, 0.08) !important;
+        }
+        .portfolio-dark .border-brand-200 {
+            border-color: rgba(14, 165, 233, 0.2) !important;
+        }
+        .portfolio-dark .border-brand-100 {
+            border-color: rgba(14, 165, 233, 0.12) !important;
+        }
+        .portfolio-dark .text-brand-800 {
+            color: #38bdf8 !important;
+        }
         .portfolio-dark .text-brand-700 {
             color: #38bdf8 !important;
         }
@@ -250,6 +271,10 @@
             border-color: #38bdf8 !important;
         }
         .portfolio-dark .bg-brand-600 {
+            background-color: #0ea5e9 !important;
+        }
+        .portfolio-dark .bg-brand-500,
+        .portfolio-dark .bg-brand-400 {
             background-color: #0ea5e9 !important;
         }
         .portfolio-dark .bg-brand-600:hover,
