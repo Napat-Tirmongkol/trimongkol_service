@@ -43,14 +43,31 @@ class DebtOverviewController extends Controller
                 ->filter(fn ($d) => $d->payments->isNotEmpty());
         }
 
-        // ── Determine how many months to compute ─────────────────────────
+        // ── Determine how far out to compute ──────────────────────────────
+        // Horizon must track the latest payment DATE, not a count. Installments
+        // run consecutively from the start month, but debt schedules (e.g. กยศ)
+        // skip months — so 140 payments can span ~168 calendar months. Using a
+        // count would truncate the tail of the schedule.
         $maxInstallmentHorizon = $installments->max(
             fn ($i) => (int) $i->total_months - (int) $i->paid_months
         ) ?? 0;
 
-        $maxDebtHorizon = $debts->max(fn ($d) => $d->payments->count()) ?? 0;
+        $latestYM = $startYM;
+        if ($maxInstallmentHorizon > 0) {
+            $insLatest = Carbon::parse($startYM . '-01')
+                ->addMonths($maxInstallmentHorizon - 1)->format('Y-m');
+            if ($insLatest > $latestYM) $latestYM = $insLatest;
+        }
+        foreach ($debts as $debt) {
+            $debtLatest = $debt->payments->max('month'); // YYYY-MM sorts lexicographically
+            if ($debtLatest && $debtLatest > $latestYM) $latestYM = $debtLatest;
+        }
 
-        $horizonMonths = min(max($maxInstallmentHorizon, $maxDebtHorizon, 12), 240);
+        $start         = Carbon::parse($startYM . '-01');
+        $latest        = Carbon::parse($latestYM . '-01');
+        $horizonMonths = ($latest->year - $start->year) * 12
+            + ($latest->month - $start->month) + 1;
+        $horizonMonths = min(max($horizonMonths, 12), 240);
 
         // ── Build month-by-month schedule (from next month onward) ────────
         $schedule        = [];
