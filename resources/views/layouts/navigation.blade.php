@@ -89,6 +89,18 @@
                             @endunless
                         </a>
                     @endif
+                    @if (\App\Services\ProductGate::enabled('tasks'))
+                        <a href="{{ route('tasks.index') }}"
+                           class="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition
+                                  {{ request()->routeIs('tasks.*')
+                                      ? 'bg-slate-900 text-white'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
+                            {{ __('app.tasks.nav') }}
+                            @unless (\App\Services\ProductGate::isOn('tasks'))
+                                <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">ปิด</span>
+                            @endunless
+                        </a>
+                    @endif
                     @if ($user?->is_admin && session('auth_context') === 'admin')
                         <a href="{{ route('admin.dashboard') }}"
                            class="rounded-full px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
@@ -232,6 +244,18 @@
                                   : 'text-slate-700 hover:bg-slate-100' }}">
                         {{ __('app.queue.nav') }}
                         @unless (\App\Services\ProductGate::isOn('queue'))
+                            <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">ปิด</span>
+                        @endunless
+                    </a>
+                @endif
+                @if (\App\Services\ProductGate::enabled('tasks'))
+                    <a href="{{ route('tasks.index') }}"
+                       class="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium
+                              {{ request()->routeIs('tasks.*')
+                                  ? 'bg-slate-900 text-white'
+                                  : 'text-slate-700 hover:bg-slate-100' }}">
+                        {{ __('app.tasks.nav') }}
+                        @unless (\App\Services\ProductGate::isOn('tasks'))
                             <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">ปิด</span>
                         @endunless
                     </a>

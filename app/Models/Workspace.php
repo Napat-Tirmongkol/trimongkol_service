@@ -46,6 +46,16 @@ class Workspace extends Model
         return $this->hasMany(Classroom::class);
     }
 
+    public function taskProjects(): HasMany
+    {
+        return $this->hasMany(TaskProject::class);
+    }
+
+    public function taskLabels(): HasMany
+    {
+        return $this->hasMany(TaskLabel::class);
+    }
+
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);

@@ -4,6 +4,27 @@
 
 ---
 
+## ✅ ระบบจัดการงานแบบ ClickUp — กระดาน Kanban สำหรับทีม (Task Board)
+
+product ใหม่ผูกกับ workspace — ทุกคนในทีมแชร์บอร์ดเดียวกัน เปิด/ปิดได้ที่ `/admin/site`
+
+- **บอร์ด (Project)** — สร้างได้หลายบอร์ด เลือกสีหัวข้อ มี progress bar ว่าเสร็จกี่งาน
+- **การ์ดงาน** — ชื่อ, รายละเอียด, สถานะ (รอทำ/กำลังทำ/เสร็จ), ความสำคัญ (ต่ำ/ปกติ/สูง/ด่วน มีสี), กำหนดส่ง (เลยกำหนดขึ้นสีแดง), ผู้รับผิดชอบ (สมาชิกในทีม)
+- **ลากการ์ดข้ามคอลัมน์ (drag & drop)** เปลี่ยนสถานะ + จัดลำดับ บันทึกอัตโนมัติ (ไม่ต้องรีโหลด)
+- **2 มุมมอง** — Board (Kanban) และ List · จำค่าที่เลือกไว้ใน localStorage
+- **งานย่อย / checklist** ในแต่ละการ์ด — ติ๊กเสร็จ/เพิ่ม/ลบได้สด ๆ
+- **ป้ายกำกับ (labels)** ระดับ workspace — ติดได้หลายป้ายต่อการ์ด เลือกสีได้
+- **Admin moderation** ที่ `/admin/products/tasks` — สถิติ + ดูแล/ลบบอร์ด (log ผ่าน `AuditLog`)
+- ตามแพทเทิร์น product เดิม (`CurrentWorkspace`, `ProductGate`, SweetAlert, toast) · คีย์ `app.tasks.*` (TH/EN ครบคู่)
+- **5 ตารางใหม่:** `task_projects`, `tasks`, `task_items`, `task_labels`, `task_label_task`
+
+**Deploy steps:**
+1. Pull
+2. Run migrations (`/admin/system`)
+3. Clear cache
+
+---
+
 ## 💼 ระบบเงินเดือน — ค่าล่วงเวลา + OT + ส่งสลิปทาง Email อัตโนมัติ
 
 - **ค่าล่วงเวลา + OT แบบใส่บาทตรง** — แต่ละ payroll item มี 2 คอลัมน์ใหม่ `overtime` กับ `ot` ไม่ต้องคำนวณชั่วโมง × อัตรา

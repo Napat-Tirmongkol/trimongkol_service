@@ -564,6 +564,24 @@ return [
                 'keep_existing'     => 'Leave blank to keep existing key',
                 'paste_token'       => 'Paste token here',
             ],
+
+            'tasks' => [
+                'label' => 'Task Manager (Task Board)',
+                'desc'  => 'Kanban-style task boards across all teams — moderate / delete boards and tasks',
+                'tab_overview' => 'Overview',
+                'tab_projects' => 'Boards',
+                'stat_projects' => 'Total boards',
+                'stat_workspaces' => 'Active teams',
+                'stat_tasks' => 'Total tasks',
+                'stat_open' => 'Open tasks',
+                'stat_done' => 'Completed tasks',
+                'today' => 'today',
+                'top_projects' => 'Busiest boards',
+                'projects_empty' => 'No task boards yet',
+                'search_placeholder' => 'Search board / team / owner email',
+                'delete_confirm' => 'Delete this board? All tasks and sub-tasks are gone for good.',
+                'project_deleted' => 'Board :name deleted',
+            ],
         ],
         'logs_heading' => 'Audit Log — admin action history',
         'logs_when' => 'When',
@@ -613,6 +631,7 @@ return [
     'common' => [
         'save' => 'Save',
         'cancel' => 'Cancel',
+        'add' => 'Add',
         'edit' => 'Edit',
         'view' => 'View',
         'delete' => 'Delete',
@@ -1858,6 +1877,85 @@ return [
         'audit_action.approval.requested'  => 'Requested approval',
         'audit_action.approval.approved'   => 'Approved',
         'audit_action.approval.rejected'   => 'Rejected',
+    ],
+
+    'tasks' => [
+        'nav' => 'Tasks',
+        'heading' => 'Task Boards',
+        'subheading' => 'Organise your team\'s work into boards and drag cards across columns as they progress.',
+
+        // Boards
+        'new_board' => 'New board',
+        'create_board' => 'Create board',
+        'edit_board' => 'Edit board',
+        'delete_board' => 'Delete board',
+        'board_settings' => 'Board settings',
+        'delete_board_confirm' => 'Delete this board? All tasks and sub-tasks in it are gone for good.',
+        'empty_title' => 'No boards yet',
+        'empty_desc' => 'Create your first board to start organising your team\'s work.',
+        'progress' => ':done of :total done',
+
+        // Views
+        'view_board' => 'Board',
+        'view_list' => 'List',
+
+        // Tasks
+        'new_task' => 'Add task',
+        'edit_task' => 'Edit task',
+        'delete_task_confirm' => 'Delete this task?',
+        'mark_done' => 'Mark done',
+        'column_empty' => 'No tasks yet',
+        'unassigned' => 'Unassigned',
+
+        // Fields
+        'field_board_name' => 'Board name',
+        'field_board_name_placeholder' => 'e.g. Marketing, Home chores',
+        'field_description' => 'Description',
+        'field_color' => 'Colour',
+        'field_title' => 'Task name',
+        'field_title_placeholder' => 'What needs doing?',
+        'field_status' => 'Status',
+        'field_priority' => 'Priority',
+        'field_due' => 'Due date',
+        'field_assignee' => 'Assignee',
+        'field_labels' => 'Labels',
+        'field_label_name_placeholder' => 'Label name',
+
+        // Sub-tasks
+        'subtasks' => 'Sub-tasks',
+        'no_subtasks' => 'No sub-tasks yet',
+        'add_subtask' => 'Add a sub-task...',
+
+        // Labels
+        'manage_labels' => 'Manage labels',
+        'new_label' => 'New label',
+        'no_labels' => 'No labels yet',
+        'delete_label_confirm' => 'Delete this label? It will be removed from every task.',
+
+        // Status columns
+        'status' => [
+            'todo' => 'To do',
+            'in_progress' => 'In progress',
+            'done' => 'Done',
+        ],
+
+        // Priority levels
+        'priority' => [
+            'low' => 'Low',
+            'normal' => 'Normal',
+            'high' => 'High',
+            'urgent' => 'Urgent',
+        ],
+
+        // Flash messages
+        'project_created' => 'Board created',
+        'project_updated' => 'Board updated',
+        'project_deleted' => 'Board deleted',
+        'task_created' => 'Task added',
+        'task_updated' => 'Task updated',
+        'task_deleted' => 'Task deleted',
+        'label_created' => 'Label added',
+        'label_deleted' => 'Label deleted',
     ],
 
     'queue' => [

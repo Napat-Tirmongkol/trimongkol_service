@@ -564,6 +564,24 @@ return [
                 'keep_existing'     => 'เว้นว่างเพื่อใช้คีย์เดิม',
                 'paste_token'       => 'วางโทเค็นที่นี่',
             ],
+
+            'tasks' => [
+                'label' => 'ระบบจัดการงาน (Task Board)',
+                'desc'  => 'กระดานงานแบบ Kanban ของทุกทีม — ดูแล/ลบบอร์ดและงาน',
+                'tab_overview' => 'ภาพรวม',
+                'tab_projects' => 'บอร์ดงาน',
+                'stat_projects' => 'บอร์ดทั้งหมด',
+                'stat_workspaces' => 'ทีมที่ใช้งาน',
+                'stat_tasks' => 'งานทั้งหมด',
+                'stat_open' => 'งานที่ยังไม่เสร็จ',
+                'stat_done' => 'งานที่เสร็จแล้ว',
+                'today' => 'วันนี้',
+                'top_projects' => 'บอร์ดที่มีงานมากสุด',
+                'projects_empty' => 'ยังไม่มีบอร์ดงานในระบบ',
+                'search_placeholder' => 'ค้นหาชื่อบอร์ด / ทีม / อีเมลเจ้าของ',
+                'delete_confirm' => 'ลบบอร์ดนี้? งานและงานย่อยทั้งหมดจะหายถาวร',
+                'project_deleted' => 'ลบบอร์ด :name แล้ว',
+            ],
         ],
         'logs_heading' => 'Audit Log — ประวัติการใช้สิทธิ์ admin',
         'logs_when' => 'เมื่อ',
@@ -613,6 +631,7 @@ return [
     'common' => [
         'save' => 'บันทึก',
         'cancel' => 'ยกเลิก',
+        'add' => 'เพิ่ม',
         'edit' => 'แก้ไข',
         'view' => 'ดู',
         'delete' => 'ลบ',
@@ -1858,6 +1877,85 @@ return [
         'audit_action.approval.requested'  => 'ขออนุมัติ',
         'audit_action.approval.approved'   => 'อนุมัติ',
         'audit_action.approval.rejected'   => 'ปฏิเสธ',
+    ],
+
+    'tasks' => [
+        'nav' => 'จัดการงาน',
+        'heading' => 'กระดานงาน',
+        'subheading' => 'จัดระเบียบงานของทีมเป็นบอร์ด ลากการ์ดข้ามคอลัมน์ตามสถานะได้',
+
+        // Boards
+        'new_board' => 'สร้างบอร์ดใหม่',
+        'create_board' => 'สร้างบอร์ด',
+        'edit_board' => 'แก้ไขบอร์ด',
+        'delete_board' => 'ลบบอร์ด',
+        'board_settings' => 'ตั้งค่าบอร์ด',
+        'delete_board_confirm' => 'ลบบอร์ดนี้? งานและงานย่อยทั้งหมดในบอร์ดจะหายถาวร',
+        'empty_title' => 'ยังไม่มีบอร์ดงาน',
+        'empty_desc' => 'สร้างบอร์ดแรกเพื่อเริ่มจัดระเบียบงานของทีม',
+        'progress' => 'เสร็จ :done จาก :total',
+
+        // Views
+        'view_board' => 'บอร์ด',
+        'view_list' => 'รายการ',
+
+        // Tasks
+        'new_task' => 'เพิ่มงาน',
+        'edit_task' => 'แก้ไขงาน',
+        'delete_task_confirm' => 'ลบงานนี้?',
+        'mark_done' => 'ทำเสร็จแล้ว',
+        'column_empty' => 'ยังไม่มีงาน',
+        'unassigned' => 'ไม่ระบุผู้รับผิดชอบ',
+
+        // Fields
+        'field_board_name' => 'ชื่อบอร์ด',
+        'field_board_name_placeholder' => 'เช่น งานการตลาด, งานบ้าน',
+        'field_description' => 'รายละเอียด',
+        'field_color' => 'สี',
+        'field_title' => 'ชื่องาน',
+        'field_title_placeholder' => 'จะทำอะไร?',
+        'field_status' => 'สถานะ',
+        'field_priority' => 'ความสำคัญ',
+        'field_due' => 'กำหนดส่ง',
+        'field_assignee' => 'ผู้รับผิดชอบ',
+        'field_labels' => 'ป้ายกำกับ',
+        'field_label_name_placeholder' => 'ชื่อป้าย',
+
+        // Sub-tasks
+        'subtasks' => 'งานย่อย',
+        'no_subtasks' => 'ยังไม่มีงานย่อย',
+        'add_subtask' => 'เพิ่มงานย่อย...',
+
+        // Labels
+        'manage_labels' => 'จัดการป้ายกำกับ',
+        'new_label' => 'ป้ายกำกับใหม่',
+        'no_labels' => 'ยังไม่มีป้ายกำกับ',
+        'delete_label_confirm' => 'ลบป้ายนี้? จะถูกนำออกจากทุกงาน',
+
+        // Status columns
+        'status' => [
+            'todo' => 'รอทำ',
+            'in_progress' => 'กำลังทำ',
+            'done' => 'เสร็จแล้ว',
+        ],
+
+        // Priority levels
+        'priority' => [
+            'low' => 'ต่ำ',
+            'normal' => 'ปกติ',
+            'high' => 'สูง',
+            'urgent' => 'ด่วน',
+        ],
+
+        // Flash messages
+        'project_created' => 'สร้างบอร์ดแล้ว',
+        'project_updated' => 'อัปเดตบอร์ดแล้ว',
+        'project_deleted' => 'ลบบอร์ดแล้ว',
+        'task_created' => 'เพิ่มงานแล้ว',
+        'task_updated' => 'อัปเดตงานแล้ว',
+        'task_deleted' => 'ลบงานแล้ว',
+        'label_created' => 'เพิ่มป้ายกำกับแล้ว',
+        'label_deleted' => 'ลบป้ายกำกับแล้ว',
     ],
 
     'queue' => [
