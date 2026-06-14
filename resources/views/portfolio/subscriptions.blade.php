@@ -56,7 +56,7 @@
             </div>
             <div class="flex justify-end gap-2 pt-1">
                 <button type="button" @click="addOpen = false"
-                        class="rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 transition">
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-100 transition">
                     ยกเลิก
                 </button>
                 <button type="submit"
@@ -104,56 +104,56 @@
     @else
 
     {{-- ── Two-column: calendar + list ─────────────────────────────────── --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {{-- Calendar: billing day groups ──────────────────────────────── --}}
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-1">
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h2 class="mb-4 text-sm font-bold text-slate-800">ปฏิทินตัดเงิน</h2>
 
                 <div class="space-y-0">
                     @foreach ($byDay as $day => $subs)
                     @php $dayTotal = $subs->sum(fn ($s) => (float) $s->monthly_payment); @endphp
-                    <div class="py-3 @if(!$loop->first) border-t border-slate-100 @endif">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
-                                    {{ $day }}
-                                </div>
-                                <span class="text-xs font-semibold text-slate-700">วันที่ {{ $day }}</span>
-                            </div>
-                            <span class="text-xs font-bold text-slate-900">฿{{ $fmtMoneyInt($dayTotal) }}</span>
+                    <div class="flex gap-2.5 py-3 @if(!$loop->first) border-t border-slate-100 @endif">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+                            {{ $day }}
                         </div>
-                        <div class="ml-9 space-y-1">
-                            @foreach ($subs as $s)
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-600">{{ $s->label }}</span>
-                                <span class="text-xs font-semibold text-slate-800">฿{{ $fmtMoney($s->monthly_payment) }}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-semibold text-slate-700">ตัดเงินวันที่ {{ $day }}</span>
+                                <span class="shrink-0 text-xs font-bold text-slate-900">฿{{ $fmtMoneyInt($dayTotal) }}</span>
                             </div>
-                            @endforeach
+                            <div class="mt-1.5 space-y-1">
+                                @foreach ($subs as $s)
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="min-w-0 truncate text-xs text-slate-600">{{ $s->label }}</span>
+                                    <span class="shrink-0 text-xs font-semibold text-slate-800">฿{{ $fmtMoney($s->monthly_payment) }}</span>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                     @endforeach
 
                     {{-- Unscheduled --}}
                     @if ($unscheduled->isNotEmpty())
-                    <div class="py-3 @if($byDay->isNotEmpty()) border-t border-slate-100 @endif">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-500">
-                                    —
-                                </div>
-                                <span class="text-xs font-semibold text-slate-500">ไม่ระบุวัน</span>
-                            </div>
-                            <span class="text-xs font-bold text-slate-700">฿{{ $fmtMoneyInt($unscheduled->sum(fn ($s) => (float) $s->monthly_payment)) }}</span>
+                    <div class="flex gap-2.5 py-3 @if($byDay->isNotEmpty()) border-t border-slate-100 @endif">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-500">
+                            —
                         </div>
-                        <div class="ml-9 space-y-1">
-                            @foreach ($unscheduled as $s)
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-600">{{ $s->label }}</span>
-                                <span class="text-xs font-semibold text-slate-800">฿{{ $fmtMoney($s->monthly_payment) }}</span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-semibold text-slate-500">ไม่ระบุวันตัดเงิน</span>
+                                <span class="shrink-0 text-xs font-bold text-slate-700">฿{{ $fmtMoneyInt($unscheduled->sum(fn ($s) => (float) $s->monthly_payment)) }}</span>
                             </div>
-                            @endforeach
+                            <div class="mt-1.5 space-y-1">
+                                @foreach ($unscheduled as $s)
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="min-w-0 truncate text-xs text-slate-600">{{ $s->label }}</span>
+                                    <span class="shrink-0 text-xs font-semibold text-slate-800">฿{{ $fmtMoney($s->monthly_payment) }}</span>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                     @endif
@@ -168,9 +168,9 @@
         </div>
 
         {{-- Full list with CRUD ──────────────────────────────────────── --}}
-        <div class="lg:col-span-3 space-y-3">
+        <div class="lg:col-span-2 space-y-3">
             @foreach ($subscriptions as $sub)
-            <div class="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm"
+            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
                  x-data="{
                      editing: false,
                      label: '{{ addslashes($sub->label) }}',
@@ -180,51 +180,54 @@
                  }">
 
                 {{-- Read mode ─────────────────────────────────────────── --}}
-                <div x-show="!editing" class="flex items-center gap-3">
+                <div x-show="!editing" class="flex items-start gap-3">
                     {{-- Service icon circle --}}
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-700 uppercase">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-700 uppercase">
                         {{ mb_substr($sub->label, 0, 2) }}
                     </div>
 
                     <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-1.5">
-                            <span class="text-sm font-semibold text-slate-800">{{ $sub->label }}</span>
+                        {{-- Row 1: name + actions (name wraps freely, actions pinned right) --}}
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="min-w-0 text-sm font-semibold text-slate-800 leading-snug break-words">{{ $sub->label }}</span>
+                            <div class="flex shrink-0 items-center gap-0.5">
+                                <button @click="editing = true"
+                                        class="p-1 text-slate-400 hover:text-slate-700 transition rounded">
+                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                    </svg>
+                                </button>
+                                <form method="POST" action="{{ route('portfolio.subscriptions.destroy', $sub) }}"
+                                      data-confirm="ลบบริการ '{{ $sub->label }}'?" data-confirm-danger="1">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="p-1 text-rose-400 hover:text-rose-600 transition rounded">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {{-- Row 2: billing badge (left) + price (right) --}}
+                        <div class="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                             @if ($sub->billing_day)
-                            <span class="inline-flex items-center rounded-full bg-brand-50 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">
-                                วันที่ {{ $sub->billing_day }}
+                            <span class="inline-flex shrink-0 items-center rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
+                                ตัดเงินวันที่ {{ $sub->billing_day }}
                             </span>
                             @else
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">
+                            <span class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                                 ไม่ระบุวัน
                             </span>
                             @endif
+                            <span class="shrink-0 whitespace-nowrap text-sm font-bold text-slate-900">
+                                ฿{{ $fmtMoney($sub->monthly_payment) }}<span class="ml-1 text-[10px] font-normal text-slate-400">/ เดือน</span>
+                            </span>
                         </div>
+
                         @if ($sub->notes)
-                        <p class="mt-0.5 text-[10px] text-slate-500 truncate">{{ $sub->notes }}</p>
+                        <p class="mt-1.5 text-[10px] text-slate-500 break-words">{{ $sub->notes }}</p>
                         @endif
-                    </div>
-
-                    <div class="shrink-0 text-right">
-                        <p class="text-sm font-bold text-slate-900">฿{{ $fmtMoney($sub->monthly_payment) }}</p>
-                        <p class="text-[10px] text-slate-400">/ เดือน</p>
-                    </div>
-
-                    <div class="flex shrink-0 items-center gap-0.5">
-                        <button @click="editing = true"
-                                class="p-1 text-slate-400 hover:text-slate-700 transition rounded">
-                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                            </svg>
-                        </button>
-                        <form method="POST" action="{{ route('portfolio.subscriptions.destroy', $sub) }}"
-                              data-confirm="ลบบริการ '{{ $sub->label }}'?" data-confirm-danger="1">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="p-1 text-rose-400 hover:text-rose-600 transition rounded">
-                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                            </button>
-                        </form>
                     </div>
                 </div>
 
