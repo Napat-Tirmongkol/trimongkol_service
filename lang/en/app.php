@@ -1982,11 +1982,12 @@ return [
         'last_refresh' => 'Last refresh',
         'never_refreshed' => 'Never refreshed',
         'nav' => [
-            'dashboard' => 'Dashboard',
-            'budget' => 'Monthly Budget',
-            'planner' => 'Investment Planner',
-            'ledger' => 'Income & Expenses',
-            'debts'  => 'Debt Overview',
+            'dashboard'     => 'Dashboard',
+            'budget'        => 'Monthly Budget',
+            'planner'       => 'Investment Planner',
+            'ledger'        => 'Income & Expenses',
+            'debts'         => 'Debt Overview',
+            'subscriptions' => 'Subscriptions',
         ],
         'planner' => [
             'heading' => 'Future Investment Planner',

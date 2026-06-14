@@ -40,6 +40,7 @@ use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerControll
 use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
 use App\Http\Controllers\Portfolio\LedgerController as PortfolioLedgerController;
 use App\Http\Controllers\Portfolio\DebtOverviewController as PortfolioDebtOverviewController;
+use App\Http\Controllers\Portfolio\SubscriptionController as PortfolioSubscriptionController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -172,6 +173,12 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
 
         // Debt Overview
         Route::get('/debts', [PortfolioDebtOverviewController::class, 'index'])->name('debts.index');
+
+        // Subscriptions
+        Route::get('/subscriptions', [PortfolioSubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::post('/subscriptions', [PortfolioSubscriptionController::class, 'store'])->name('subscriptions.store');
+        Route::patch('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'update'])->name('subscriptions.update');
+        Route::delete('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
     });
 });
 
