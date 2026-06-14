@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Models\Workspace;
 use App\Services\Accounting\DemoSeeder;
+use App\Services\Accounting\WorkspaceReset;
 use App\Services\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -52,7 +54,9 @@ class SystemController extends Controller
         $webhookConfigured = ! empty(Setting::get('deploy.webhook_url'));
         $lastResult = session('system_result');
 
-        return view('admin.system', compact('info', 'mailInfo', 'pending', 'webhookConfigured', 'lastResult'));
+        $workspaces = Workspace::orderBy('name')->get(['id', 'name', 'slug']);
+
+        return view('admin.system', compact('info', 'mailInfo', 'pending', 'webhookConfigured', 'lastResult', 'workspaces'));
     }
 
     public function pull(Request $request)
@@ -195,6 +199,47 @@ class SystemController extends Controller
             'login_email' => $result['login_email'],
             'login_password' => $result['login_password'],
         ]);
+    }
+
+    public function resetAccountingWorkspace(Request $request)
+    {
+        $data = $request->validate([
+            'workspace_id' => 'required|integer|exists:workspaces,id',
+            'confirm' => 'required|string',
+        ]);
+
+        $workspace = Workspace::findOrFail($data['workspace_id']);
+
+        // Require the operator to type the exact workspace name to confirm —
+        // this is irreversible.
+        if (trim($data['confirm']) !== $workspace->name) {
+            return redirect()->route('admin.system')
+                ->with('error', "Confirmation did not match workspace name. Type \"{$workspace->name}\" exactly.");
+        }
+
+        try {
+            $deleted = WorkspaceReset::reset($workspace);
+        } catch (\Throwable $e) {
+            Log::error('Accounting workspace reset failed', [
+                'workspace_id' => $workspace->id,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->route('admin.system')
+                ->with('error', 'Reset failed: '.$e->getMessage());
+        }
+
+        AuditLog::record('system.accounting_reset', $workspace, $workspace->name, [
+            'rows_deleted' => array_sum($deleted),
+            'tables' => $deleted,
+        ]);
+
+        return redirect()->route('admin.system')
+            ->with('status', sprintf(
+                'Reset accounting data for "%s" — %d rows across %d tables.',
+                $workspace->name,
+                array_sum($deleted),
+                count(array_filter($deleted, fn ($n) => $n > 0))
+            ));
     }
 
     public function clearCache(Request $request)

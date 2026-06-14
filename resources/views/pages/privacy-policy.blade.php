@@ -61,7 +61,27 @@
         </section>
 
         <section>
-            <h2 class="text-xl font-semibold text-slate-800">5. การแบ่งปันข้อมูล</h2>
+            <h2 class="text-xl font-semibold text-slate-800">5. การใช้งาน Google Sign-In (OAuth)</h2>
+            <p class="mt-2 text-slate-600 leading-relaxed">
+                สำหรับฟีเจอร์พอร์ตทรัพย์สินส่วนตัว ({{ url('/portfolio') }}) เราใช้ Google OAuth
+                เพื่อให้คุณเข้าสู่ระบบโดยไม่ต้องสร้างรหัสผ่านใหม่ เราจะขอสิทธิ์เข้าถึงข้อมูลพื้นฐาน
+                ดังต่อไปนี้:
+            </p>
+            <ul class="mt-3 list-disc space-y-2 pl-6 text-slate-600">
+                <li><strong>openid / profile</strong> — ชื่อและรูปโปรไฟล์ของคุณ (ใช้แสดงในระบบ)</li>
+                <li><strong>email</strong> — อีเมลที่ผ่านการยืนยันจาก Google (ใช้ระบุตัวคุณ)</li>
+            </ul>
+            <p class="mt-3 text-slate-600 leading-relaxed">
+                ข้อมูลที่ได้รับจาก Google จะถูกใช้ <strong>เพื่อยืนยันตัวตนเท่านั้น</strong>
+                เราไม่เข้าถึง Gmail, Google Drive, Calendar, Contacts หรือบริการอื่น ๆ ของ Google
+                และไม่ส่งต่อข้อมูลให้บุคคลที่สาม คุณสามารถยกเลิกการเข้าถึงได้ตลอดเวลาที่
+                <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener"
+                   class="text-brand-600 hover:underline">myaccount.google.com/permissions</a>
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-semibold text-slate-800">6. การแบ่งปันข้อมูล</h2>
             <p class="mt-2 text-slate-600 leading-relaxed">
                 เราไม่ขาย ให้เช่า หรือแบ่งปันข้อมูลส่วนตัวของคุณกับบุคคลที่สาม
                 ยกเว้นในกรณีต่อไปนี้:
@@ -74,7 +94,7 @@
         </section>
 
         <section>
-            <h2 class="text-xl font-semibold text-slate-800">6. ความปลอดภัยของข้อมูล</h2>
+            <h2 class="text-xl font-semibold text-slate-800">7. ความปลอดภัยของข้อมูล</h2>
             <p class="mt-2 text-slate-600 leading-relaxed">
                 เราใช้มาตรการรักษาความปลอดภัยที่เหมาะสม ได้แก่ การเข้ารหัส token และรหัสผ่าน
                 การจำกัดการเข้าถึง และการบันทึก audit log สำหรับการกระทำที่สำคัญ
@@ -82,7 +102,7 @@
         </section>
 
         <section>
-            <h2 class="text-xl font-semibold text-slate-800">7. สิทธิ์ของคุณ</h2>
+            <h2 class="text-xl font-semibold text-slate-800">8. สิทธิ์ของคุณ</h2>
             <p class="mt-2 text-slate-600 leading-relaxed">คุณมีสิทธิ์:</p>
             <ul class="mt-3 list-disc space-y-2 pl-6 text-slate-600">
                 <li>เข้าถึง แก้ไข หรือลบข้อมูลส่วนตัวของคุณ</li>
@@ -92,7 +112,7 @@
         </section>
 
         <section>
-            <h2 class="text-xl font-semibold text-slate-800">8. ติดต่อเรา</h2>
+            <h2 class="text-xl font-semibold text-slate-800">9. ติดต่อเรา</h2>
             <p class="mt-2 text-slate-600 leading-relaxed">
                 หากมีคำถามเกี่ยวกับนโยบายนี้ สามารถติดต่อเราได้ที่
                 <a href="{{ route('contact') }}" class="text-brand-600 hover:underline">หน้าติดต่อ</a>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Exceptions\Accounting\LedgerException;
+use App\Mail\PayslipMail;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\Employee;
 use App\Services\Accounting\AccountingAuditLog;
@@ -10,6 +11,8 @@ use App\Models\Accounting\PayrollItem;
 use App\Models\Accounting\PayrollRun;
 use App\Services\Accounting\Payroll;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PayrollController extends AccountingController
 {
@@ -29,6 +32,7 @@ class PayrollController extends AccountingController
         $data = $request->validate([
             'code' => 'required|string|max:40',
             'name' => 'required|string|max:160',
+            'email' => 'nullable|email|max:160',
             'tax_id' => 'nullable|string|max:20',
             'social_security_id' => 'nullable|string|max:20',
             'base_salary' => 'required|numeric|min:0',
@@ -46,6 +50,39 @@ class PayrollController extends AccountingController
         AccountingAuditLog::record($workspace, 'employee.added', null, $data['name']);
 
         return back()->with('status', __('app.accounting.employee_added'));
+    }
+
+    public function editEmployee(Employee $employee)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($employee->workspace_id === $workspace->id, 404);
+
+        return view('accounting.payroll.edit-employee', compact('workspace', 'employee'));
+    }
+
+    public function updateEmployee(Request $request, Employee $employee)
+    {
+        $workspace = $this->requireWorkspace();
+        abort_unless($employee->workspace_id === $workspace->id, 404);
+        $this->assertPoster($workspace);
+
+        $data = $request->validate([
+            'name' => 'required|string|max:160',
+            'email' => 'nullable|email|max:160',
+            'tax_id' => 'nullable|string|max:20',
+            'social_security_id' => 'nullable|string|max:20',
+            'base_salary' => 'required|numeric|min:0',
+            'bank_account' => 'nullable|string|max:40',
+            'position' => 'nullable|string|max:80',
+            'hired_on' => 'nullable|date',
+        ]);
+
+        $employee->update($data);
+
+        AccountingAuditLog::record($workspace, 'employee.updated', $employee, $employee->name);
+
+        return redirect()->route('accounting.payroll.employees')
+            ->with('status', __('app.accounting.employee_updated'));
     }
 
     public function toggleEmployee(Employee $employee)
@@ -125,6 +162,8 @@ class PayrollController extends AccountingController
 
         $data = $request->validate([
             'gross' => 'required|numeric|min:0',
+            'overtime' => 'nullable|numeric|min:0',
+            'ot' => 'nullable|numeric|min:0',
             'wht' => 'nullable|numeric|min:0',
             'other_deductions' => 'nullable|numeric|min:0',
         ]);
@@ -152,7 +191,39 @@ class PayrollController extends AccountingController
 
         AccountingAuditLog::record($workspace, 'payroll_run.posted', $payrollRun, $payrollRun->period);
 
-        return back()->with('status', __('app.accounting.payroll_posted'));
+        $sent = $this->dispatchPayslipEmails($payrollRun);
+
+        return back()->with('status', __('app.accounting.payroll_posted_with_slips', ['count' => $sent]));
+    }
+
+    /**
+     * Email each item's payslip (PDF attached) to the employee. Failures are
+     * logged but never block the post — payroll is already on the ledger.
+     */
+    private function dispatchPayslipEmails(PayrollRun $payrollRun): int
+    {
+        $payrollRun->loadMissing('items.employee', 'workspace');
+        $sent = 0;
+
+        foreach ($payrollRun->items as $item) {
+            $email = $item->employee->email ?? null;
+            if (! $email) {
+                continue;
+            }
+
+            try {
+                Mail::to($email)->send(new PayslipMail($item));
+                $sent++;
+            } catch (\Throwable $e) {
+                Log::warning('Payslip mail failed', [
+                    'payroll_item_id' => $item->id,
+                    'employee' => $item->employee->code,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $sent;
     }
 
     public function payslip(PayrollItem $payrollItem)

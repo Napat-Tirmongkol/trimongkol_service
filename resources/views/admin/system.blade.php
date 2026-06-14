@@ -164,6 +164,48 @@
                 </div>
             </div>
 
+            {{-- Reset accounting data for one workspace --}}
+            <div class="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm">
+                <div class="flex items-start gap-3">
+                    <div class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100 text-rose-700">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-semibold text-rose-900">{{ __('app.admin.system.accounting_reset_heading') }}</h3>
+                        <p class="mt-1 text-xs text-rose-800">{{ __('app.admin.system.accounting_reset_hint') }}</p>
+
+                        <form method="POST" action="{{ route('admin.system.reset-accounting-workspace') }}"
+                              data-confirm="{{ __('app.admin.system.accounting_reset_confirm') }}"
+                              data-confirm-danger="1"
+                              class="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-medium text-rose-900">{{ __('app.admin.system.accounting_reset_workspace_label') }}</label>
+                                <select name="workspace_id" required
+                                        class="mt-1 block w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-rose-400">
+                                    <option value="">— {{ __('app.admin.system.accounting_reset_pick') }} —</option>
+                                    @foreach ($workspaces as $ws)
+                                        <option value="{{ $ws->id }}">{{ $ws->name }} ({{ $ws->slug }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-rose-900">{{ __('app.admin.system.accounting_reset_type_name') }}</label>
+                                <input type="text" name="confirm" required autocomplete="off"
+                                       placeholder="{{ __('app.admin.system.accounting_reset_type_name_placeholder') }}"
+                                       class="mt-1 block w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-rose-400">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit"
+                                        class="w-full rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 sm:w-auto">
+                                    {{ __('app.admin.system.accounting_reset_run') }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             {{-- Test email --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 class="text-sm font-semibold text-slate-900">{{ __('app.admin.system.mail_heading') }}</h3>

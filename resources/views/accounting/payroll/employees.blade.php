@@ -38,6 +38,12 @@
                         <input type="number" name="base_salary" step="0.01" min="0" value="{{ old('base_salary') }}"
                                class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-brand-400">
                     </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-700">{{ __('app.accounting.employee_email') }}</label>
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="name@example.com"
+                               class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-brand-400">
+                        <p class="mt-1 text-xs text-slate-500">{{ __('app.accounting.employee_email_hint') }}</p>
+                    </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-700">{{ __('app.accounting.employee_tax_id') }}</label>
                         <input type="text" name="tax_id" value="{{ old('tax_id') }}"
@@ -80,6 +86,7 @@
                             <tr>
                                 <th class="px-4 py-2 text-left">{{ __('app.accounting.employee_code') }}</th>
                                 <th class="px-4 py-2 text-left">{{ __('app.accounting.employee_name') }}</th>
+                                <th class="px-4 py-2 text-left">{{ __('app.accounting.employee_email') }}</th>
                                 <th class="px-4 py-2 text-left">{{ __('app.accounting.employee_position') }}</th>
                                 <th class="px-4 py-2 text-right">{{ __('app.accounting.employee_salary') }}</th>
                                 <th class="px-4 py-2 text-center">{{ __('app.accounting.col_status') }}</th>
@@ -91,6 +98,13 @@
                                 <tr>
                                     <td class="px-4 py-2 font-mono text-xs text-slate-600">{{ $e->code }}</td>
                                     <td class="px-4 py-2 font-medium text-slate-900">{{ $e->name }}</td>
+                                    <td class="px-4 py-2 text-xs text-slate-600">
+                                        @if ($e->email)
+                                            {{ $e->email }}
+                                        @else
+                                            <span class="text-amber-600">{{ __('app.accounting.employee_no_email') }}</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-2 text-slate-600">{{ $e->position }}</td>
                                     <td class="px-4 py-2 text-right tabular-nums">฿{{ number_format((float) $e->base_salary, 2) }}</td>
                                     <td class="px-4 py-2 text-center">
@@ -100,12 +114,16 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-2">
-                                        <form method="POST" action="{{ route('accounting.payroll.employees.toggle', $e) }}">
-                                            @csrf
-                                            <button type="submit" class="text-xs text-slate-500 hover:text-slate-800">
-                                                {{ $e->is_active ? __('app.accounting.deactivate') : __('app.accounting.activate') }}
-                                            </button>
-                                        </form>
+                                        <div class="flex items-center justify-end gap-3">
+                                            <a href="{{ route('accounting.payroll.employees.edit', $e) }}"
+                                               class="text-xs text-brand-700 hover:text-brand-900">{{ __('app.accounting.edit') }}</a>
+                                            <form method="POST" action="{{ route('accounting.payroll.employees.toggle', $e) }}">
+                                                @csrf
+                                                <button type="submit" class="text-xs text-slate-500 hover:text-slate-800">
+                                                    {{ $e->is_active ? __('app.accounting.deactivate') : __('app.accounting.activate') }}
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

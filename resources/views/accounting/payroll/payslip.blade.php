@@ -50,6 +50,15 @@
         </thead>
         <tbody>
             <tr><td>{{ __('app.accounting.payroll_gross') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->gross, 2) }}</td></tr>
+            @if ((float) $payrollItem->overtime > 0)
+                <tr><td style="padding-left: 24px;">+ {{ __('app.accounting.payroll_overtime') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->overtime, 2) }}</td></tr>
+            @endif
+            @if ((float) $payrollItem->ot > 0)
+                <tr><td style="padding-left: 24px;">+ {{ __('app.accounting.payroll_ot') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->ot, 2) }}</td></tr>
+            @endif
+            @if ((float) $payrollItem->overtime > 0 || (float) $payrollItem->ot > 0)
+                <tr class="total-row"><td>{{ __('app.accounting.payroll_total_earnings') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->gross + (float) $payrollItem->overtime + (float) $payrollItem->ot, 2) }}</td></tr>
+            @endif
             <tr><td style="padding-left: 24px;">− {{ __('app.accounting.payroll_ss') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->ss_employee, 2) }}</td></tr>
             <tr><td style="padding-left: 24px;">− {{ __('app.accounting.payroll_wht') }}</td><td class="text-right">฿{{ number_format((float) $payrollItem->wht, 2) }}</td></tr>
             @if ((float) $payrollItem->other_deductions > 0)
