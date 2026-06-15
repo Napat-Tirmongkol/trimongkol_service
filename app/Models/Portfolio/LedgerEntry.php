@@ -7,36 +7,37 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BudgetItem extends Model
+class LedgerEntry extends Model
 {
-    protected $table = 'portfolio_budget_items';
+    protected $table = 'portfolio_ledger';
 
     protected $fillable = [
         'user_id',
+        'date',
         'month',
-        'category',
-        'label',
+        'type',
         'amount',
-        'actual_amount',
-        'is_checked',
-        'sort_order',
+        'label',
+        'budget_item_id',
         'notes',
     ];
 
     protected $casts = [
+        'date'   => 'date',
         'amount' => 'decimal:2',
-        'actual_amount' => 'decimal:2',
-        'is_checked' => 'boolean',
-        'sort_order' => 'integer',
     ];
 
-    const CATEGORY_FIXED = 'fixed_expense';
-    const CATEGORY_VARIABLE = 'variable_expense';
-    const CATEGORY_SAVING = 'saving';
+    const TYPE_INCOME  = 'income';
+    const TYPE_EXPENSE = 'expense';
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function budgetItem(): BelongsTo
+    {
+        return $this->belongsTo(BudgetItem::class);
     }
 
     public function scopeForUser(Builder $q, User|int $user): Builder

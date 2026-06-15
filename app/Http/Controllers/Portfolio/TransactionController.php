@@ -54,6 +54,19 @@ class TransactionController extends Controller
 
     private function authorizeOwnership(Holding $holding): void
     {
-        abort_unless($holding->user_id === (int) auth()->id(), 403);
+        abort_unless($holding->user_id === $this->resolvePortfolioUserId(), 403);
+    }
+
+    private function resolvePortfolioUserId(): int
+    {
+        $allowed = (array) config('portfolio.allowed_emails', []);
+        $primaryEmail = !empty($allowed) ? strtolower($allowed[0]) : null;
+        if ($primaryEmail) {
+            $owner = \App\Models\User::where('email', $primaryEmail)->first();
+            if ($owner) {
+                return $owner->id;
+            }
+        }
+        return (int) auth()->id();
     }
 }

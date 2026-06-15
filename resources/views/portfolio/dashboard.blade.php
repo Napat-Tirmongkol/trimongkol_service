@@ -65,6 +65,24 @@
                 <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5">
                     <div class="text-xs font-medium uppercase tracking-wider text-rose-700">{{ __('app.portfolio.tile_debts') }}</div>
                     <div class="mt-2 text-2xl font-bold text-rose-800">฿{{ $fmtMoney($totals['debts']) }}</div>
+                    @php $hasUpperDetail = false; @endphp
+                    @if (isset($totals['koyoso_total']) && $totals['koyoso_total'] > 0)
+                        @php $hasUpperDetail = true; @endphp
+                        <div class="mt-3 border-t border-rose-200/60 pt-2 flex justify-between items-center text-[11px] text-rose-900">
+                            <span class="flex items-center gap-1.5 font-semibold">
+                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                หนี้ กยศ. คงเหลือ
+                            </span>
+                            <span class="font-bold">฿{{ $fmtMoney($totals['koyoso_total']) }}</span>
+                        </div>
+                    @endif
+                    
+                    @if (isset($totals['budget_debts']) && $totals['budget_debts'] > 0)
+                        <div class="{{ $hasUpperDetail ? 'mt-1.5' : 'mt-3 border-t border-rose-200/60 pt-2' }} flex justify-between items-center text-[11px] text-rose-800/80">
+                            <span>{{ __('app.portfolio.tile_budget_debts') }}</span>
+                            <span class="font-bold">฿{{ $fmtMoney($totals['budget_debts']) }}</span>
+                        </div>
+                    @endif
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="text-xs font-medium uppercase tracking-wider text-slate-500">{{ __('app.portfolio.tile_net') }}</div>
@@ -86,6 +104,88 @@
                     </div>
                 </div>
             </div>
+
+            {{-- กยศ Widget --}}
+            @if(!empty($koyoso))
+                @php
+                    $thMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+                    [$njY, $njM] = explode('-', $koyoso['nextJulyMonth']);
+                    $nextJulyLabel = $thMonths[(int)$njM] . ' ' . ((int)$njY + 543);
+                @endphp
+                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    {{-- Header --}}
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">{{ $koyoso['debt']->label }}</h3>
+                            <p class="text-xs text-slate-500">15 งวด · ชำระทุกวันที่ 5 กรกฎาคม</p>
+                        </div>
+                        <a href="{{ route('portfolio.budget.index') }}"
+                           class="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700 transition">
+                            ดูรายละเอียด
+                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    {{-- Main stats --}}
+                    <div class="grid grid-cols-2 gap-6 mb-3">
+                        <div>
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">คงเหลือ</div>
+                            <div class="text-2xl font-extrabold text-rose-700 mt-0.5 leading-none">
+                                ฿{{ $fmtMoney($koyoso['remainingAmount']) }}
+                            </div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                จากทั้งหมด ฿{{ $fmtMoney($koyoso['debt']->total_amount) }}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">สะสมแล้ว</div>
+                            <div class="text-2xl font-extrabold text-emerald-700 mt-0.5 leading-none">
+                                {{ $koyoso['progressPct'] }}%
+                            </div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                ฿{{ $fmtMoney($koyoso['paidAmount']) }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Progress bar --}}
+                    <div class="mb-4">
+                        <div class="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-2 rounded-full bg-emerald-500 transition-all duration-500"
+                                 style="width: {{ $koyoso['progressPct'] }}%"></div>
+                        </div>
+                    </div>
+
+                    {{-- Current งวด progress + remaining --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <div class="text-[10px] font-semibold text-slate-500">
+                                งวดที่ {{ $koyoso['installmentNo'] }} ({{ $nextJulyLabel }})
+                            </div>
+                            <div class="mt-1 text-base font-bold text-slate-900 leading-none">
+                                ฿{{ $fmtMoney($koyoso['curPaid']) }}<span class="text-sm font-normal text-slate-400">/฿{{ $fmtMoney($koyoso['curTarget']) }}</span>
+                            </div>
+                            <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                                <div class="h-1.5 rounded-full bg-emerald-500" style="width: {{ $koyoso['curPct'] }}%"></div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl bg-sky-50 p-3">
+                            <div class="text-[10px] font-semibold text-sky-600">เหลือต้องจ่ายงวดนี้</div>
+                            @if($koyoso['curIsPaid'])
+                                <div class="mt-1 text-base font-bold text-emerald-700 leading-none">ครบแล้ว ✓</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">รอรอบถัดไป</div>
+                            @else
+                                <div class="mt-1 text-base font-bold text-sky-900 leading-none">
+                                    ฿{{ $fmtMoney($koyoso['curRemaining']) }}
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">ครบกำหนด 5 {{ $nextJulyLabel }}</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- Trend chart (90-day net-worth line) --}}
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

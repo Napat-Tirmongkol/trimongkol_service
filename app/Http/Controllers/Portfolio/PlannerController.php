@@ -13,7 +13,7 @@ class PlannerController extends Controller
 {
     public function index(PriceFetcher $prices)
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
 
         // 1. Fetch current holdings to calculate actual net worth and pass to What-if and Performance
         $holdings = Holding::query()
@@ -65,7 +65,7 @@ class PlannerController extends Controller
             'target_date' => 'nullable|date',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         Goal::create($data);
 
@@ -108,12 +108,12 @@ class PlannerController extends Controller
             'currency' => 'required|string|size:3',
             'notes' => 'nullable|string|max:1000',
         ]);
-        $data['user_id'] = (int) auth()->id();
+        $data['user_id'] = $this->resolvePortfolioUserId();
 
         $item = WatchlistItem::create($data);
 
         // Fetch price immediately
-        $prices->refreshWatchlistForUser((int) auth()->id());
+        $prices->refreshWatchlistForUser($this->resolvePortfolioUserId());
 
         return redirect()->to(route('portfolio.planner') . '#watchlist')
             ->with('status', __('app.portfolio.planner.watchlist_created'));
@@ -130,7 +130,7 @@ class PlannerController extends Controller
 
     public function refreshWatchlist(PriceFetcher $prices)
     {
-        $userId = (int) auth()->id();
+        $userId = $this->resolvePortfolioUserId();
         $result = $prices->refreshWatchlistForUser($userId);
 
         $msg = __('app.portfolio.planner.watchlist_refreshed', [
@@ -145,11 +145,24 @@ class PlannerController extends Controller
 
     private function authorizeGoal(Goal $goal): void
     {
-        abort_unless($goal->user_id === (int) auth()->id(), 403);
+        abort_unless($goal->user_id === $this->resolvePortfolioUserId(), 403);
     }
 
     private function authorizeWatchlist(WatchlistItem $item): void
     {
-        abort_unless($item->user_id === (int) auth()->id(), 403);
+        abort_unless($item->user_id === $this->resolvePortfolioUserId(), 403);
+    }
+
+    private function resolvePortfolioUserId(): int
+    {
+        $allowed = (array) config('portfolio.allowed_emails', []);
+        $primaryEmail = !empty($allowed) ? strtolower($allowed[0]) : null;
+        if ($primaryEmail) {
+            $owner = \App\Models\User::where('email', $primaryEmail)->first();
+            if ($owner) {
+                return $owner->id;
+            }
+        }
+        return (int) auth()->id();
     }
 }

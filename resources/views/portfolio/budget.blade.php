@@ -22,7 +22,106 @@
         addVariableOpen: false,
         addSavingOpen: false,
         addInstallmentOpen: false,
-        addSubscriptionOpen: false
+        addSubscriptionOpen: false,
+        addDebtOpen: false,
+        totals: {
+            incomeTotal: {{ $incomeTotal }},
+            fixedTotal: {{ $fixedTotal }},
+            variableTotal: {{ $variableTotal }},
+            savingsTotal: {{ $savingsTotal }},
+            totalExpenses: {{ $totalExpenses }},
+            remainingAmount: {{ $remainingAmount }},
+            actualFixedTotal: {{ $actualFixedTotal }},
+            actualVariableTotal: {{ $actualVariableTotal }},
+            actualSavingsTotal: {{ $actualSavingsTotal }},
+            actualExpensesTotal: {{ $actualExpensesTotal }},
+            actualRemainingAmount: {{ $actualRemainingAmount }},
+            plannedFixedItem: {{ (float) $fixedExpensesList->sum('amount') }},
+            plannedInstallments: {{ $installmentsPaymentSum }},
+            plannedSubscriptions: {{ $subscriptionsPaymentSum }},
+            plannedDebts: {{ $debtPaymentsSum }},
+            actualFixedItem: {{ $actualFixedBudgetItemSum }},
+            actualInstallments: {{ $actualInstallmentsPaymentSum }},
+            actualSubscriptions: {{ $actualSubscriptionsPaymentSum }},
+            actualDebts: {{ $actualDebtPaymentsSum }}
+        },
+        chartType: 'planned',
+        fmtMoney(val) {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+        },
+        async toggleCheck(url) {
+            try {
+                let response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    let data = await response.json();
+                    if (data.success && data.totals) {
+                        this.totals = data.totals;
+                    }
+                    return data.is_checked;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        },
+        getSegments(type) {
+            let rawData = [
+                { label: 'ค่าใช้จ่ายคงที่ทั่วไป', val: parseFloat(this.totals.plannedFixedItem || 0), actualVal: parseFloat(this.totals.actualFixedItem || 0), color: '#6366f1' },
+                { label: 'รายจ่ายผันแปร', val: parseFloat(this.totals.variableTotal || 0), actualVal: parseFloat(this.totals.actualVariableTotal || 0), color: '#f59e0b' },
+                { label: 'เงินออม / ลงทุน', val: parseFloat(this.totals.savingsTotal || 0), actualVal: parseFloat(this.totals.actualSavingsTotal || 0), color: '#10b981' },
+                { label: 'ผ่อนชำระ', val: parseFloat(this.totals.plannedInstallments || 0), actualVal: parseFloat(this.totals.actualInstallments || 0), color: '#3b82f6' },
+                { label: 'บริการรายเดือน', val: parseFloat(this.totals.plannedSubscriptions || 0), actualVal: parseFloat(this.totals.actualSubscriptions || 0), color: '#ec4899' },
+                { label: 'ชำระหนี้สิน', val: parseFloat(this.totals.plannedDebts || 0), actualVal: parseFloat(this.totals.actualDebts || 0), color: '#ef4444' }
+            ];
+
+            let items = rawData.map(item => {
+                return {
+                    label: item.label,
+                    value: type === 'planned' ? item.val : item.actualVal,
+                    color: item.color
+                };
+            }).filter(item => item.value > 0);
+
+            let total = items.reduce((sum, item) => sum + item.value, 0);
+            if (total === 0) {
+                return [];
+            }
+
+            let accumulatedOffset = 0;
+            const circumference = 314.16;
+
+            return items.map(item => {
+                let pct = item.value / total;
+                let strokeLength = pct * circumference;
+                let offset = accumulatedOffset;
+                accumulatedOffset += strokeLength;
+                return {
+                    ...item,
+                    pct: pct * 100,
+                    dashArray: strokeLength.toFixed(2) + ' ' + circumference,
+                    dashOffset: (-offset).toFixed(2)
+                };
+            });
+        },
+        donutGradient(type) {
+            let segs = this.getSegments(type);
+            if (!segs.length) return '#f1f5f9';
+            let parts = [];
+            let acc = 0;
+            segs.forEach((seg, i) => {
+                let start = acc;
+                // pin the final stop to 100% so float rounding leaves no sliver
+                acc = (i === segs.length - 1) ? 100 : acc + seg.pct;
+                parts.push(seg.color + ' ' + start + '% ' + acc + '%');
+            });
+            return 'conic-gradient(' + parts.join(', ') + ')';
+        }
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
             
@@ -84,23 +183,104 @@
 
                 {{-- Total Expenses Card --}}
                 <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-1">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">แผนรายจ่ายรวม</div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500">ใช้จริง / แผนรายจ่าย</div>
                     <div class="text-3xl font-extrabold text-slate-900">
-                        ฿{{ $fmtMoney($totalExpenses) }}
+                        <span x-text="'฿' + fmtMoney(totals.actualExpensesTotal)">฿{{ $fmtMoney($actualExpensesTotal) }}</span>
+                        <span class="text-lg font-normal text-slate-400">/ ฿{{ $fmtMoney($totalExpenses) }}</span>
                     </div>
-                    <div class="text-[11px] text-slate-500">
-                        Fixed: ฿{{ $fmtMoney($fixedTotal) }} | Variable: ฿{{ $fmtMoney($variableTotal) }} | Savings: ฿{{ $fmtMoney($savingsTotal) }}
+                    <div class="text-[11px] text-slate-500" x-text="'ใช้จริง: Fixed ฿' + fmtMoney(totals.actualFixedTotal) + ' | Var ฿' + fmtMoney(totals.actualVariableTotal) + ' | Save ฿' + fmtMoney(totals.actualSavingsTotal)">
+                        ใช้จริง: Fixed ฿{{ $fmtMoney($actualFixedTotal) }} | Var ฿{{ $fmtMoney($actualVariableTotal) }} | Save ฿{{ $fmtMoney($actualSavingsTotal) }}
                     </div>
                 </div>
 
                 {{-- Remaining Balance Card --}}
-                <div class="rounded-2xl border {{ $remainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50' }} p-5 space-y-1">
-                    <div class="text-xs font-semibold uppercase tracking-wider {{ $remainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">คงเหลือตามแผน</div>
-                    <div class="text-3xl font-extrabold {{ $remainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900' }}">
-                        ฿{{ $fmtMoney($remainingAmount) }}
+                <div class="rounded-2xl border p-5 space-y-1"
+                     :class="totals.actualRemainingAmount >= 0 ? 'border-emerald-200 bg-emerald-50/50' : 'border-rose-200 bg-rose-50/50'">
+                    <div class="text-xs font-semibold uppercase tracking-wider"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'">คงเหลือจริง / ตามแผน</div>
+                    <div class="text-3xl font-extrabold"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-900' : 'text-rose-900'">
+                        <span x-text="'฿' + fmtMoney(totals.actualRemainingAmount)">฿{{ $fmtMoney($actualRemainingAmount) }}</span>
+                        <span class="text-lg font-normal"
+                              :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-600/70' : 'text-rose-600/70'">/ ฿{{ $fmtMoney($remainingAmount) }}</span>
                     </div>
-                    <div class="text-[11px] {{ $remainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700' }}">
-                        {{ $remainingAmount >= 0 ? 'งบประมาณสมดุลดี' : 'แผนรายจ่ายเกินกว่ารายได้!' }}
+                    <div class="text-[11px]"
+                         :class="totals.actualRemainingAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'"
+                         x-text="totals.actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!'">
+                        {{ $actualRemainingAmount >= 0 ? 'กระแสเงินสดจริงยังเป็นบวก' : 'ใช้จริงเกินกว่ารายได้แล้ว!' }}
+                    </div>
+                </div>
+            </div>
+
+            {{-- Chart Card --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">สัดส่วนค่าใช้จ่ายรายเดือน</h3>
+                        <p class="text-xs text-slate-500">แสดงสัดส่วนการใช้จ่ายแบ่งตามกลุ่มรายจ่ายต่าง ๆ</p>
+                    </div>
+                    
+                    {{-- Toggle Button Group --}}
+                    <div class="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 self-start">
+                        <button type="button" 
+                                @click="chartType = 'planned'"
+                                :class="chartType === 'planned' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold transition">
+                            ตามแผนที่ตั้งไว้
+                        </button>
+                        <button type="button" 
+                                @click="chartType = 'actual'"
+                                :class="chartType === 'actual' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                                class="rounded-md px-3 py-1.5 text-xs font-semibold transition">
+                            ตามที่ใช้จริง
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Empty State --}}
+                <div x-show="getSegments(chartType).length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <svg class="h-12 w-12 stroke-current" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <p class="mt-2 text-sm font-medium">ยังไม่มีข้อมูลรายจ่ายประจำเดือนนี้</p>
+                </div>
+
+                {{-- Chart Content --}}
+                <div x-show="getSegments(chartType).length > 0" class="grid items-center gap-8 md:grid-cols-2">
+                    {{-- Donut chart — CSS conic-gradient. Alpine's <template x-for> can't
+                         create SVG-namespaced <circle> nodes, so an SVG donut renders nothing.
+                         Sizes/gradient are inlined via :style so they don't depend on the
+                         compiled Tailwind build (h-56 / stroke-slate-100 are missing there). --}}
+                    <div class="flex justify-center">
+                        <div class="relative rounded-full transition-all duration-300 ease-in-out"
+                             style="width: 14rem; height: 14rem;"
+                             :style="{ background: donutGradient(chartType) }">
+                            {{-- donut hole (inherits the card background) --}}
+                            <div class="absolute rounded-full bg-white" style="inset: 16%;"></div>
+
+                            {{-- Text in the center --}}
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
+                                <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Legend List --}}
+                    <div class="divide-y divide-slate-100">
+                        <template x-for="(seg, idx) in getSegments(chartType)" :key="idx">
+                            <div class="flex items-center justify-between py-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="h-3.5 w-3.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                                    <span class="text-sm font-semibold text-slate-700" x-text="seg.label"></span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-slate-900" x-text="'฿' + fmtMoney(seg.value)"></span>
+                                    <span class="ml-1.5 text-xs text-slate-500" x-text="'(' + fmtMoney(seg.pct) + '%)'"></span>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -136,10 +316,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ค่าเช่าบ้าน, ค่าเทอม"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ใช้จริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -157,29 +344,41 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($fixedExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -202,7 +401,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -244,12 +452,31 @@
                                     </span>
                                 </div>
                             @endif
+
+                            {{-- READ-ONLY: Variable Debt Payments Sum (Auto) --}}
+                            @if($debtPaymentsSum > 0)
+                                <div class="py-2.5 flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="h-4 w-4 flex items-center justify-center text-[10px] font-bold text-slate-400 bg-slate-100 rounded border border-slate-200">A</span>
+                                        <div>
+                                            <span class="text-sm font-medium text-slate-700">ผ่อนตามตาราง (Variable)</span>
+                                            <p class="text-[10px] text-slate-400">คำนวณจากตารางผ่อนด้านขวา</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-700">
+                                        ฿{{ $fmtMoney($debtPaymentsSum) }}
+                                    </span>
+                                </div>
+                            @endif
                         </div>
 
                         {{-- Total Fixed Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมค่าใช้จ่ายคงที่</span>
-                            <span>฿{{ $fmtMoney($fixedTotal) }}</span>
+                            <span>รวมค่าใช้จ่ายคงที่ (ใช้จริง / งบ)</span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualFixedTotal)">฿{{ $fmtMoney($actualFixedTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($fixedTotal) }}</span>
+                            </span>
                         </div>
                     </div>
 
@@ -278,10 +505,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ค่าอาหาร, สังสรรค์"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ใช้จริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -299,29 +533,41 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($variableExpensesList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -344,7 +590,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -358,8 +613,11 @@
 
                         {{-- Total Variable Expenses --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมค่าใช้จ่ายผันแปร</span>
-                            <span>฿{{ $fmtMoney($variableTotal) }}</span>
+                            <span>รวมค่าใช้จ่ายผันแปร (ใช้จริง / งบ)</span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualVariableTotal)">฿{{ $fmtMoney($actualVariableTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($variableTotal) }}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -429,7 +687,7 @@
                                             ฿{{ $fmtMoney($inc->amount) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -498,10 +756,17 @@
                                     <input type="text" name="label" required placeholder="เช่น ออมเงินแต่งงาน, ฝากกับแฟน"
                                            class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
-                                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                                           class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">งบประมาณ (บาท)</label>
+                                        <input type="number" step="0.01" name="amount" required placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">ออมจริง (บาท - ไม่จำเป็น)</label>
+                                        <input type="number" step="0.01" name="actual_amount" placeholder="0.00"
+                                               class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่จำเป็น)</label>
@@ -519,29 +784,41 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($savingsList as $item)
                                 <div class="py-2.5 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($item->label) }}', amount: {{ $item->amount }}, notes: '{{ addslashes($item->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($item->label) }}', 
+                                         amount: {{ $item->amount }}, 
+                                         actual_amount: {{ $item->actual_amount ?? 'null' }}, 
+                                         notes: '{{ addslashes($item->notes) }}',
+                                         checked: {{ $item->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $item->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'item', 'id' => $item->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $item->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $item->label }}
                                             </span>
                                             @if($item->notes)
                                                 <p class="text-[10px] text-slate-400 truncate">{{ $item->notes }}</p>
                                             @endif
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $item->is_checked ? 'text-slate-400' : '' }}">
-                                            ฿{{ $fmtMoney($item->amount) }}
-                                        </span>
+                                        <div class="text-right">
+                                            <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                                  :class="checked ? 'text-slate-400' : ''">
+                                                ฿{{ $fmtMoney($item->amount) }}
+                                            </span>
+                                            @if($item->actual_amount !== null)
+                                                <p class="text-[10px] text-slate-500 whitespace-nowrap">ใช้จริง: ฿{{ $fmtMoney($item->actual_amount) }}</p>
+                                            @endif
+                                        </div>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>
@@ -564,7 +841,16 @@
                                             @csrf
                                             @method('PATCH')
                                             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                            <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">งบประมาณ</label>
+                                                    <input type="number" step="0.01" name="amount" x-model="amount" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[9px] text-slate-500 mb-0.5">ใช้จริง</label>
+                                                    <input type="number" step="0.01" name="actual_amount" x-model="actual_amount" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ยังไม่ได้ระบุ">
+                                                </div>
+                                            </div>
                                             <input type="text" name="notes" x-model="notes" class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
                                             <div class="flex justify-end gap-1.5">
                                                 <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
@@ -578,8 +864,11 @@
 
                         {{-- Total Savings --}}
                         <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
-                            <span>รวมเงินออม/ลงทุน</span>
-                            <span>฿{{ $fmtMoney($savingsTotal) }}</span>
+                            <span>รวมเงินออม/ลงทุน (ออมจริง / เป้า)</span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(totals.actualSavingsTotal)">฿{{ $fmtMoney($actualSavingsTotal) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($savingsTotal) }}</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -662,21 +951,21 @@
                                          total_amount: {{ $inst->total_amount }}, 
                                          total_months: {{ $inst->total_months }}, 
                                          paid_months: {{ $inst->paid_months }}, 
-                                         notes: '{{ addslashes($inst->notes) }}' 
+                                         notes: '{{ addslashes($inst->notes) }}',
+                                         checked: {{ $inst->is_checked ? 'true' : 'false' }}
                                      }">
                                     
                                     {{-- Standard read-only view --}}
                                     <div x-show="!editing" class="space-y-2">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="flex items-center gap-3">
-                                                <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'installment', 'id' => $inst->id]) }}">
-                                                    @csrf
-                                                    <input type="checkbox" {{ $inst->is_checked ? 'checked' : '' }}
-                                                           @change="$el.form.submit()"
-                                                           class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                                </form>
+                                                <input type="checkbox" 
+                                                       :checked="checked"
+                                                       @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'installment', 'id' => $inst->id]) }}')"
+                                                       class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                                 <div>
-                                                    <span class="text-sm font-bold text-slate-800 {{ $inst->is_checked ? 'line-through text-slate-400' : '' }}">
+                                                    <span class="text-sm font-bold text-slate-800"
+                                                          :class="checked ? 'line-through text-slate-400' : ''">
                                                         {{ $inst->label }}
                                                     </span>
                                                     <p class="text-[10px] text-slate-500">
@@ -685,7 +974,7 @@
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-1">
-                                                <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                                <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                     <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                     </svg>
@@ -760,6 +1049,291 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- 3.1b VARIABLE DEBTS (ผ่อนตามตาราง) --}}
+                        @if($debts->count() > 0 || true)
+                            @php
+                                $thaiMonthsShort = [
+                                    '01'=>'ม.ค.','02'=>'ก.พ.','03'=>'มี.ค.','04'=>'เม.ย.',
+                                    '05'=>'พ.ค.','06'=>'มิ.ย.','07'=>'ก.ค.','08'=>'ส.ค.',
+                                    '09'=>'ก.ย.','10'=>'ต.ค.','11'=>'พ.ย.','12'=>'ธ.ค.'
+                                ];
+                                $thMonthLabel = function ($ym) use ($thaiMonthsShort) {
+                                    [$y, $m] = explode('-', $ym);
+                                    return ($thaiMonthsShort[$m] ?? $m) . ' ' . ((int)$y + 543);
+                                };
+                            @endphp
+                            <div class="border-t border-slate-100 pt-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">ผ่อนตามตาราง</p>
+                                    <button @click="addDebtOpen = !addDebtOpen"
+                                            class="rounded-lg border border-slate-200 p-1 text-slate-600 hover:bg-slate-50 transition"
+                                            title="เพิ่มหนี้ผ่อนตามตาราง">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Add Debt Form --}}
+                                <div x-show="addDebtOpen" x-cloak class="rounded-xl bg-slate-50 p-4 border border-slate-200 space-y-3">
+                                    <form method="POST" action="{{ route('portfolio.budget.debts.store') }}" class="space-y-3">
+                                        @csrf
+                                        <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อหนี้</label>
+                                            <input type="text" name="label" required placeholder="เช่น TikTok Paylater, SPayLater"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">ยอดหนี้รวมทั้งหมด (ไม่บังคับ)</label>
+                                            <input type="number" step="0.01" name="total_amount" placeholder="0.00"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-700 mb-1">หมายเหตุ (ไม่บังคับ)</label>
+                                            <input type="text" name="notes" placeholder="ข้อมูลเพิ่มเติม"
+                                                   class="block w-full rounded-lg border-slate-300 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                        </div>
+                                        <div class="flex justify-end gap-2 pt-1">
+                                            <button type="button" @click="addDebtOpen = false" class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">ยกเลิก</button>
+                                            <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-brand-700">เพิ่มหนี้</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {{-- List of Variable Debts --}}
+                                @forelse($debts as $debt)
+                                    @if(str_contains($debt->label, 'กยศ'))
+                                        @include('portfolio.partials.koyoso-debt-card', ['debt' => $debt])
+                                    @else
+                                    @php
+                                        $currPay = $debt->payments->firstWhere('month', $activeMonth);
+                                        $paidSum = $debt->payments->where('is_paid', true)->sum('amount');
+                                        $progressPct = $debt->total_amount > 0
+                                            ? min(100, round($paidSum / $debt->total_amount * 100))
+                                            : 0;
+                                    @endphp
+                                    <div class="rounded-xl border border-slate-150 bg-slate-50/50 p-4 space-y-2"
+                                         x-data="{
+                                             scheduleOpen: false,
+                                             editing: false,
+                                             label: '{{ addslashes($debt->label) }}',
+                                             total_amount: {{ $debt->total_amount }},
+                                             notes: '{{ addslashes($debt->notes) }}',
+                                             checked: {{ ($currPay && $currPay->is_paid) ? 'true' : 'false' }}
+                                         }">
+
+                                        {{-- Read view --}}
+                                        <div x-show="!editing" class="flex items-start justify-between gap-3">
+                                            <div class="flex items-start gap-3 flex-1 min-w-0">
+                                                {{-- Checkbox for current month's payment --}}
+                                                @if($currPay)
+                                                    <input type="checkbox" 
+                                                           :checked="checked"
+                                                           @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $currPay->id]) }}')"
+                                                           class="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                                @else
+                                                    <div class="mt-0.5 h-4 w-4 shrink-0 rounded border-2 border-dashed border-slate-200"></div>
+                                                @endif
+
+                                                <div class="min-w-0 flex-1">
+                                                    <span class="text-sm font-bold text-slate-800"
+                                                          :class="checked ? 'line-through text-slate-400' : ''">
+                                                        {{ $debt->label }}
+                                                    </span>
+                                                    <p class="text-[10px] text-slate-500">
+                                                        @if($currPay)
+                                                            งวดเดือนนี้: ฿{{ $fmtMoney($currPay->amount) }}
+                                                        @else
+                                                            ไม่มีงวดชำระเดือนนี้
+                                                        @endif
+                                                    </p>
+                                                    @if($debt->notes)
+                                                        <p class="text-[10px] text-slate-400">{{ $debt->notes }}</p>
+                                                    @endif
+                                                </div>
+
+                                                @if($currPay)
+                                                    <span class="text-sm font-bold whitespace-nowrap"
+                                                          :class="checked ? 'text-slate-400' : 'text-slate-900'">
+                                                        ฿{{ $fmtMoney($currPay->amount) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                <button @click="scheduleOpen = !scheduleOpen"
+                                                        class="rounded border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 transition">
+                                                    <span x-text="scheduleOpen ? 'ซ่อน' : 'ตาราง'">ตาราง</span>
+                                                </button>
+                                                <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
+                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </button>
+                                                <form method="POST" action="{{ route('portfolio.budget.debts.destroy', $debt) }}"
+                                                      data-confirm="ลบหนี้ '{{ $debt->label }}' และตารางผ่อนทั้งหมด?"
+                                                      data-confirm-danger="1">
+                                                    @csrf @method('DELETE')
+                                                    <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                    <button type="submit" class="text-rose-400 hover:text-rose-600 p-0.5 rounded transition">
+                                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        {{-- Edit debt header --}}
+                                        <div x-show="editing" x-cloak class="w-full">
+                                            <form method="POST" action="{{ route('portfolio.budget.debts.update', $debt) }}"
+                                                  class="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                <input type="text" name="label" x-model="label" required
+                                                       class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="ชื่อหนี้">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">ยอดหนี้รวม (ถ้ามี)</label>
+                                                        <input type="number" step="0.01" name="total_amount" x-model="total_amount"
+                                                               class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                                    </div>
+                                                </div>
+                                                <input type="text" name="notes" x-model="notes"
+                                                       class="block w-full rounded border-slate-300 px-2 py-1 text-xs" placeholder="หมายเหตุ">
+                                                <div class="flex justify-end gap-1.5">
+                                                    <button type="button" @click="editing = false" class="rounded px-2 py-1 text-[10px] bg-slate-200 text-slate-700 font-semibold">ยกเลิก</button>
+                                                    <button type="submit" class="rounded bg-brand-600 px-2 py-1 text-[10px] text-white font-semibold">บันทึก</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        {{-- Schedule table (expandable) --}}
+                                        <div x-show="scheduleOpen" x-cloak class="border-t border-slate-100 pt-2 space-y-1">
+                                            @foreach($debt->payments->sortBy('month') as $pay)
+                                                @php $isNow = $pay->month === $activeMonth; @endphp
+                                                <div class="flex items-center gap-2"
+                                                     x-data="{
+                                                         editP: false,
+                                                         editAmt: {{ $pay->amount }},
+                                                         editNotes: '{{ addslashes($pay->notes) }}',
+                                                         isPaid: {{ $pay->is_paid ? 'true' : 'false' }},
+                                                         async toggle() {
+                                                             try {
+                                                                 const r = await fetch('{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $pay->id]) }}', {
+                                                                     method: 'POST',
+                                                                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                                                                 });
+                                                                 if (r.ok) { const d = await r.json(); if (d.success) this.isPaid = d.is_checked; }
+                                                             } catch(e) { console.error(e); }
+                                                         }
+                                                     }">
+
+                                                    {{-- Read row --}}
+                                                    <div x-show="!editP" class="flex items-center gap-2 flex-1 min-w-0">
+                                                        {{-- Clickable paid toggle --}}
+                                                        <button type="button" @click="toggle()"
+                                                                class="shrink-0 flex items-center justify-center w-4 h-4 cursor-pointer focus:outline-none">
+                                                            <svg x-show="isPaid" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <div x-show="!isPaid"
+                                                                 class="h-3 w-3 rounded-full border-2 {{ $isNow ? 'border-brand-500' : 'border-slate-200' }}"></div>
+                                                        </button>
+                                                        <span class="text-xs"
+                                                              :class="isPaid ? 'text-slate-400 line-through' : '{{ $isNow ? 'font-bold text-slate-900' : 'text-slate-600' }}'">
+                                                            {{ $thMonthLabel($pay->month) }}
+                                                        </span>
+                                                        @if($isNow)
+                                                            <span class="text-[10px] text-brand-600 font-medium">(เดือนนี้)</span>
+                                                        @endif
+                                                        <span class="ml-auto text-xs whitespace-nowrap"
+                                                              :class="isPaid ? 'text-slate-400' : 'text-slate-700'">
+                                                            ฿{{ $fmtMoney($pay->amount) }}
+                                                        </span>
+                                                        <button @click="editP = true" class="text-slate-400 hover:text-slate-600 shrink-0">
+                                                            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                            </svg>
+                                                        </button>
+                                                        <form method="POST" action="{{ route('portfolio.budget.debt-payments.destroy', $pay) }}"
+                                                              data-confirm="ลบงวด {{ $thMonthLabel($pay->month) }}?">
+                                                            @csrf @method('DELETE')
+                                                            <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                            <button type="submit" class="text-rose-400 hover:text-rose-500 shrink-0">
+                                                                <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+
+                                                    {{-- Edit row --}}
+                                                    <form x-show="editP" x-cloak method="POST"
+                                                          action="{{ route('portfolio.budget.debt-payments.update', $pay) }}"
+                                                          class="flex gap-1 flex-1 items-center min-w-0">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                                        <span class="text-[10px] text-slate-500 shrink-0 w-14">{{ $thMonthLabel($pay->month) }}</span>
+                                                        <input type="number" step="0.01" name="amount" x-model="editAmt" required
+                                                               class="block w-full rounded border-slate-300 px-1.5 py-0.5 text-xs min-w-0">
+                                                        <input type="text" name="notes" x-model="editNotes"
+                                                               class="block w-16 rounded border-slate-300 px-1.5 py-0.5 text-xs" placeholder="หมายเหตุ">
+                                                        <button type="submit" class="rounded bg-brand-600 px-1.5 py-0.5 text-[10px] text-white font-semibold shrink-0">บันทึก</button>
+                                                        <button type="button" @click="editP = false" class="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600 font-semibold shrink-0">ยกเลิก</button>
+                                                    </form>
+                                                </div>
+                                            @endforeach
+
+                                            {{-- Add payment entry --}}
+                                            <div class="pt-1" x-data="{ addP: false, newMonth: '{{ $activeMonth }}', newAmt: '' }">
+                                                <button @click="addP = !addP"
+                                                        class="flex items-center gap-1 text-[10px] font-semibold text-brand-600 hover:text-brand-700">
+                                                    <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                    เพิ่มงวดชำระ
+                                                </button>
+                                                <div x-show="addP" x-cloak class="mt-1.5">
+                                                    <form method="POST" action="{{ route('portfolio.budget.debt-payments.store') }}"
+                                                          class="flex flex-wrap gap-1.5 items-center">
+                                                        @csrf
+                                                        <input type="hidden" name="debt_id" value="{{ $debt->id }}">
+                                                        <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                                                        <input type="month" name="month" x-model="newMonth" required
+                                                               class="rounded border-slate-300 px-1.5 py-0.5 text-xs">
+                                                        <input type="number" step="0.01" name="amount" x-model="newAmt" required
+                                                               placeholder="จำนวนเงิน"
+                                                               class="rounded border-slate-300 px-1.5 py-0.5 text-xs w-28">
+                                                        <button type="submit" class="rounded bg-brand-600 px-2 py-0.5 text-[10px] text-white font-semibold">เพิ่ม</button>
+                                                        <button type="button" @click="addP = false" class="rounded bg-slate-200 px-2 py-0.5 text-[10px] text-slate-600 font-semibold">ยกเลิก</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+
+                                            {{-- Progress bar (if total_amount set) --}}
+                                            @if($debt->total_amount > 0)
+                                                <div class="pt-2 border-t border-slate-100 space-y-1">
+                                                    <div class="w-full rounded-full overflow-hidden bg-slate-200" style="height:6px">
+                                                        <div class="bg-brand-600 h-full transition-all" style="width:{{ $progressPct }}%"></div>
+                                                    </div>
+                                                    <div class="flex justify-between text-[10px] text-slate-500">
+                                                        <span>ชำระแล้ว {{ $progressPct }}%</span>
+                                                        <span>฿{{ $fmtMoney($paidSum) }} / ฿{{ $fmtMoney((float)$debt->total_amount) }}</span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @endif
+                                @empty
+                                    <p class="text-xs text-slate-400 text-center py-2">ยังไม่มีหนี้ผ่อนตามตาราง กดปุ่ม "+" เพื่อเพิ่ม</p>
+                                @endforelse
+                            </div>
+                        @endif
+
                     </div>
 
                     {{-- 3.2 SUBSCRIPTIONS --}}
@@ -814,18 +1388,24 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($subscriptions as $sub)
                                 <div class="py-3 flex items-center justify-between gap-3"
-                                     x-data="{ editing: false, label: '{{ addslashes($sub->label) }}', monthly_payment: {{ $sub->monthly_payment }}, billing_day: '{{ $sub->billing_day }}', notes: '{{ addslashes($sub->notes) }}' }">
+                                     x-data="{ 
+                                         editing: false, 
+                                         label: '{{ addslashes($sub->label) }}', 
+                                         monthly_payment: {{ $sub->monthly_payment }}, 
+                                         billing_day: '{{ $sub->billing_day }}', 
+                                         notes: '{{ addslashes($sub->notes) }}',
+                                         checked: {{ $sub->is_checked ? 'true' : 'false' }}
+                                     }">
                                     
                                     {{-- Read mode --}}
                                     <div x-show="!editing" class="flex items-center gap-3 flex-1 min-w-0">
-                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'subscription', 'id' => $sub->id]) }}">
-                                            @csrf
-                                            <input type="checkbox" {{ $sub->is_checked ? 'checked' : '' }}
-                                                   @change="$el.form.submit()"
-                                                   class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
-                                        </form>
+                                        <input type="checkbox" 
+                                               :checked="checked"
+                                               @change="checked = await toggleCheck('{{ route('portfolio.budget.toggle', ['type' => 'subscription', 'id' => $sub->id]) }}')"
+                                               class="h-4 w-4 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500">
                                         <div class="min-w-0 flex-1">
-                                            <span class="text-sm font-medium text-slate-800 {{ $sub->is_checked ? 'line-through text-slate-400' : '' }}">
+                                            <span class="text-sm font-medium text-slate-800"
+                                                  :class="checked ? 'line-through text-slate-400' : ''">
                                                 {{ $sub->label }}
                                             </span>
                                             <div class="flex flex-col text-[10px] text-slate-500 mt-0.5">
@@ -837,11 +1417,12 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap {{ $sub->is_checked ? 'text-slate-400' : '' }}">
+                                        <span class="text-sm font-bold text-slate-900 whitespace-nowrap"
+                                              :class="checked ? 'text-slate-400' : ''">
                                             ฿{{ $fmtMoney($sub->monthly_payment) }}
                                         </span>
                                         <div class="flex items-center gap-1">
-                                            <button @click="editing = true" class="text-slate-400 hover:text-slate-600 p-0.5 rounded transition">
+                                            <button @click="editing = true" class="text-slate-500 hover:text-slate-700 p-0.5 rounded transition">
                                                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                                 </svg>

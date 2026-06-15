@@ -15,6 +15,21 @@
     @livewireStyles
 
     <style>
+        /* ── Tailwind utility fallbacks (compiled CSS predates budget templates) ── */
+        .h-1\.5{height:.375rem}
+        .h-3\.5{height:.875rem}
+        .w-3\.5{width:.875rem}
+        .gap-1\.5{gap:.375rem}
+        .p-0\.5{padding:.125rem}
+        .p-1\.5{padding:.375rem}
+        .p-2\.5{padding:.625rem}
+        .py-1\.5{padding-top:.375rem;padding-bottom:.375rem}
+        .py-2\.5{padding-top:.625rem;padding-bottom:.625rem}
+        .mb-0\.5{margin-bottom:.125rem}
+        .mt-0\.5{margin-top:.125rem}
+        .text-\[10px\]{font-size:10px;line-height:1.4}
+        .text-\[11px\]{font-size:11px;line-height:1.4}
+
         /* ── Portfolio Dark Mode (mirrors admin theme) ────────────── */
 
         /* Global Backgrounds */
@@ -188,12 +203,16 @@
         .portfolio-dark .text-emerald-900 {
             color: #34d399 !important;
         }
+        .portfolio-dark .text-emerald-600 {
+            color: #34d399 !important;
+        }
         .portfolio-dark .bg-emerald-500 {
             background-color: #10b981 !important;
         }
 
         /* Status Cards — Rose / Red */
         .portfolio-dark .bg-rose-50\/50,
+        .portfolio-dark .bg-rose-50\/30,
         .portfolio-dark .bg-rose-50 {
             background-color: rgba(159, 18, 57, 0.15) !important;
         }
@@ -203,6 +222,9 @@
         .portfolio-dark .text-rose-700,
         .portfolio-dark .text-rose-800,
         .portfolio-dark .text-rose-900 {
+            color: #fb7185 !important;
+        }
+        .portfolio-dark .text-rose-600 {
             color: #fb7185 !important;
         }
         .portfolio-dark .text-rose-400 {
@@ -225,6 +247,20 @@
         .portfolio-dark .bg-brand-100 {
             background-color: rgba(14, 165, 233, 0.15) !important;
         }
+        .portfolio-dark .bg-brand-50\/50,
+        .portfolio-dark .bg-brand-50\/30,
+        .portfolio-dark .bg-brand-50 {
+            background-color: rgba(14, 165, 233, 0.08) !important;
+        }
+        .portfolio-dark .border-brand-200 {
+            border-color: rgba(14, 165, 233, 0.2) !important;
+        }
+        .portfolio-dark .border-brand-100 {
+            border-color: rgba(14, 165, 233, 0.12) !important;
+        }
+        .portfolio-dark .text-brand-800 {
+            color: #38bdf8 !important;
+        }
         .portfolio-dark .text-brand-700 {
             color: #38bdf8 !important;
         }
@@ -235,6 +271,10 @@
             border-color: #38bdf8 !important;
         }
         .portfolio-dark .bg-brand-600 {
+            background-color: #0ea5e9 !important;
+        }
+        .portfolio-dark .bg-brand-500,
+        .portfolio-dark .bg-brand-400 {
             background-color: #0ea5e9 !important;
         }
         .portfolio-dark .bg-brand-600:hover,
@@ -343,6 +383,21 @@
         .portfolio-dark ::-webkit-scrollbar-thumb:hover {
             background: #2a3042;
         }
+
+        /* ── Select element: remove native browser arrow to prevent Chromium
+              dark-mode double-arrow rendering bug ──────────────────────────── */
+        select:not([multiple]):not([size]) {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.1rem;
+            padding-right: 2.25rem;
+        }
+        .portfolio-dark select:not([multiple]):not([size]) {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+        }
     </style>
 
     <script>
@@ -399,6 +454,8 @@
                             </svg>
                         </button>
 
+
+
                         @if (auth()->user()->avatar_url)
                             <img src="{{ auth()->user()->avatar_url }}" alt="" referrerpolicy="no-referrer"
                                  class="h-8 w-8 rounded-full ring-2" :class="dark ? 'ring-slate-700' : 'ring-slate-100'">
@@ -434,9 +491,21 @@
                                class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.budget.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
                                 {{ __('app.portfolio.nav.budget') }}
                             </a>
-                            <a href="{{ route('portfolio.planner') }}" 
+                            <a href="{{ route('portfolio.planner') }}"
                                class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.planner') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
                                 {{ __('app.portfolio.nav.planner') }}
+                            </a>
+                            <a href="{{ route('portfolio.ledger.index') }}"
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.ledger.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
+                                {{ __('app.portfolio.nav.ledger') }}
+                            </a>
+                            <a href="{{ route('portfolio.debts.index') }}"
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.debts.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
+                                {{ __('app.portfolio.nav.debts') }}
+                            </a>
+                            <a href="{{ route('portfolio.subscriptions.index') }}"
+                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.subscriptions.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
+                                {{ __('app.portfolio.nav.subscriptions') }}
                             </a>
                         </nav>
                     </div>

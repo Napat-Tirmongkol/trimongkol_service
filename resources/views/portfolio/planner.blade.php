@@ -106,43 +106,49 @@
             <div x-show="activeTab === 'dca'" class="space-y-6" x-cloak>
                 <div class="grid gap-6 md:grid-cols-3"
                      x-data="{
-                         initialCapital: 100000,
-                         monthlyContribution: 5000,
-                         annualReturn: 8,
-                         years: 15,
-                         get dcaResults() {
-                             let init = parseFloat(this.initialCapital) || 0;
-                             let monthly = parseFloat(this.monthlyContribution) || 0;
-                             let rate = parseFloat(this.annualReturn) / 100 || 0;
-                             let Y = parseInt(this.years) || 1;
-                             
-                             let balance = init;
-                             let totalInvested = init;
-                             let yearlyData = [];
-                             
-                             let monthlyRate = rate / 12;
-                             
-                             for (let y = 1; y <= Y; y++) {
-                                 for (let m = 0; m < 12; m++) {
-                                     balance = (balance + monthly) * (1 + monthlyRate);
-                                     totalInvested += monthly;
-                                 }
-                                 yearlyData.push({
-                                     year: y,
-                                     invested: totalInvested,
-                                     value: balance,
-                                     gains: Math.max(0, balance - totalInvested)
-                                 });
-                             }
-                             
-                             return {
-                                 totalInvested: totalInvested,
-                                 futureValue: balance,
-                                 totalGains: Math.max(0, balance - totalInvested),
-                                 yearlyData: yearlyData
-                             };
-                         }
-                     }">
+                          initialCapital: parseFloat(localStorage.getItem('dca_initial_capital')) || 100000,
+                          monthlyContribution: parseFloat(localStorage.getItem('dca_monthly_contribution')) || 5000,
+                          annualReturn: parseFloat(localStorage.getItem('dca_annual_return')) || 8,
+                          years: parseInt(localStorage.getItem('dca_years')) || 15,
+                          init() {
+                              this.$watch('initialCapital', v => localStorage.setItem('dca_initial_capital', v));
+                              this.$watch('monthlyContribution', v => localStorage.setItem('dca_monthly_contribution', v));
+                              this.$watch('annualReturn', v => localStorage.setItem('dca_annual_return', v));
+                              this.$watch('years', v => localStorage.setItem('dca_years', v));
+                          },
+                          get dcaResults() {
+                              let init = parseFloat(this.initialCapital) || 0;
+                              let monthly = parseFloat(this.monthlyContribution) || 0;
+                              let rate = parseFloat(this.annualReturn) / 100 || 0;
+                              let Y = parseInt(this.years) || 1;
+                              
+                              let balance = init;
+                              let totalInvested = init;
+                              let yearlyData = [];
+                              
+                              let monthlyRate = rate / 12;
+                              
+                              for (let y = 1; y <= Y; y++) {
+                                  for (let m = 0; m < 12; m++) {
+                                      balance = (balance + monthly) * (1 + monthlyRate);
+                                      totalInvested += monthly;
+                                  }
+                                  yearlyData.push({
+                                      year: y,
+                                      invested: totalInvested,
+                                      value: balance,
+                                      gains: Math.max(0, balance - totalInvested)
+                                  });
+                              }
+                              
+                              return {
+                                  totalInvested: totalInvested,
+                                  futureValue: balance,
+                                  totalGains: Math.max(0, balance - totalInvested),
+                                  yearlyData: yearlyData
+                              };
+                          }
+                      }">
                     
                     {{-- Form Sliders --}}
                     <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-1">
@@ -211,30 +217,31 @@
                             </div>
                         </div>
 
-                        {{-- SVG Chart --}}
+                        {{-- CSS Flexbox Chart with Tooltips --}}
                         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                             <h3 class="text-sm font-semibold text-slate-900 mb-4">กราฟแสดงการเติบโตรายปี</h3>
-                            <div class="relative h-64 w-full">
-                                <svg viewBox="0 0 500 200" preserveAspectRatio="none" class="h-full w-full">
-                                    <template x-for="(data, idx) in dcaResults.yearlyData" :key="idx">
-                                        <g>
-                                            {{-- Invested bar --}}
-                                            <rect :x="idx * (500 / years) + 2"
-                                                  :y="180 - (data.invested / dcaResults.futureValue) * 160"
-                                                  :width="Math.max(1, (500 / years) - 4)"
-                                                  :height="(data.invested / dcaResults.futureValue) * 160"
-                                                  fill="#94a3b8" />
-                                            {{-- Gains bar --}}
-                                            <rect :x="idx * (500 / years) + 2"
-                                                  :y="180 - (data.value / dcaResults.futureValue) * 160"
-                                                  :width="Math.max(1, (500 / years) - 4)"
-                                                  :height="(data.gains / dcaResults.futureValue) * 160"
-                                                  fill="#059669" />
-                                        </g>
-                                    </template>
-                                    {{-- Base line --}}
-                                    <line x1="0" y1="180" x2="500" y2="180" stroke="#cbd5e1" stroke-width="1"/>
-                                </svg>
+                            <div class="relative h-64 w-full flex items-end justify-between gap-1 border-b border-slate-200 pb-1 px-1">
+                                <template x-for="(data, idx) in dcaResults.yearlyData" :key="idx">
+                                    <div class="flex-1 flex flex-col justify-end h-full relative group min-w-[4px]" style="max-width: 40px;">
+                                        <!-- Stacked segments bar -->
+                                        <div class="w-full flex flex-col justify-end rounded-t overflow-hidden" :style="'height: ' + ((data.value / dcaResults.futureValue) * 100) + '%'">
+                                            <!-- Gains segment (top green) -->
+                                            <div class="w-full bg-emerald-600 hover:bg-emerald-500 transition-colors" :style="'height: ' + ((data.gains / data.value) * 100) + '%'"></div>
+                                            <!-- Invested segment (bottom gray) -->
+                                            <div class="w-full bg-slate-400 hover:bg-slate-300 transition-colors" :style="'height: ' + ((data.invested / data.value) * 100) + '%'"></div>
+                                        </div>
+                                        <!-- Year label below bar on hover -->
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 text-[9px] text-slate-400 hidden group-hover:block" x-text="'ปีที่ ' + data.year"></div>
+                                        
+                                        <!-- Interactive Tooltip on hover -->
+                                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-slate-900 text-white text-[10px] rounded-lg p-2 whitespace-nowrap z-30 shadow-md ring-1 ring-white/10 pointer-events-none">
+                                            <span class="font-bold border-b border-slate-700 pb-0.5 mb-1" x-text="'ปีที่ ' + data.year"></span>
+                                            <span>เงินต้นสะสม: <strong x-text="'฿' + new Intl.NumberFormat().format(Math.round(data.invested))"></strong></span>
+                                            <span>ผลตอบแทนสะสม: <strong class="text-emerald-400" x-text="'฿' + new Intl.NumberFormat().format(Math.round(data.gains))"></strong></span>
+                                            <span class="mt-1 pt-1 border-t border-slate-700 text-brand-400 font-bold">มูลค่ารวม: <span x-text="'฿' + new Intl.NumberFormat().format(Math.round(data.value))"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                             <div class="mt-2 flex justify-between text-xs text-slate-500">
                                 <span>ปีที่ 1</span>
