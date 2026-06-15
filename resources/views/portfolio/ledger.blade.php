@@ -1,5 +1,7 @@
 <x-portfolio-layout>
 
+@include('portfolio.partials.receipt-import')
+
 {{-- Register the calculator Alpine component before Alpine initialises --}}
 <script>
 document.addEventListener('alpine:init', () => {
@@ -187,22 +189,40 @@ document.addEventListener('alpine:init', () => {
     </div>
 
     {{-- Add entry panel --}}
-    <div x-data="{ open: false, newType: 'expense' }" class="mb-6">
-        <button type="button" @click="open = !open"
-                class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60 bg-brand-600 hover:bg-brand-700">
-            <svg x-show="!open" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-            </svg>
-            <svg x-show="open" x-cloak class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-            <span x-text="open ? 'ยกเลิก' : '{{ __('app.portfolio.ledger.add_entry') }}'"></span>
-        </button>
+    <div x-data="{ open: false, newType: 'expense', receiptBusy: false }" class="mb-6">
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" @click="open = !open"
+                    class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60 bg-brand-600 hover:bg-brand-700">
+                <svg x-show="!open" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                <svg x-show="open" x-cloak class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                <span x-text="open ? 'ยกเลิก' : '{{ __('app.portfolio.ledger.add_entry') }}'"></span>
+            </button>
+
+            {{-- Receipt import: PDF e-receipt → pre-fill the form below (review before saving) --}}
+            <button type="button" @click="$refs.receiptFile.click()" :disabled="receiptBusy"
+                    class="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:opacity-60 border-slate-200 bg-white text-slate-700 hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 2h6a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-3 2V4a2 2 0 0 1 2-2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6M9 11h6"/>
+                </svg>
+                <span x-text="receiptBusy ? '{{ __('app.portfolio.ledger.receipt_reading') }}' : '{{ __('app.portfolio.ledger.receipt_import') }}'"></span>
+            </button>
+            <input type="file" x-ref="receiptFile" accept=".pdf,application/pdf" class="hidden"
+                   @change="receiptBusy = true; window.parseReceipt($event.target.files[0])
+                       .then(f => { window.fillLedgerAddForm(f); newType = 'expense'; open = true;
+                                    window.flashToast && window.flashToast({ message: window.LEDGER_RECEIPT_MSG.filled, type: 'success' }); })
+                       .catch(err => { window.flashToast && window.flashToast({ message: err.message, type: 'error' }); })
+                       .finally(() => { receiptBusy = false; $event.target.value = ''; })">
+        </div>
 
         <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-150"
              x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
              class="mt-3 rounded-xl border bg-white p-5 shadow-sm">
-            <form method="POST" action="{{ route('portfolio.ledger.store') }}" class="space-y-4">
+            <form id="ledger-add-form" method="POST" action="{{ route('portfolio.ledger.store') }}" class="space-y-4">
                 @csrf
                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <div>
