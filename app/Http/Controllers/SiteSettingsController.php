@@ -103,6 +103,7 @@ class SiteSettingsController extends Controller
         'ระบบที่เปิดใช้งาน (Products)' => [
             'products.queue.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบเรียกคิว', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้ (สแกนเนอร์/ส่งการบ้านเปิดตลอด)'],
             'products.accounting.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบบัญชี', 'hint' => 'ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ — แต่แอดมินยังเข้าทดสอบได้'],
+            'products.tasks.enabled' => ['type' => 'shared', 'toggle' => true, 'label' => 'ระบบจัดการงาน (Task Board)', 'hint' => 'กระดานงานแบบ Kanban สำหรับทีม — ปิดแล้วผู้ใช้ทั่วไปจะไม่เห็นและเข้า URL ไม่ได้ แต่แอดมินยังเข้าทดสอบได้'],
         ],
         'ข้อมูลบริษัท (สำหรับเอกสาร)' => [
             'company.name' => ['type' => 'shared', 'label' => 'ชื่อบริษัท (หัวเอกสาร — เว้นว่าง = ใช้ชื่อแบรนด์)', 'wide' => true],

@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\Products\AccountingController as AdminAccountingC
 use App\Http\Controllers\Admin\Products\QueueController as AdminQueueController;
 use App\Http\Controllers\Admin\Products\ScannerController as AdminScannerController;
 use App\Http\Controllers\Admin\Products\SocialController as AdminSocialController;
+use App\Http\Controllers\Admin\Products\TaskController as AdminTaskController;
 use App\Http\Controllers\Admin\RoleController as AdminRoleController;
 use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\SystemController as AdminSystemController;
@@ -59,6 +60,10 @@ use App\Http\Controllers\QueueController;
 use App\Http\Controllers\SiteSettingsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskItemController;
+use App\Http\Controllers\TaskLabelController;
+use App\Http\Controllers\TaskProjectController;
 use App\Http\Controllers\TwoFactorAuthController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Controllers\WorkspaceInvitationController;
@@ -208,6 +213,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/queues/{queue}/reset', [QueueController::class, 'reset'])->name('queues.reset');
         Route::get('/queues/{queue}/poster', [QueueController::class, 'poster'])->name('queues.poster');
         Route::get('/queues/{queue}/tts', [QueueController::class, 'tts'])->name('queues.tts');
+    });
+
+    // Task Manager product — workspace-scoped Kanban boards (ClickUp-style).
+    // Everyone in the workspace shares the boards, cards, labels and sub-tasks.
+    Route::middleware('product:tasks')->group(function () {
+        Route::get('/tasks', [TaskProjectController::class, 'index'])->name('tasks.index');
+        Route::post('/tasks/projects', [TaskProjectController::class, 'store'])->name('tasks.projects.store');
+        Route::get('/tasks/projects/{project}', [TaskProjectController::class, 'show'])->name('tasks.projects.show');
+        Route::patch('/tasks/projects/{project}', [TaskProjectController::class, 'update'])->name('tasks.projects.update');
+        Route::delete('/tasks/projects/{project}', [TaskProjectController::class, 'destroy'])->name('tasks.projects.destroy');
+
+        // Labels + sub-task routes use static prefixes and must stay above the
+        // /tasks/{task} wildcard so "labels"/"items" aren't read as a task id.
+        Route::post('/tasks/labels', [TaskLabelController::class, 'store'])->name('tasks.labels.store');
+        Route::delete('/tasks/labels/{label}', [TaskLabelController::class, 'destroy'])->name('tasks.labels.destroy');
+        Route::post('/tasks/items/{item}/toggle', [TaskItemController::class, 'toggle'])->name('tasks.items.toggle');
+        Route::delete('/tasks/items/{item}', [TaskItemController::class, 'destroy'])->name('tasks.items.destroy');
+
+        Route::post('/tasks/projects/{project}/cards', [TaskController::class, 'store'])->name('tasks.store');
+        Route::post('/tasks/{task}/items', [TaskItemController::class, 'store'])->name('tasks.items.store');
+        Route::post('/tasks/{task}/move', [TaskController::class, 'move'])->name('tasks.move');
+        Route::post('/tasks/{task}/toggle', [TaskController::class, 'toggleComplete'])->name('tasks.toggle');
+        Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+        Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     });
 
 
@@ -408,6 +437,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/settings', [AdminSocialController::class, 'settings'])->name('settings');
                 Route::patch('/settings', [AdminSocialController::class, 'updateSettings'])->name('settings.update');
                 Route::post('/fetch-now', [AdminSocialController::class, 'fetchNow'])->name('fetch-now');
+            });
+
+            Route::prefix('products/tasks')->name('tasks.')->group(function () {
+                Route::get('/', [AdminTaskController::class, 'dashboard'])->name('dashboard');
+                Route::get('/projects', [AdminTaskController::class, 'projects'])->name('projects');
+                Route::get('/projects/{project}', [AdminTaskController::class, 'showProject'])->name('projects.show');
+                Route::delete('/projects/{project}', [AdminTaskController::class, 'destroyProject'])->name('projects.destroy');
             });
 
             // Back-compat redirects for the old flat URLs.

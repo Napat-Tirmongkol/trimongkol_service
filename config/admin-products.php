@@ -52,4 +52,15 @@ return [
             ['route' => 'admin.social.settings',  'label_key' => 'app.admin.products.social.tab_settings', 'pattern' => 'admin.social.settings*'],
         ],
     ],
+
+    'tasks' => [
+        'label_key' => 'app.admin.products.tasks.label',
+        'desc_key'  => 'app.admin.products.tasks.desc',
+        'route'     => 'admin.tasks.dashboard',
+        'pattern'   => 'admin.tasks.*',
+        'tabs' => [
+            ['route' => 'admin.tasks.dashboard', 'label_key' => 'app.admin.products.tasks.tab_overview', 'pattern' => 'admin.tasks.dashboard'],
+            ['route' => 'admin.tasks.projects',  'label_key' => 'app.admin.products.tasks.tab_projects', 'pattern' => 'admin.tasks.projects*'],
+        ],
+    ],
 ];
