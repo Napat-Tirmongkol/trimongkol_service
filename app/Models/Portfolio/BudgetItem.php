@@ -43,4 +43,10 @@ class BudgetItem extends Model
     {
         return $q->where('user_id', $user instanceof User ? $user->id : $user);
     }
+
+    public function ledgerEntries()
+    {
+        return $this->hasMany(LedgerEntry::class);
+    }
 }
+
