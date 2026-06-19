@@ -91,6 +91,11 @@ class BudgetController extends Controller
         $debtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyAmount($d, $activeMonth)
         );
+        // Footer "รวมผ่อนต่อเดือน" excludes กยศ (logs are both planned and actual,
+        // making the ratio meaningless for tracking payment progress).
+        $nonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyAmount($d, $activeMonth));
 
         $fixedTotal = (float) $fixedExpensesList->sum('amount')
             + $installmentsPaymentSum
@@ -111,6 +116,9 @@ class BudgetController extends Controller
         $actualDebtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
         );
+        $actualNonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -152,7 +160,9 @@ class BudgetController extends Controller
             'actualFixedBudgetItemSum',
             'actualInstallmentsPaymentSum',
             'actualSubscriptionsPaymentSum',
-            'actualDebtPaymentsSum'
+            'actualDebtPaymentsSum',
+            'nonKoyosoDebtPaymentsSum',
+            'actualNonKoyosoDebtPaymentsSum'
         ));
     }
 
@@ -777,6 +787,12 @@ class BudgetController extends Controller
         $actualDebtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
         );
+        $nonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyAmount($d, $activeMonth));
+        $actualNonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -811,6 +827,8 @@ class BudgetController extends Controller
             'actualInstallments' => $actualInstallmentsPaymentSum,
             'actualSubscriptions' => $actualSubscriptionsPaymentSum,
             'actualDebts' => $actualDebtPaymentsSum,
+            'plannedNonKoyosoDebts' => $nonKoyosoDebtPaymentsSum,
+            'actualNonKoyosoDebts' => $actualNonKoyosoDebtPaymentsSum,
         ];
     }
 
