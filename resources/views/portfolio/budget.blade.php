@@ -1334,6 +1334,14 @@
                             </div>
                         @endif
 
+                        {{-- Total monthly installments + debts --}}
+                        <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
+                            <span>รวมผ่อนต่อเดือน (ใช้จริง / งบ)</span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(parseFloat(totals.actualInstallments || 0) + parseFloat(totals.actualDebts || 0))">฿{{ $fmtMoney($actualInstallmentsPaymentSum + $actualDebtPaymentsSum) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($installmentsPaymentSum + $debtPaymentsSum) }}</span>
+                            </span>
+                        </div>
                     </div>
 
                     {{-- 3.2 SUBSCRIPTIONS --}}
