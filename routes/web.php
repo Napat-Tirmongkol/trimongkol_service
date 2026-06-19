@@ -38,6 +38,9 @@ use App\Http\Controllers\Portfolio\DashboardController as PortfolioDashboardCont
 use App\Http\Controllers\Portfolio\TransactionController as PortfolioTransactionController;
 use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerController;
 use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
+use App\Http\Controllers\Portfolio\LedgerController as PortfolioLedgerController;
+use App\Http\Controllers\Portfolio\DebtOverviewController as PortfolioDebtOverviewController;
+use App\Http\Controllers\Portfolio\SubscriptionController as PortfolioSubscriptionController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -158,6 +161,24 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         Route::post('/budget/debt-payments', [PortfolioBudgetController::class, 'storeDebtPayment'])->name('budget.debt-payments.store');
         Route::patch('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'updateDebtPayment'])->name('budget.debt-payments.update');
         Route::delete('/budget/debt-payments/{payment}', [PortfolioBudgetController::class, 'destroyDebtPayment'])->name('budget.debt-payments.destroy');
+        // กยศ-style per-งวด payment logs (flexible actual payments toward a yearly target)
+        Route::post('/budget/debt-payment-logs', [PortfolioBudgetController::class, 'storeDebtPaymentLog'])->name('budget.debt-payment-logs.store');
+        Route::delete('/budget/debt-payment-logs/{log}', [PortfolioBudgetController::class, 'destroyDebtPaymentLog'])->name('budget.debt-payment-logs.destroy');
+
+        // Daily Income / Expense Ledger
+        Route::get('/ledger', [PortfolioLedgerController::class, 'index'])->name('ledger.index');
+        Route::post('/ledger', [PortfolioLedgerController::class, 'store'])->name('ledger.store');
+        Route::patch('/ledger/{entry}', [PortfolioLedgerController::class, 'update'])->name('ledger.update');
+        Route::delete('/ledger/{entry}', [PortfolioLedgerController::class, 'destroy'])->name('ledger.destroy');
+
+        // Debt Overview
+        Route::get('/debts', [PortfolioDebtOverviewController::class, 'index'])->name('debts.index');
+
+        // Subscriptions
+        Route::get('/subscriptions', [PortfolioSubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::post('/subscriptions', [PortfolioSubscriptionController::class, 'store'])->name('subscriptions.store');
+        Route::patch('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'update'])->name('subscriptions.update');
+        Route::delete('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
     });
 });
 

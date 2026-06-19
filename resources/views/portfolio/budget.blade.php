@@ -108,6 +108,19 @@
                     dashOffset: (-offset).toFixed(2)
                 };
             });
+        },
+        donutGradient(type) {
+            let segs = this.getSegments(type);
+            if (!segs.length) return '#f1f5f9';
+            let parts = [];
+            let acc = 0;
+            segs.forEach((seg, i) => {
+                let start = acc;
+                // pin the final stop to 100% so float rounding leaves no sliver
+                acc = (i === segs.length - 1) ? 100 : acc + seg.pct;
+                parts.push(seg.color + ' ' + start + '% ' + acc + '%');
+            });
+            return 'conic-gradient(' + parts.join(', ') + ')';
         }
     }">
         <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
@@ -235,28 +248,22 @@
 
                 {{-- Chart Content --}}
                 <div x-show="getSegments(chartType).length > 0" class="grid items-center gap-8 md:grid-cols-2">
-                    {{-- SVG Donut Chart container --}}
-                    <div class="relative flex justify-center">
-                        <svg class="h-56 w-56 -rotate-90 transform" viewBox="0 0 120 120">
-                            <circle cx="60" cy="60" r="50" class="stroke-slate-100" stroke-width="10" fill="none" />
-                            
-                            <template x-for="(seg, idx) in getSegments(chartType)" :key="idx">
-                                <circle cx="60"
-                                        cy="60"
-                                        r="50"
-                                        fill="none"
-                                        :stroke="seg.color"
-                                        stroke-width="10"
-                                        :stroke-dasharray="seg.dashArray"
-                                        :stroke-dashoffset="seg.dashOffset"
-                                        class="transition-all duration-300 ease-in-out hover:stroke-[12px] cursor-pointer" />
-                            </template>
-                        </svg>
-                        
-                        {{-- Text in the center --}}
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
-                            <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                    {{-- Donut chart — CSS conic-gradient. Alpine's <template x-for> can't
+                         create SVG-namespaced <circle> nodes, so an SVG donut renders nothing.
+                         Sizes/gradient are inlined via :style so they don't depend on the
+                         compiled Tailwind build (h-56 / stroke-slate-100 are missing there). --}}
+                    <div class="flex justify-center">
+                        <div class="relative rounded-full transition-all duration-300 ease-in-out"
+                             style="width: 14rem; height: 14rem;"
+                             :style="{ background: donutGradient(chartType) }">
+                            {{-- donut hole (inherits the card background) --}}
+                            <div class="absolute rounded-full bg-white" style="inset: 16%;"></div>
+
+                            {{-- Text in the center --}}
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500" x-text="chartType === 'planned' ? 'งบแผนรวม' : 'ใช้จริงรวม'"></span>
+                                <span class="text-xl font-extrabold text-slate-900 mt-0.5" x-text="'฿' + fmtMoney(chartType === 'planned' ? totals.totalExpenses : totals.actualExpensesTotal)"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -1097,6 +1104,9 @@
 
                                 {{-- List of Variable Debts --}}
                                 @forelse($debts as $debt)
+                                    @if(str_contains($debt->label, 'กยศ'))
+                                        @include('portfolio.partials.koyoso-debt-card', ['debt' => $debt])
+                                    @else
                                     @php
                                         $currPay = $debt->payments->firstWhere('month', $activeMonth);
                                         $paidSum = $debt->payments->where('is_paid', true)->sum('amount');
@@ -1205,26 +1215,42 @@
                                             @foreach($debt->payments->sortBy('month') as $pay)
                                                 @php $isNow = $pay->month === $activeMonth; @endphp
                                                 <div class="flex items-center gap-2"
-                                                     x-data="{ editP: false, editAmt: {{ $pay->amount }}, editNotes: '{{ addslashes($pay->notes) }}' }">
+                                                     x-data="{
+                                                         editP: false,
+                                                         editAmt: {{ $pay->amount }},
+                                                         editNotes: '{{ addslashes($pay->notes) }}',
+                                                         isPaid: {{ $pay->is_paid ? 'true' : 'false' }},
+                                                         async toggle() {
+                                                             try {
+                                                                 const r = await fetch('{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $pay->id]) }}', {
+                                                                     method: 'POST',
+                                                                     headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                                                                 });
+                                                                 if (r.ok) { const d = await r.json(); if (d.success) this.isPaid = d.is_checked; }
+                                                             } catch(e) { console.error(e); }
+                                                         }
+                                                     }">
 
                                                     {{-- Read row --}}
                                                     <div x-show="!editP" class="flex items-center gap-2 flex-1 min-w-0">
-                                                        @if($pay->is_paid)
-                                                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500 shrink-0">
+                                                        {{-- Clickable paid toggle --}}
+                                                        <button type="button" @click="toggle()"
+                                                                class="shrink-0 flex items-center justify-center w-4 h-4 cursor-pointer focus:outline-none">
+                                                            <svg x-show="isPaid" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" class="text-emerald-500">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                                             </svg>
-                                                        @elseif($isNow)
-                                                            <div class="h-3 w-3 rounded-full border-2 border-brand-500 shrink-0"></div>
-                                                        @else
-                                                            <div class="h-3 w-3 rounded-full border-2 border-slate-200 shrink-0"></div>
-                                                        @endif
-                                                        <span class="text-xs {{ $pay->is_paid ? 'text-slate-400 line-through' : ($isNow ? 'font-bold text-slate-900' : 'text-slate-600') }}">
+                                                            <div x-show="!isPaid"
+                                                                 class="h-3 w-3 rounded-full border-2 {{ $isNow ? 'border-brand-500' : 'border-slate-200' }}"></div>
+                                                        </button>
+                                                        <span class="text-xs"
+                                                              :class="isPaid ? 'text-slate-400 line-through' : '{{ $isNow ? 'font-bold text-slate-900' : 'text-slate-600' }}'">
                                                             {{ $thMonthLabel($pay->month) }}
                                                         </span>
                                                         @if($isNow)
                                                             <span class="text-[10px] text-brand-600 font-medium">(เดือนนี้)</span>
                                                         @endif
-                                                        <span class="ml-auto text-xs {{ $pay->is_paid ? 'text-slate-400' : 'text-slate-700' }} whitespace-nowrap">
+                                                        <span class="ml-auto text-xs whitespace-nowrap"
+                                                              :class="isPaid ? 'text-slate-400' : 'text-slate-700'">
                                                             ฿{{ $fmtMoney($pay->amount) }}
                                                         </span>
                                                         <button @click="editP = true" class="text-slate-400 hover:text-slate-600 shrink-0">
@@ -1301,6 +1327,7 @@
                                             @endif
                                         </div>
                                     </div>
+                                    @endif
                                 @empty
                                     <p class="text-xs text-slate-400 text-center py-2">ยังไม่มีหนี้ผ่อนตามตาราง กดปุ่ม "+" เพื่อเพิ่ม</p>
                                 @endforelse

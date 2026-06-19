@@ -48,23 +48,59 @@ class DashboardController extends Controller
             ? ($totals['gain'] / $totals['cost']) * 100
             : 0;
 
-        // Calculate remaining unpaid variable debts from budget
+        // Calculate remaining unpaid variable debts from budget + build กยศ widget data
         $variableDebtsUnpaid = 0.0;
-        $koyosoDebtsUnpaid = 0.0;
+        $koyosoDebtsUnpaid   = 0.0;
+        $koyoso              = null;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_debts')) {
             $variableDebts = \App\Models\Portfolio\Debt::query()
                 ->forUser($userId)
                 ->with('payments')
                 ->get();
             foreach ($variableDebts as $d) {
+                $isKoyoso = str_contains($d->label, 'กยศ');
                 if ($d->total_amount > 0) {
-                    $paidSum = $d->payments->where('is_paid', true)->sum('amount');
-                    $unpaid = max(0.0, (float) $d->total_amount - $paidSum);
-                    if (str_contains(strtolower($d->label), 'กยศ') || str_contains($d->label, 'กยศ')) {
+                    // กยศ tracks partial progress via paid_amount per งวด; other
+                    // debts mark whole monthly rows paid.
+                    $paidSumD = $isKoyoso
+                        ? (float) $d->payments->sum('paid_amount')
+                        : (float) $d->payments->where('is_paid', true)->sum('amount');
+                    $unpaid   = max(0.0, (float) $d->total_amount - $paidSumD);
+                    if ($isKoyoso) {
                         $koyosoDebtsUnpaid += $unpaid;
                     } else {
                         $variableDebtsUnpaid += $unpaid;
                     }
+                }
+
+                if ($isKoyoso && $koyoso === null && $d->payments->isNotEmpty()) {
+                    // Per-งวด model: 15 yearly targets (month = YYYY-07 due date),
+                    // each accruing flexible logged payments into paid_amount.
+                    $periods     = $d->payments->sortBy('month')->values();
+                    $paid        = (float) $periods->sum('paid_amount');
+                    $totalTarget = (float) $d->total_amount;
+
+                    // Focus งวด = earliest not-fully-paid (fall back to last).
+                    $current    = $periods->firstWhere('is_paid', false) ?? $periods->last();
+                    $curMonthYM = $current?->month;               // YYYY-07
+                    $curTarget  = $current ? (float) $current->amount : 0.0;
+                    $curPaid    = $current ? (float) $current->paid_amount : 0.0;
+
+                    $koyoso = [
+                        'debt'            => $d,
+                        'paidAmount'      => $paid,
+                        'remainingAmount' => max(0.0, $totalTarget - $paid),
+                        'progressPct'     => $totalTarget > 0
+                            ? min(100, round($paid / $totalTarget * 100, 1))
+                            : 0,
+                        'nextJulyMonth'   => $curMonthYM,
+                        'installmentNo'   => $curMonthYM ? (int) substr($curMonthYM, 0, 4) - 2025 : 0,
+                        'curTarget'       => $curTarget,
+                        'curPaid'         => $curPaid,
+                        'curRemaining'    => max(0.0, $curTarget - $curPaid),
+                        'curPct'          => $curTarget > 0 ? min(100, round($curPaid / $curTarget * 100)) : 0,
+                        'curIsPaid'       => (bool) ($current?->is_paid),
+                    ];
                 }
             }
         }
@@ -115,7 +151,7 @@ class DashboardController extends Controller
         $lastRefresh = $holdings->whereNotNull('last_priced_at')->max('last_priced_at');
 
         return view('portfolio.dashboard', compact(
-            'holdings', 'byKind', 'totals', 'trend', 'lastRefresh',
+            'holdings', 'byKind', 'totals', 'trend', 'lastRefresh', 'koyoso',
         ));
     }
 
