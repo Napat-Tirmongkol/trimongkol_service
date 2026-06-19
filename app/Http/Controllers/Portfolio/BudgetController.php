@@ -307,11 +307,22 @@ class BudgetController extends Controller
         return $this->redirectAfterAction($installment->month, __('app.portfolio.budget.installment_updated'));
     }
 
-    public function destroyInstallment(Installment $installment)
+    public function destroyInstallment(Request $request, Installment $installment)
     {
         $this->authorizeInstallment($installment);
         $month = $installment->month;
-        $installment->delete();
+
+        if ($request->input('redirect_to') === 'debts') {
+            // The /debts page collapses an installment to one row per label
+            // (newest month shown). Installments are stored per-month, so a
+            // single delete leaves older months behind and the row reappears.
+            // Deleting the whole label removes the installment everywhere.
+            Installment::forUser($installment->user_id)
+                ->where('label', $installment->label)
+                ->delete();
+        } else {
+            $installment->delete();
+        }
 
         return $this->redirectAfterAction($month, __('app.portfolio.budget.installment_deleted'));
     }
