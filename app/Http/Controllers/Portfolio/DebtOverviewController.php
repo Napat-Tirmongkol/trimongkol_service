@@ -14,6 +14,10 @@ class DebtOverviewController extends Controller
     {
         $userId = $this->resolvePortfolioUserId();
 
+        // Current month — used as the $activeMonth context for management forms
+        // (koyoso-debt-card partial needs it for redirect_month hidden inputs).
+        $activeMonth = date('Y-m');
+
         // Plan starts NEXT month. The current month is tracked in the budget
         // worksheet, so it is intentionally excluded from this forward plan.
         $startYM = Carbon::parse(date('Y-m') . '-01')->addMonth()->format('Y-m');
@@ -34,7 +38,19 @@ class DebtOverviewController extends Controller
                 ->values();
         }
 
-        // ── Debts with future payment schedule only ───────────────────────
+        // ── All debts with full payment history + logs (for management cards) ──
+        $allDebts = collect();
+        if (Schema::hasTable('portfolio_debts')) {
+            $allDebts = Debt::forUser($userId)
+                ->with([
+                    'payments' => fn ($q) => $q->orderBy('month'),
+                    'payments.logs' => fn ($q) => $q->orderBy('paid_on', 'desc'),
+                ])
+                ->orderBy('id')
+                ->get();
+        }
+
+        // ── Debts with future payment schedule only (for the plan table) ──────
         $debts = collect();
         if (Schema::hasTable('portfolio_debts')) {
             $debts = Debt::forUser($userId)
@@ -208,8 +224,8 @@ class DebtOverviewController extends Controller
             : 0.0;
 
         return view('portfolio.debt-overview', compact(
-            'installments', 'debts', 'schedule', 'startYM',
-            'firstMonthData', 'firstMonthTotal', 'totalRemaining',
+            'installments', 'debts', 'allDebts', 'schedule', 'startYM',
+            'activeMonth', 'firstMonthData', 'firstMonthTotal', 'totalRemaining',
             'maxMonthlyTotal', 'avgMonthly'
         ));
     }

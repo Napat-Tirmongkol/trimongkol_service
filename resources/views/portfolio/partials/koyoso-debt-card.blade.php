@@ -1,5 +1,6 @@
 {{-- กยศ per-งวด tracker: yearly targets + flexible logged payments. Fully editable. --}}
 @php
+    $fromDebts = ($redirectTo ?? null) === 'debts';
     $koyosoPayments = $debt->payments->sortBy('month')->values();
     $totalTarget = (float) $koyosoPayments->sum('amount');
     $totalPaid   = (float) $koyosoPayments->sum('paid_amount');
@@ -44,6 +45,7 @@
                   data-confirm="ลบ '{{ $debt->label }}' และประวัติการจ่ายทั้งหมด?" data-confirm-danger="1">
                 @csrf @method('DELETE')
                 <input type="hidden" name="month" value="{{ $activeMonth }}">
+                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                 <button type="submit" class="text-rose-400 hover:text-rose-600 p-0.5 rounded transition" title="ลบหนี้นี้">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -56,6 +58,7 @@
         <form method="POST" action="{{ route('portfolio.budget.debts.update', $debt) }}" class="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200">
             @csrf @method('PATCH')
             <input type="hidden" name="month" value="{{ $activeMonth }}">
+            @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
             <label class="block text-[10px] font-bold text-slate-600">ชื่อหนี้</label>
             <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
             <label class="block text-[10px] font-bold text-slate-600">ยอดหนี้รวม (เงินต้น+ดอกเบี้ย)</label>
@@ -119,6 +122,7 @@
                     @csrf
                     <input type="hidden" name="debt_payment_id" value="{{ $currentPeriod->id }}">
                     <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                    @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                     <div>
                         <label class="block text-[9px] text-slate-500">วันที่จ่าย</label>
                         <input type="date" name="paid_on" value="{{ date('Y-m-d') }}" required class="rounded border-slate-300 px-1.5 py-0.5 text-xs">
@@ -142,6 +146,7 @@
                                   data-confirm="ลบรายการจ่าย ฿{{ $fmtMoney($log->amount) }} นี้?">
                                 @csrf @method('DELETE')
                                 <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                                 <button type="submit" class="text-rose-400 hover:text-rose-600 shrink-0">
                                     <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
@@ -172,6 +177,7 @@
                 @csrf
                 <input type="hidden" name="debt_id" value="{{ $debt->id }}">
                 <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-[9px] text-slate-500">เดือนครบกำหนด</label>
@@ -220,6 +226,7 @@
                                   data-confirm="ลบงวด {{ $pNo }} ({{ $dueLabel($p->month) }}) และประวัติการจ่ายของงวดนี้?" data-confirm-danger="1" class="shrink-0 flex">
                                 @csrf @method('DELETE')
                                 <input type="hidden" name="month" value="{{ $activeMonth }}">
+                                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                                 <button type="submit" class="text-rose-300 hover:text-rose-600" title="ลบงวด">
                                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
@@ -232,6 +239,7 @@
                                 @csrf
                                 <input type="hidden" name="debt_payment_id" value="{{ $p->id }}">
                                 <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                                 <div>
                                     <label class="block text-[9px] text-slate-500">วันที่จ่าย</label>
                                     <input type="date" name="paid_on" value="{{ date('Y-m-d') }}" required class="rounded border-slate-300 px-1.5 py-0.5 text-xs">
@@ -252,6 +260,7 @@
                                                   data-confirm="ลบรายการจ่าย ฿{{ $fmtMoney($log->amount) }} นี้?">
                                                 @csrf @method('DELETE')
                                                 <input type="hidden" name="redirect_month" value="{{ $activeMonth }}">
+                                                @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                                                 <button type="submit" class="text-rose-400 hover:text-rose-600 shrink-0">
                                                     <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                                 </button>
@@ -267,6 +276,7 @@
                     <form x-show="editP" x-cloak method="POST" action="{{ route('portfolio.budget.debt-payments.update', $p) }}" class="space-y-1.5">
                         @csrf @method('PATCH')
                         <input type="hidden" name="month" value="{{ $activeMonth }}">
+                        @if($fromDebts)<input type="hidden" name="redirect_to" value="debts">@endif
                         <div class="grid grid-cols-2 gap-1.5">
                             <div>
                                 <label class="block text-[9px] text-slate-500">เดือนครบกำหนด</label>
