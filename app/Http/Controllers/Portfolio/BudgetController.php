@@ -91,6 +91,11 @@ class BudgetController extends Controller
         $debtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyAmount($d, $activeMonth)
         );
+        // Footer "รวมผ่อนต่อเดือน" excludes กยศ (logs are both planned and actual,
+        // making the ratio meaningless for tracking payment progress).
+        $nonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyAmount($d, $activeMonth));
 
         $fixedTotal = (float) $fixedExpensesList->sum('amount')
             + $installmentsPaymentSum
@@ -111,6 +116,9 @@ class BudgetController extends Controller
         $actualDebtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
         );
+        $actualNonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -152,7 +160,9 @@ class BudgetController extends Controller
             'actualFixedBudgetItemSum',
             'actualInstallmentsPaymentSum',
             'actualSubscriptionsPaymentSum',
-            'actualDebtPaymentsSum'
+            'actualDebtPaymentsSum',
+            'nonKoyosoDebtPaymentsSum',
+            'actualNonKoyosoDebtPaymentsSum'
         ));
     }
 
@@ -272,8 +282,7 @@ class BudgetController extends Controller
 
         Installment::create($data);
 
-        return redirect()->route('portfolio.budget.index', ['month' => $data['month']])
-            ->with('status', __('app.portfolio.budget.installment_created'));
+        return $this->redirectAfterAction($data['month'], __('app.portfolio.budget.installment_created'));
     }
 
     public function updateInstallment(Request $request, Installment $installment)
@@ -295,18 +304,27 @@ class BudgetController extends Controller
 
         $installment->update($data);
 
-        return redirect()->route('portfolio.budget.index', ['month' => $installment->month])
-            ->with('status', __('app.portfolio.budget.installment_updated'));
+        return $this->redirectAfterAction($installment->month, __('app.portfolio.budget.installment_updated'));
     }
 
-    public function destroyInstallment(Installment $installment)
+    public function destroyInstallment(Request $request, Installment $installment)
     {
         $this->authorizeInstallment($installment);
         $month = $installment->month;
-        $installment->delete();
 
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', __('app.portfolio.budget.installment_deleted'));
+        if ($request->input('redirect_to') === 'debts') {
+            // The /debts page collapses an installment to one row per label
+            // (newest month shown). Installments are stored per-month, so a
+            // single delete leaves older months behind and the row reappears.
+            // Deleting the whole label removes the installment everywhere.
+            Installment::forUser($installment->user_id)
+                ->where('label', $installment->label)
+                ->delete();
+        } else {
+            $installment->delete();
+        }
+
+        return $this->redirectAfterAction($month, __('app.portfolio.budget.installment_deleted'));
     }
 
     public function storeSubscription(Request $request)
@@ -405,8 +423,7 @@ class BudgetController extends Controller
         Debt::create($data);
 
         $month = $request->input('month', date('Y-m'));
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'เพิ่มรายการหนี้เรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'เพิ่มรายการหนี้เรียบร้อยแล้ว');
     }
 
     public function updateDebt(Request $request, Debt $debt)
@@ -423,8 +440,7 @@ class BudgetController extends Controller
         $debt->update($data);
 
         $month = $request->input('month', date('Y-m'));
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'อัปเดตข้อมูลหนี้เรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'อัปเดตข้อมูลหนี้เรียบร้อยแล้ว');
     }
 
     public function destroyDebt(Debt $debt)
@@ -433,8 +449,7 @@ class BudgetController extends Controller
         $month = request()->input('month', date('Y-m'));
         $debt->delete();
 
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'ลบรายการหนี้เรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'ลบรายการหนี้เรียบร้อยแล้ว');
     }
 
     public function storeDebtPayment(Request $request)
@@ -455,8 +470,8 @@ class BudgetController extends Controller
             ['amount' => $data['amount'], 'notes' => $data['notes'] ?? null]
         );
 
-        return redirect()->route('portfolio.budget.index', ['month' => $request->input('redirect_month', $data['month'])])
-            ->with('status', 'เพิ่มงวดชำระเรียบร้อยแล้ว');
+        $month = $request->input('redirect_month', $data['month']);
+        return $this->redirectAfterAction($month, 'เพิ่มงวดชำระเรียบร้อยแล้ว');
     }
 
     public function updateDebtPayment(Request $request, DebtPayment $payment)
@@ -464,15 +479,26 @@ class BudgetController extends Controller
         $this->authorizeDebtPayment($payment);
 
         $data = $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'notes'  => 'nullable|string|max:1000',
+            'amount'    => 'required|numeric|min:0',
+            'notes'     => 'nullable|string|max:1000',
+            'due_month' => 'nullable|string|regex:/^\d{4}-\d{2}$/',
         ]);
 
-        $payment->update($data);
+        $payment->amount = $data['amount'];
+        $payment->notes  = $data['notes'] ?? null;
+        if (!empty($data['due_month'])) {
+            $payment->month = $data['due_month']; // กยศ: editable งวด due month
+        }
+        // กยศ-style งวด (tracked via logged payments) derive is_paid from how
+        // much has been logged, so re-evaluate after the target changes. Fixed
+        // schedule rows have paid_amount = 0 and keep their toggled flag.
+        if ((float) $payment->paid_amount > 0) {
+            $payment->is_paid = (float) $payment->paid_amount >= (float) $payment->amount;
+        }
+        $payment->save();
 
         $month = $request->input('month', $payment->month);
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'อัปเดตงวดชำระเรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'อัปเดตงวดชำระเรียบร้อยแล้ว');
     }
 
     public function destroyDebtPayment(DebtPayment $payment)
@@ -481,8 +507,7 @@ class BudgetController extends Controller
         $month = request()->input('month', $payment->month);
         $payment->delete();
 
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'ลบงวดชำระเรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'ลบงวดชำระเรียบร้อยแล้ว');
     }
 
     /** Record one real payment toward a per-งวด target (กยศ-style). */
@@ -511,8 +536,7 @@ class BudgetController extends Controller
         $this->recalcDebtPayment($payment);
 
         $month = $request->input('redirect_month', date('Y-m'));
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'บันทึกการจ่ายเรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'บันทึกการจ่ายเรียบร้อยแล้ว');
     }
 
     public function destroyDebtPaymentLog(DebtPaymentLog $log)
@@ -527,8 +551,7 @@ class BudgetController extends Controller
             $this->recalcDebtPayment($payment);
         }
 
-        return redirect()->route('portfolio.budget.index', ['month' => $month])
-            ->with('status', 'ลบรายการจ่ายเรียบร้อยแล้ว');
+        return $this->redirectAfterAction($month, 'ลบรายการจ่ายเรียบร้อยแล้ว');
     }
 
     public function resetMonth(Request $request)
@@ -775,6 +798,12 @@ class BudgetController extends Controller
         $actualDebtPaymentsSum = (float) $debts->sum(
             fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
         );
+        $nonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyAmount($d, $activeMonth));
+        $actualNonKoyosoDebtPaymentsSum = (float) $debts
+            ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -809,6 +838,8 @@ class BudgetController extends Controller
             'actualInstallments' => $actualInstallmentsPaymentSum,
             'actualSubscriptions' => $actualSubscriptionsPaymentSum,
             'actualDebts' => $actualDebtPaymentsSum,
+            'plannedNonKoyosoDebts' => $nonKoyosoDebtPaymentsSum,
+            'actualNonKoyosoDebts' => $actualNonKoyosoDebtPaymentsSum,
         ];
     }
 
@@ -864,6 +895,14 @@ class BudgetController extends Controller
                 $holding->recalculateFromTransactions($prices);
             }
         }
+    }
+
+    private function redirectAfterAction(string $month, string $msg)
+    {
+        if (request()->input('redirect_to') === 'debts') {
+            return redirect()->route('portfolio.debts.index')->with('status', $msg);
+        }
+        return redirect()->route('portfolio.budget.index', ['month' => $month])->with('status', $msg);
     }
 
     private function resolvePortfolioUserId(): int

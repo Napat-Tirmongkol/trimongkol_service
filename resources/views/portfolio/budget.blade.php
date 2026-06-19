@@ -43,7 +43,9 @@
             actualFixedItem: {{ $actualFixedBudgetItemSum }},
             actualInstallments: {{ $actualInstallmentsPaymentSum }},
             actualSubscriptions: {{ $actualSubscriptionsPaymentSum }},
-            actualDebts: {{ $actualDebtPaymentsSum }}
+            actualDebts: {{ $actualDebtPaymentsSum }},
+            plannedNonKoyosoDebts: {{ $nonKoyosoDebtPaymentsSum }},
+            actualNonKoyosoDebts: {{ $actualNonKoyosoDebtPaymentsSum }}
         },
         chartType: 'planned',
         fmtMoney(val) {
@@ -1334,6 +1336,14 @@
                             </div>
                         @endif
 
+                        {{-- Total monthly installments + non-กยศ debts --}}
+                        <div class="flex justify-between border-t border-slate-200 pt-3 text-sm font-bold text-slate-900">
+                            <span>รวมผ่อนต่อเดือน (ใช้จริง / งบ)</span>
+                            <span>
+                                <span x-text="'฿' + fmtMoney(parseFloat(totals.actualInstallments || 0) + parseFloat(totals.actualNonKoyosoDebts || 0))">฿{{ $fmtMoney($actualInstallmentsPaymentSum + $actualNonKoyosoDebtPaymentsSum) }}</span>
+                                <span class="text-xs font-normal text-slate-500">/ ฿{{ $fmtMoney($installmentsPaymentSum + $nonKoyosoDebtPaymentsSum) }}</span>
+                            </span>
+                        </div>
                     </div>
 
                     {{-- 3.2 SUBSCRIPTIONS --}}

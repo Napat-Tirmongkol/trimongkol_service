@@ -45,16 +45,16 @@ class LedgerController extends Controller
         $byDate = $entries->groupBy(fn ($e) => $e->date->format('Y-m-d'));
 
         // Load budget items for the dropdown.
-        // Try the active month first; if that month has no items (e.g. viewing
-        // a future month or a month where no budget was ever set up), fall back
-        // to the most recent month that does have items.
+        // Try the active month first; if that month has no items, fall back to
+        // the most recent month at or before it that does have items (never a
+        // future month, even if one happens to have budget items set up).
         $budgetItems       = collect();
         $budgetItemMonth   = null;
         if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_budget_items')) {
             $hasActive = BudgetItem::query()->forUser($userId)->where('month', $activeMonth)->exists();
             $budgetItemMonth = $hasActive
                 ? $activeMonth
-                : BudgetItem::query()->forUser($userId)->orderBy('month', 'desc')->value('month');
+                : BudgetItem::query()->forUser($userId)->where('month', '<=', $activeMonth)->orderBy('month', 'desc')->value('month');
 
             if ($budgetItemMonth) {
                 $budgetItems = BudgetItem::query()
