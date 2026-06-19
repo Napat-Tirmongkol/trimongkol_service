@@ -464,11 +464,23 @@ class BudgetController extends Controller
         $this->authorizeDebtPayment($payment);
 
         $data = $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'notes'  => 'nullable|string|max:1000',
+            'amount'    => 'required|numeric|min:0',
+            'notes'     => 'nullable|string|max:1000',
+            'due_month' => 'nullable|string|regex:/^\d{4}-\d{2}$/',
         ]);
 
-        $payment->update($data);
+        $payment->amount = $data['amount'];
+        $payment->notes  = $data['notes'] ?? null;
+        if (!empty($data['due_month'])) {
+            $payment->month = $data['due_month']; // กยศ: editable งวด due month
+        }
+        // กยศ-style งวด (tracked via logged payments) derive is_paid from how
+        // much has been logged, so re-evaluate after the target changes. Fixed
+        // schedule rows have paid_amount = 0 and keep their toggled flag.
+        if ((float) $payment->paid_amount > 0) {
+            $payment->is_paid = (float) $payment->paid_amount >= (float) $payment->amount;
+        }
+        $payment->save();
 
         $month = $request->input('month', $payment->month);
         return redirect()->route('portfolio.budget.index', ['month' => $month])
