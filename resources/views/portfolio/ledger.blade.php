@@ -115,64 +115,65 @@ document.addEventListener('alpine:init', () => {
     }));
 
     // กราฟเส้นแนวโน้มรายเดือน (cumulative ต่อวัน) — filter ตามหมวดงบ (budget_item_id)
-    Alpine.data('ledgerChart', (cfg) => ({
-        filter: 'all',
-        chart: null,
-        cfg,
-        init() {
-            const boot = () => window.Chart ? this.draw() : setTimeout(boot, 40);
-            this.$nextTick(boot);
-        },
-        xlabels() { return Array.from({ length: this.cfg.days }, (_, i) => i + 1); },
-        cumulative(match) {
-            const arr = new Array(this.cfg.days).fill(0);
-            this.cfg.entries.forEach(e => { if (match(e)) arr[e.d - 1] += e.amt; });
+    // สำคัญ: เก็บ instance ของ Chart ไว้นอก reactive state ของ Alpine (closure var)
+    // ถ้าเก็บใน this.chart Alpine จะ proxy ทั้งก้อน → recursion จน stack overflow + Chart.js พัง
+    Alpine.data('ledgerChart', (cfg) => {
+        let chart = null;
+        const xlabels = () => Array.from({ length: cfg.days }, (_, i) => i + 1);
+        const cumulative = (match) => {
+            const arr = new Array(cfg.days).fill(0);
+            cfg.entries.forEach(e => { if (match(e)) arr[e.d - 1] += e.amt; });
             let run = 0;
             return arr.map(v => Math.round((run += v) * 100) / 100);
-        },
-        line(label, data, color, opts = {}) {
-            return Object.assign({
-                label, data, borderColor: color, backgroundColor: color + '22',
-                borderWidth: 2.5, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, fill: false,
-            }, opts);
-        },
-        datasets() {
-            if (this.filter === 'all') {
+        };
+        const line = (label, data, color, opts = {}) => Object.assign({
+            label, data, borderColor: color, backgroundColor: color + '22',
+            borderWidth: 2.5, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, fill: false,
+        }, opts);
+        const datasets = (filter) => {
+            if (filter === 'all') {
                 return [
-                    this.line(this.cfg.labels.income,  this.cumulative(e => e.type === 'income'),  '#35ed7e'),
-                    this.line(this.cfg.labels.expense, this.cumulative(e => e.type === 'expense'), '#ff7088'),
+                    line(cfg.labels.income,  cumulative(e => e.type === 'income'),  '#35ed7e'),
+                    line(cfg.labels.expense, cumulative(e => e.type === 'expense'), '#ff7088'),
                 ];
             }
-            const bid = parseInt(this.filter, 10);
-            const ds = [ this.line(this.cfg.labels.expense, this.cumulative(e => e.type === 'expense' && e.bid === bid), '#5865f2', { fill: true }) ];
-            const planned = this.cfg.planned[bid];
-            if (planned) ds.push(this.line(this.cfg.labels.budget, new Array(this.cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
+            const bid = parseInt(filter, 10);
+            const ds = [ line(cfg.labels.expense, cumulative(e => e.type === 'expense' && e.bid === bid), '#5865f2', { fill: true }) ];
+            const planned = cfg.planned[bid];
+            if (planned) ds.push(line(cfg.labels.budget, new Array(cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
             return ds;
-        },
-        draw() {
-            this.chart = new Chart(this.$refs.canvas, {
-                type: 'line',
-                data: { labels: this.xlabels(), datasets: this.datasets() },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { labels: { color: '#cdd2f5', usePointStyle: true, boxWidth: 8 } },
-                        tooltip: { callbacks: { label: (c) => c.dataset.label + ': ฿' + c.parsed.y.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) } },
+        };
+        return {
+            filter: 'all',
+            init() {
+                const boot = () => window.Chart ? this.draw() : setTimeout(boot, 40);
+                this.$nextTick(boot);
+            },
+            draw() {
+                chart = new Chart(this.$refs.canvas, {
+                    type: 'line',
+                    data: { labels: xlabels(), datasets: datasets(this.filter) },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#cdd2f5', usePointStyle: true, boxWidth: 8 } },
+                            tooltip: { callbacks: { label: (c) => c.dataset.label + ': ฿' + c.parsed.y.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) } },
+                        },
+                        scales: {
+                            x: { ticks: { color: '#9aa2d8', maxTicksLimit: 12 }, grid: { color: 'rgba(155,162,216,.12)' } },
+                            y: { beginAtZero: true, ticks: { color: '#9aa2d8', callback: (v) => '฿' + v.toLocaleString('th-TH') }, grid: { color: 'rgba(155,162,216,.12)' } },
+                        },
                     },
-                    scales: {
-                        x: { ticks: { color: '#9aa2d8', maxTicksLimit: 12 }, grid: { color: 'rgba(155,162,216,.12)' } },
-                        y: { beginAtZero: true, ticks: { color: '#9aa2d8', callback: (v) => '฿' + v.toLocaleString('th-TH') }, grid: { color: 'rgba(155,162,216,.12)' } },
-                    },
-                },
-            });
-        },
-        refresh() {
-            if (!this.chart) return;
-            this.chart.data.datasets = this.datasets();
-            this.chart.update();
-        },
-    }));
+                });
+            },
+            refresh() {
+                if (!chart) return;
+                chart.data.datasets = datasets(this.filter);
+                chart.update();
+            },
+        };
+    });
 });
 </script>
 
