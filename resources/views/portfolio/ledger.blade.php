@@ -113,8 +113,71 @@ document.addEventListener('alpine:init', () => {
             if (k === '/') { e.preventDefault(); this.co('÷'); }
         },
     }));
+
+    // กราฟเส้นแนวโน้มรายเดือน (cumulative ต่อวัน) — filter ตามหมวดงบ (budget_item_id)
+    Alpine.data('ledgerChart', (cfg) => ({
+        filter: 'all',
+        chart: null,
+        cfg,
+        init() {
+            const boot = () => window.Chart ? this.draw() : setTimeout(boot, 40);
+            this.$nextTick(boot);
+        },
+        xlabels() { return Array.from({ length: this.cfg.days }, (_, i) => i + 1); },
+        cumulative(match) {
+            const arr = new Array(this.cfg.days).fill(0);
+            this.cfg.entries.forEach(e => { if (match(e)) arr[e.d - 1] += e.amt; });
+            let run = 0;
+            return arr.map(v => Math.round((run += v) * 100) / 100);
+        },
+        line(label, data, color, opts = {}) {
+            return Object.assign({
+                label, data, borderColor: color, backgroundColor: color + '22',
+                borderWidth: 2.5, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, fill: false,
+            }, opts);
+        },
+        datasets() {
+            if (this.filter === 'all') {
+                return [
+                    this.line(this.cfg.labels.income,  this.cumulative(e => e.type === 'income'),  '#35ed7e'),
+                    this.line(this.cfg.labels.expense, this.cumulative(e => e.type === 'expense'), '#ff7088'),
+                ];
+            }
+            const bid = parseInt(this.filter, 10);
+            const ds = [ this.line(this.cfg.labels.expense, this.cumulative(e => e.type === 'expense' && e.bid === bid), '#5865f2', { fill: true }) ];
+            const planned = this.cfg.planned[bid];
+            if (planned) ds.push(this.line(this.cfg.labels.budget, new Array(this.cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
+            return ds;
+        },
+        draw() {
+            this.chart = new Chart(this.$refs.canvas, {
+                type: 'line',
+                data: { labels: this.xlabels(), datasets: this.datasets() },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#cdd2f5', usePointStyle: true, boxWidth: 8 } },
+                        tooltip: { callbacks: { label: (c) => c.dataset.label + ': ฿' + c.parsed.y.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) } },
+                    },
+                    scales: {
+                        x: { ticks: { color: '#9aa2d8', maxTicksLimit: 12 }, grid: { color: 'rgba(155,162,216,.12)' } },
+                        y: { beginAtZero: true, ticks: { color: '#9aa2d8', callback: (v) => '฿' + v.toLocaleString('th-TH') }, grid: { color: 'rgba(155,162,216,.12)' } },
+                    },
+                },
+            });
+        },
+        refresh() {
+            if (!this.chart) return;
+            this.chart.data.datasets = this.datasets();
+            this.chart.update();
+        },
+    }));
 });
 </script>
+
+{{-- Chart.js (CDN ตาม pattern เดิมของโปรเจกต์) — ใช้กับกราฟแนวโน้มในหน้านี้เท่านั้น --}}
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
 @php
     $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -185,6 +248,44 @@ document.addEventListener('alpine:init', () => {
             </div>
         </div>
     </div>
+
+    {{-- กราฟเส้นแนวโน้ม (cumulative ต่อวัน) — ดูตามหมวดงบได้ (filter ตาม budget item) --}}
+    @if ($entries->isNotEmpty())
+        <script>
+            window.__ledgerChart = {
+                days: {{ $daysInMonth }},
+                entries: @json($chartEntries),
+                planned: @json($chartPlanned),
+                labels: {
+                    income:  @json(__('app.portfolio.ledger.chart_income')),
+                    expense: @json(__('app.portfolio.ledger.chart_expense')),
+                    budget:  @json(__('app.portfolio.ledger.chart_budget')),
+                },
+            };
+        </script>
+        <div class="mb-6 rounded-xl border bg-white p-4 shadow-sm sm:p-5" x-data="ledgerChart(window.__ledgerChart)">
+            <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-sm font-semibold" :class="dark ? 'text-slate-200' : 'text-slate-700'">
+                    {{ __('app.portfolio.ledger.chart_heading') }}
+                </h2>
+                <select x-model="filter" @change="refresh()"
+                        class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
+                    <option value="all">{{ __('app.portfolio.ledger.chart_all') }}</option>
+                    @foreach ($budgetItems->groupBy('category') as $cat => $items)
+                        <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
+                            @foreach ($items as $item)
+                                <option value="{{ $item->id }}">{{ $item->label }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            </div>
+            <div style="position:relative;height:260px">
+                <canvas x-ref="canvas"></canvas>
+            </div>
+        </div>
+    @endif
 
     {{-- Add entry panel --}}
     <div x-data="{ open: false, newType: 'expense' }" class="mb-6">
