@@ -400,6 +400,8 @@
         }
     </style>
 
+    @include('portfolio.partials.discord-theme')
+
     <script>
         // Restore theme before paint to prevent flash
         (function(){
@@ -409,7 +411,7 @@
         })();
     </script>
 </head>
-<body x-data="{
+<body class="portfolio-discord" x-data="{
         dark: localStorage.getItem('portfolio_dark') !== '0',
         toggle() {
             this.dark = !this.dark;
@@ -452,7 +454,7 @@
                     <div class="flex items-center gap-3">
                         {{-- Dark Mode Toggle --}}
                         <button @click="toggle()" type="button"
-                                class="relative flex h-8 w-8 items-center justify-center rounded-full transition"
+                                class="discord-hide relative flex h-8 w-8 items-center justify-center rounded-full transition"
                                 :class="dark ? 'text-amber-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'"
                                 :title="dark ? 'เปลี่ยนเป็น Light Mode' : 'เปลี่ยนเป็น Dark Mode'">
                             {{-- Sun icon (shown in dark mode → click to go light) --}}
