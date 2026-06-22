@@ -2087,6 +2087,15 @@ return [
             'debts'         => 'Debt Overview',
             'subscriptions' => 'Subscriptions',
         ],
+        // Short labels for the mobile bottom nav (limited width)
+        'nav_short' => [
+            'dashboard'     => 'Home',
+            'budget'        => 'Budget',
+            'planner'       => 'Invest',
+            'ledger'        => 'Ledger',
+            'debts'         => 'Debts',
+            'subscriptions' => 'Subs',
+        ],
         'planner' => [
             'heading' => 'Future Investment Planner',
             'subheading' => 'Simulate portfolios, calculate DCA growth, track financial goals, and analyze returns',

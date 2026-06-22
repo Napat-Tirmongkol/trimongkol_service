@@ -426,6 +426,17 @@
 >
     <div class="min-h-screen flex flex-col">
         @auth
+            @php
+                // เมนู portfolio ชุดเดียว ใช้ทั้งแท็บบน(จอใหญ่) และแถบล่าง (มือถือ)
+                $portfolioNav = [
+                    ['href' => route('portfolio.dashboard'),            'match' => 'portfolio.dashboard',       'label' => __('app.portfolio.nav.dashboard'),     'short' => __('app.portfolio.nav_short.dashboard'),     'icon' => 'home'],
+                    ['href' => route('portfolio.budget.index'),         'match' => 'portfolio.budget.*',        'label' => __('app.portfolio.nav.budget'),        'short' => __('app.portfolio.nav_short.budget'),        'icon' => 'wallet'],
+                    ['href' => route('portfolio.planner'),              'match' => 'portfolio.planner',         'label' => __('app.portfolio.nav.planner'),       'short' => __('app.portfolio.nav_short.planner'),       'icon' => 'trending-up'],
+                    ['href' => route('portfolio.ledger.index'),         'match' => 'portfolio.ledger.*',        'label' => __('app.portfolio.nav.ledger'),        'short' => __('app.portfolio.nav_short.ledger'),        'icon' => 'book'],
+                    ['href' => route('portfolio.debts.index'),          'match' => 'portfolio.debts.*',         'label' => __('app.portfolio.nav.debts'),         'short' => __('app.portfolio.nav_short.debts'),         'icon' => 'card'],
+                    ['href' => route('portfolio.subscriptions.index'),  'match' => 'portfolio.subscriptions.*', 'label' => __('app.portfolio.nav.subscriptions'), 'short' => __('app.portfolio.nav_short.subscriptions'), 'icon' => 'repeat'],
+                ];
+            @endphp
             <header :class="dark
                 ? 'border-b border-slate-800 bg-[#121418]/90 backdrop-blur'
                 : 'border-b border-slate-200 bg-white'">
@@ -478,43 +489,50 @@
                         </form>
                     </div>
                 </div>
-                <div :class="dark
+                <div class="hidden sm:block" :class="dark
                     ? 'border-t border-slate-800 bg-[#0b0c0e]/50'
                     : 'border-t border-slate-200 bg-slate-50/50'">
                     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                            <a href="{{ route('portfolio.dashboard') }}" 
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.dashboard') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.dashboard') }}
-                            </a>
-                            <a href="{{ route('portfolio.budget.index') }}" 
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.budget.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.budget') }}
-                            </a>
-                            <a href="{{ route('portfolio.planner') }}"
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.planner') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.planner') }}
-                            </a>
-                            <a href="{{ route('portfolio.ledger.index') }}"
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.ledger.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.ledger') }}
-                            </a>
-                            <a href="{{ route('portfolio.debts.index') }}"
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.debts.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.debts') }}
-                            </a>
-                            <a href="{{ route('portfolio.subscriptions.index') }}"
-                               class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs('portfolio.subscriptions.*') ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
-                                {{ __('app.portfolio.nav.subscriptions') }}
-                            </a>
+                            @foreach ($portfolioNav as $item)
+                                <a href="{{ $item['href'] }}"
+                                   class="border-b-2 px-1 py-3 text-sm font-medium transition {{ request()->routeIs($item['match']) ? 'border-brand-600 text-brand-600 font-semibold' : 'border-transparent text-slate-500 hover:border-slate-600 hover:text-slate-300' }}">
+                                    {{ $item['label'] }}
+                                </a>
+                            @endforeach
                         </nav>
                     </div>
                 </div>
             </header>
+
+            {{-- แถบเมนูล่าง (เฉพาะมือถือ) — สี dark/light จัดการโดย .portfolio-dark CSS อัตโนมัติ --}}
+            <nav class="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white sm:hidden"
+                 style="padding-bottom: env(safe-area-inset-bottom);"
+                 aria-label="{{ __('app.portfolio.heading') }}">
+                <div class="flex">
+                    @foreach ($portfolioNav as $item)
+                        @php $isActive = request()->routeIs($item['match']); @endphp
+                        <a href="{{ $item['href'] }}"
+                           @class([
+                               'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition',
+                               'text-brand-600' => $isActive,
+                               'text-slate-500' => ! $isActive,
+                           ])
+                           @if ($isActive) aria-current="page" @endif>
+                            @include('portfolio.partials.nav-icon', ['icon' => $item['icon'], 'class' => 'h-6 w-6'])
+                            <span class="max-w-full truncate">{{ $item['short'] }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </nav>
         @endauth
 
         <main class="flex-1">
             {{ $slot }}
+            @auth
+                {{-- เว้นที่ให้แถบเมนูล่าง (มือถือ) ไม่ทับเนื้อหา — รวม safe-area ของ iPhone --}}
+                <div class="sm:hidden" aria-hidden="true" style="height: calc(3.75rem + env(safe-area-inset-bottom));"></div>
+            @endauth
         </main>
     </div>
 
