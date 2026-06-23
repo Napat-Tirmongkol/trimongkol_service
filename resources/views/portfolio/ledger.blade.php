@@ -120,39 +120,60 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('ledgerChart', (cfg) => {
         let chart = null;
         const xlabels = () => Array.from({ length: cfg.days }, (_, i) => i + 1);
-        const cumulative = (match) => {
+        // ยอด "รายวัน" ต่อวัน (ไม่สะสม)
+        const perDay = (match) => {
             const arr = new Array(cfg.days).fill(0);
             cfg.entries.forEach(e => { if (match(e)) arr[e.d - 1] += e.amt; });
-            let run = 0;
-            return arr.map(v => Math.round((run += v) * 100) / 100);
+            return arr.map(v => Math.round(v * 100) / 100);
         };
-        const line = (label, data, color, opts = {}) => Object.assign({
+        // ยอด "สะสม" (running total)
+        const cumulative = (match) => {
+            let run = 0;
+            return perDay(match).map(v => Math.round((run += v) * 100) / 100);
+        };
+        const lineDs = (label, data, color, opts = {}) => Object.assign({
             label, data, borderColor: color, backgroundColor: color + '22',
             borderWidth: 2.5, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, fill: false,
         }, opts);
-        const datasets = (filter) => {
+        const barDs = (label, data, color) => ({
+            label, data, backgroundColor: color + 'cc', borderColor: color,
+            borderWidth: 0, borderRadius: 4, maxBarThickness: 22,
+        });
+        const datasets = (filter, mode) => {
+            const daily = mode === 'daily';
+            const series = daily ? perDay : cumulative;
             if (filter === 'all') {
-                return [
-                    line(cfg.labels.income,  cumulative(e => e.type === 'income'),  '#35ed7e'),
-                    line(cfg.labels.expense, cumulative(e => e.type === 'expense'), '#ff7088'),
-                ];
+                const inc = series(e => e.type === 'income');
+                const exp = series(e => e.type === 'expense');
+                return daily
+                    ? [ barDs(cfg.labels.income, inc, '#35ed7e'), barDs(cfg.labels.expense, exp, '#ff7088') ]
+                    : [ lineDs(cfg.labels.income, inc, '#35ed7e'), lineDs(cfg.labels.expense, exp, '#ff7088') ];
             }
             const bid = parseInt(filter, 10);
-            const ds = [ line(cfg.labels.expense, cumulative(e => e.type === 'expense' && e.bid === bid), '#5865f2', { fill: true }) ];
+            const exp = series(e => e.type === 'expense' && e.bid === bid);
+            const ds = [ daily ? barDs(cfg.labels.expense, exp, '#5865f2') : lineDs(cfg.labels.expense, exp, '#5865f2', { fill: true }) ];
             const planned = cfg.planned[bid];
-            if (planned) ds.push(line(cfg.labels.budget, new Array(cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
+            if (planned) {
+                if (daily) {
+                    const avg = Math.round((planned / cfg.days) * 100) / 100;
+                    ds.push(Object.assign(lineDs(cfg.labels.budgetDaily, new Array(cfg.days).fill(avg), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }), { type: 'line' }));
+                } else {
+                    ds.push(lineDs(cfg.labels.budget, new Array(cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
+                }
+            }
             return ds;
         };
         return {
             filter: 'all',
+            mode: 'cumulative',
             init() {
                 const boot = () => window.Chart ? this.draw() : setTimeout(boot, 40);
                 this.$nextTick(boot);
             },
             draw() {
                 chart = new Chart(this.$refs.canvas, {
-                    type: 'line',
-                    data: { labels: xlabels(), datasets: datasets(this.filter) },
+                    type: this.mode === 'daily' ? 'bar' : 'line',
+                    data: { labels: xlabels(), datasets: datasets(this.filter, this.mode) },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
@@ -167,10 +188,10 @@ document.addEventListener('alpine:init', () => {
                     },
                 });
             },
+            // เปลี่ยนโหมด = เปลี่ยนชนิดกราฟ (line↔bar) ต้อง destroy แล้วสร้างใหม่
             refresh() {
-                if (!chart) return;
-                chart.data.datasets = datasets(this.filter);
-                chart.update();
+                if (chart) { chart.destroy(); chart = null; }
+                this.draw();
             },
         };
     });
@@ -261,6 +282,7 @@ document.addEventListener('alpine:init', () => {
                     income:  @json(__('app.portfolio.ledger.chart_income')),
                     expense: @json(__('app.portfolio.ledger.chart_expense')),
                     budget:  @json(__('app.portfolio.ledger.chart_budget')),
+                    budgetDaily: @json(__('app.portfolio.ledger.chart_budget_daily')),
                 },
             };
         </script>
@@ -269,18 +291,26 @@ document.addEventListener('alpine:init', () => {
                 <h2 class="text-sm font-semibold" :class="dark ? 'text-slate-200' : 'text-slate-700'">
                     {{ __('app.portfolio.ledger.chart_heading') }}
                 </h2>
-                <select x-model="filter" @change="refresh()"
-                        class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
-                    <option value="all">{{ __('app.portfolio.ledger.chart_all') }}</option>
-                    @foreach ($budgetItems->groupBy('category') as $cat => $items)
-                        <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
-                            @foreach ($items as $item)
-                                <option value="{{ $item->id }}">{{ $item->label }}</option>
-                            @endforeach
-                        </optgroup>
-                    @endforeach
-                </select>
+                <div class="flex flex-wrap gap-2">
+                    <select x-model="mode" @change="refresh()"
+                            class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
+                        <option value="cumulative">{{ __('app.portfolio.ledger.chart_cumulative') }}</option>
+                        <option value="daily">{{ __('app.portfolio.ledger.chart_daily') }}</option>
+                    </select>
+                    <select x-model="filter" @change="refresh()"
+                            class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
+                        <option value="all">{{ __('app.portfolio.ledger.chart_all') }}</option>
+                        @foreach ($budgetItems->groupBy('category') as $cat => $items)
+                            <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
+                                @foreach ($items as $item)
+                                    <option value="{{ $item->id }}">{{ $item->label }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                </div>
             </div>
             <div style="position:relative;height:260px">
                 <canvas x-ref="canvas"></canvas>
