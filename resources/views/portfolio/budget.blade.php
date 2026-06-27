@@ -1063,6 +1063,14 @@
                                             </div>
                                         </div>
 
+                                        @php $insLedgerActual = (float) ($installmentLedger[$inst->label] ?? 0); @endphp
+                                        @if($insLedgerActual > 0)
+                                            <div class="flex items-center gap-1 text-[10px] font-semibold text-blue-600">
+                                                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                <span title="ดึงจากรายรับรายจ่ายอัตโนมัติ">ใช้จริง: ฿{{ $fmtMoney($insLedgerActual) }}</span>
+                                            </div>
+                                        @endif
+
                                         @if($inst->notes)
                                             <p class="text-[10px] text-slate-500 bg-white border border-slate-100 p-1.5 rounded">{{ $inst->notes }}</p>
                                         @endif
@@ -1480,6 +1488,10 @@
                                             <div class="flex flex-col text-[10px] text-slate-500 mt-0.5">
                                                 @if($sub->billing_day)
                                                     <span>ตัดเงินทุกวันที่ {{ $sub->billing_day }} ของเดือน</span>
+                                                @endif
+                                                @php $subLedgerActual = (float) ($subscriptionLedger[$sub->label] ?? 0); @endphp
+                                                @if($subLedgerActual > 0)
+                                                    <span class="font-semibold text-blue-600" title="ดึงจากรายรับรายจ่ายอัตโนมัติ">ใช้จริง: ฿{{ $fmtMoney($subLedgerActual) }}</span>
                                                 @endif
                                                 @if($sub->notes)
                                                     <span class="text-slate-400 truncate">{{ $sub->notes }}</span>
