@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Portfolio;
 
 use App\Http\Controllers\Controller;
 use App\Models\Portfolio\BudgetItem;
+use App\Models\Portfolio\Debt;
 use App\Models\Portfolio\Income;
 use App\Models\Portfolio\Installment;
 use App\Models\Portfolio\LedgerEntry;
+use App\Models\Portfolio\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -36,7 +38,7 @@ class LedgerController extends Controller
         $entries = LedgerEntry::query()
             ->forUser($userId)
             ->where('month', $activeMonth)
-            ->with(['budgetItem', 'installment', 'income'])
+            ->with(['budgetItem', 'installment', 'income', 'subscription', 'debt'])
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
             ->get();
@@ -94,6 +96,25 @@ class LedgerController extends Controller
             }
         }
 
+        // ── Subscriptions for dropdown (newest record per label) ──────────
+        $subscriptions = collect();
+        if (Schema::hasTable('portfolio_subscriptions')) {
+            $subscriptions = Subscription::forUser($userId)
+                ->orderBy('month', 'desc')
+                ->get()
+                ->unique('label')
+                ->sortBy('label')
+                ->values();
+        }
+
+        // ── Debts for dropdown (persistent — กยศ ฯลฯ) ─────────────────────
+        $debtItems = collect();
+        if (Schema::hasTable('portfolio_debts')) {
+            $debtItems = Debt::forUser($userId)
+                ->orderBy('label')
+                ->get();
+        }
+
         // ── Line-chart data (cumulative ต่อวัน, คำนวณฝั่ง client) ──
         // เชื่อมหมวดงบผ่าน budget_item_id ที่มีอยู่แล้ว — ไม่ต้องเพิ่มคอลัมน์
         $daysInMonth  = \Illuminate\Support\Carbon::parse($activeMonth . '-01')->daysInMonth;
@@ -109,7 +130,7 @@ class LedgerController extends Controller
             'allMonths', 'activeMonth', 'entries', 'byDate',
             'totalIncome', 'totalExpense', 'net',
             'budgetItems', 'budgetItemMonth',
-            'installments', 'incomeItems',
+            'installments', 'incomeItems', 'subscriptions', 'debtItems',
             'daysInMonth', 'chartEntries', 'chartPlanned'
         ));
     }
@@ -127,16 +148,12 @@ class LedgerController extends Controller
             'notes'       => 'nullable|string|max:1000',
         ]);
 
-        [$budgetItemId, $installmentId, $incomeId] = $this->resolveBudgetLink(
-            $data['budget_link'] ?? '', $userId
-        );
+        $links = $this->resolveBudgetLink($data['budget_link'] ?? '', $userId);
 
         unset($data['budget_link']);
-        $data['budget_item_id'] = $budgetItemId;
-        $data['installment_id'] = $installmentId;
-        $data['income_id']      = $incomeId;
-        $data['user_id']        = $userId;
-        $data['month']          = substr($data['date'], 0, 7);
+        $data = array_merge($data, $links);
+        $data['user_id'] = $userId;
+        $data['month']   = substr($data['date'], 0, 7);
 
         $entry = LedgerEntry::create($data);
 
@@ -164,15 +181,11 @@ class LedgerController extends Controller
 
         $oldBudgetItemId = $entry->budget_item_id;
 
-        [$budgetItemId, $installmentId, $incomeId] = $this->resolveBudgetLink(
-            $data['budget_link'] ?? '', $userId
-        );
+        $links = $this->resolveBudgetLink($data['budget_link'] ?? '', $userId);
 
         unset($data['budget_link']);
-        $data['budget_item_id'] = $budgetItemId;
-        $data['installment_id'] = $installmentId;
-        $data['income_id']      = $incomeId;
-        $data['month']          = substr($data['date'], 0, 7);
+        $data = array_merge($data, $links);
+        $data['month'] = substr($data['date'], 0, 7);
 
         $entry->update($data);
 
@@ -202,35 +215,45 @@ class LedgerController extends Controller
             ->with('status', __('app.portfolio.ledger.entry_deleted'));
     }
 
-    // Decode "b:5", "i:3", "in:2" into [budget_item_id, installment_id, income_id]
+    // Decode an encoded link ("b:5" / "i:3" / "in:2" / "s:4" / "d:1") into the
+    // matching FK column. Returns all five columns (only one is ever non-null).
     private function resolveBudgetLink(string $link, int $userId): array
     {
-        $budgetItemId = null;
-        $installmentId = null;
-        $incomeId = null;
+        $cols = [
+            'budget_item_id'  => null,
+            'installment_id'  => null,
+            'income_id'       => null,
+            'subscription_id' => null,
+            'debt_id'         => null,
+        ];
 
         if ($link === '' || $link === '0') {
-            return [$budgetItemId, $installmentId, $incomeId];
+            return $cols;
         }
 
-        if (str_starts_with($link, 'b:')) {
-            $id = (int) substr($link, 2);
-            if ($id && BudgetItem::where('id', $id)->where('user_id', $userId)->exists()) {
-                $budgetItemId = $id;
-            }
-        } elseif (str_starts_with($link, 'i:')) {
-            $id = (int) substr($link, 2);
-            if ($id && Installment::where('id', $id)->where('user_id', $userId)->exists()) {
-                $installmentId = $id;
-            }
-        } elseif (str_starts_with($link, 'in:')) {
-            $id = (int) substr($link, 3);
-            if ($id && Income::where('id', $id)->where('user_id', $userId)->exists()) {
-                $incomeId = $id;
+        // prefix => [column, model class]
+        $map = [
+            'b:'  => ['budget_item_id',  BudgetItem::class],
+            'i:'  => ['installment_id',  Installment::class],
+            'in:' => ['income_id',       Income::class],
+            's:'  => ['subscription_id', Subscription::class],
+            'd:'  => ['debt_id',         Debt::class],
+        ];
+
+        // Longest prefix first so "in:" wins over "i:".
+        uksort($map, fn ($a, $b) => strlen($b) - strlen($a));
+
+        foreach ($map as $prefix => [$column, $model]) {
+            if (str_starts_with($link, $prefix)) {
+                $id = (int) substr($link, strlen($prefix));
+                if ($id && $model::where('id', $id)->where('user_id', $userId)->exists()) {
+                    $cols[$column] = $id;
+                }
+                break;
             }
         }
 
-        return [$budgetItemId, $installmentId, $incomeId];
+        return $cols;
     }
 
     private function syncActualAmount(?int $budgetItemId): void

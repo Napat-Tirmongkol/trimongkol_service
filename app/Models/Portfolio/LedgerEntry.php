@@ -21,6 +21,8 @@ class LedgerEntry extends Model
         'budget_item_id',
         'installment_id',
         'income_id',
+        'subscription_id',
+        'debt_id',
         'notes',
     ];
 
@@ -50,6 +52,16 @@ class LedgerEntry extends Model
     public function income(): BelongsTo
     {
         return $this->belongsTo(Income::class);
+    }
+
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
+    }
+
+    public function debt(): BelongsTo
+    {
+        return $this->belongsTo(Debt::class);
     }
 
     public function scopeForUser(Builder $q, User|int $user): Builder
