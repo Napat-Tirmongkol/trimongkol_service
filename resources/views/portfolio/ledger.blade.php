@@ -132,8 +132,24 @@ document.addEventListener('alpine:init', () => {
     $categoryLabel = [
         'fixed_expense'    => 'ค่าใช้จ่ายคงที่',
         'variable_expense' => 'ค่าใช้จ่ายผันแปร',
-        'saving'           => 'ออมเงิน',
+        'saving'           => 'เงินออม / ลงทุน',
     ];
+
+    // Helper: compute encoded budget_link value for an existing entry
+    $entryLink = function ($entry): string {
+        if ($entry->budget_item_id)  return 'b:'  . $entry->budget_item_id;
+        if ($entry->installment_id)  return 'i:'  . $entry->installment_id;
+        if ($entry->income_id)       return 'in:' . $entry->income_id;
+        return '';
+    };
+
+    // Helper: label of whatever the entry is linked to
+    $linkedLabel = function ($entry): string {
+        if ($entry->budgetItem)  return $entry->budgetItem->label;
+        if ($entry->installment) return $entry->installment->label;
+        if ($entry->income)      return $entry->income->label;
+        return '';
+    };
 @endphp
 
 {{-- ── Outer wrapper: owns the calculator singleton ── --}}
@@ -240,23 +256,37 @@ document.addEventListener('alpine:init', () => {
                     </div>
                 </div>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div x-show="newType === 'expense'" x-cloak>
+                    <div>
                         <label class="mb-1 block text-xs font-medium text-slate-600">
                             {{ __('app.portfolio.ledger.link_budget') }}
                             @if ($budgetItemMonth && $budgetItemMonth !== $activeMonth)
                                 <span class="font-normal text-amber-600">(จากเดือน {{ $monthLabel($budgetItemMonth) }})</span>
                             @endif
                         </label>
-                        <select name="budget_item_id"
+                        <select name="budget_link"
                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                             <option value="">{{ __('app.portfolio.ledger.no_link') }}</option>
                             @foreach ($budgetItems->groupBy('category') as $cat => $items)
                                 <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
                                     @foreach ($items as $item)
-                                        <option value="{{ $item->id }}">{{ $item->label }}</option>
+                                        <option value="b:{{ $item->id }}">{{ $item->label }}</option>
                                     @endforeach
                                 </optgroup>
                             @endforeach
+                            @if ($installments->isNotEmpty())
+                                <optgroup label="หนี้สิน / ผ่อนของ">
+                                    @foreach ($installments as $ins)
+                                        <option value="i:{{ $ins->id }}">{{ $ins->label }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if ($incomeItems->isNotEmpty())
+                                <optgroup label="แหล่งรายได้">
+                                    @foreach ($incomeItems as $inc)
+                                        <option value="in:{{ $inc->id }}">{{ $inc->label }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
                     </div>
                     <div>
@@ -326,9 +356,10 @@ document.addEventListener('alpine:init', () => {
                                             <span class="text-sm font-medium" :class="dark ? 'text-slate-200' : 'text-slate-800'">
                                                 {{ $entry->label }}
                                             </span>
-                                            @if ($entry->budgetItem)
+                                            @php $lbl = $linkedLabel($entry); @endphp
+                                            @if ($lbl)
                                                 <span class="rounded px-1.5 py-0.5 text-[11px] font-medium bg-sky-50 text-sky-700">
-                                                    {{ $entry->budgetItem->label }}
+                                                    {{ $lbl }}
                                                 </span>
                                             @endif
                                         </div>
@@ -405,20 +436,38 @@ document.addEventListener('alpine:init', () => {
                                             </div>
                                         </div>
                                         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <div x-show="eType === 'expense'" x-cloak>
+                                            <div>
                                                 <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.link_budget') }}</label>
-                                                <select name="budget_item_id"
+                                                <select name="budget_link"
                                                         class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">
                                                     <option value="">{{ __('app.portfolio.ledger.no_link') }}</option>
                                                     @foreach ($budgetItems->groupBy('category') as $cat => $items)
                                                         <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
                                                             @foreach ($items as $item)
-                                                                <option value="{{ $item->id }}" @selected($entry->budget_item_id == $item->id)>
+                                                                <option value="b:{{ $item->id }}" @selected($entryLink($entry) === 'b:' . $item->id)>
                                                                     {{ $item->label }}
                                                                 </option>
                                                             @endforeach
                                                         </optgroup>
                                                     @endforeach
+                                                    @if ($installments->isNotEmpty())
+                                                        <optgroup label="หนี้สิน / ผ่อนของ">
+                                                            @foreach ($installments as $ins)
+                                                                <option value="i:{{ $ins->id }}" @selected($entryLink($entry) === 'i:' . $ins->id)>
+                                                                    {{ $ins->label }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endif
+                                                    @if ($incomeItems->isNotEmpty())
+                                                        <optgroup label="แหล่งรายได้">
+                                                            @foreach ($incomeItems as $inc)
+                                                                <option value="in:{{ $inc->id }}" @selected($entryLink($entry) === 'in:' . $inc->id)>
+                                                                    {{ $inc->label }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endif
                                                 </select>
                                             </div>
                                             <div>
