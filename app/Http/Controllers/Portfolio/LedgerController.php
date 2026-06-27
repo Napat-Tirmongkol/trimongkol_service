@@ -94,11 +94,23 @@ class LedgerController extends Controller
             }
         }
 
+        // ── Line-chart data (cumulative ต่อวัน, คำนวณฝั่ง client) ──
+        // เชื่อมหมวดงบผ่าน budget_item_id ที่มีอยู่แล้ว — ไม่ต้องเพิ่มคอลัมน์
+        $daysInMonth  = \Illuminate\Support\Carbon::parse($activeMonth . '-01')->daysInMonth;
+        $chartEntries = $entries->map(fn ($e) => [
+            'd'    => (int) $e->date->day,
+            'amt'  => (float) $e->amount,
+            'type' => $e->type,
+            'bid'  => $e->budget_item_id,
+        ])->values();
+        $chartPlanned = $budgetItems->mapWithKeys(fn ($b) => [$b->id => (float) $b->amount]);
+
         return view('portfolio.ledger', compact(
             'allMonths', 'activeMonth', 'entries', 'byDate',
             'totalIncome', 'totalExpense', 'net',
             'budgetItems', 'budgetItemMonth',
-            'installments', 'incomeItems'
+            'installments', 'incomeItems',
+            'daysInMonth', 'chartEntries', 'chartPlanned'
         ));
     }
 

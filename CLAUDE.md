@@ -110,6 +110,31 @@
 
 ---
 
+## เขียนเท่าที่จำเป็น (YAGNI)
+
+**บันได — ก่อนเขียนโค้ดใหม่ หยุดที่ขั้นแรกที่ใช้ได้:**
+
+1. ต้องมีสิ่งนี้จริงไหม? — ไม่: ข้าม บอกเหตุผล 1 บรรทัด
+2. Laravel/PHP มี helper/stdlib อยู่แล้วไหม? — ใช้เลย (`Str`, `Arr`, `collect()`, validation rules)
+3. Native platform feature? — `<input type="date">` แทน lib, CSS แทน JS, DB constraint แทน app code
+4. dependency ที่ติดตั้งแล้วทำได้ไหม? — ใช้ตัวนั้น (อย่าเพิ่มตัวใหม่ — ดู Don'ts)
+5. บรรทัดเดียวจบไหม? — บรรทัดเดียว
+6. ค่อยเขียนเท่าที่จำเป็น
+
+ลบ > เพิ่ม · boring > clever · ไฟล์น้อยที่สุด · diff สั้นที่สุดที่ทำงานได้
+
+**ขี้เกียจ ≠ มักง่าย** — ห้ามตัดทิ้ง: validation ตรง trust boundary, error handling กันข้อมูลหาย, security, accessibility, อะไรที่ user สั่งชัด ๆ — logic ที่ไม่ trivial ทิ้ง check ไว้ 1 อันเสมอ (assert/test เล็ก ๆ)
+
+**มาร์ก simplification ที่ตั้งใจ** — comment `ตัดทอน:` ระบุเพดาน + ทางอัปเกรด เพื่อให้อ่านออกว่าเป็นเจตนา ไม่ใช่ลืม:
+
+```php
+// ตัดทอน: validate แค่ format — เพิ่ม DNS MX check เมื่อต้องกันอีเมลพิมพ์ผิดจริงจัง
+```
+
+เก็บหนี้ที่ดองไว้: `grep -rn "ตัดทอน:" app/ resources/` แล้วสรุปลง `docs/CHANGELOG.md` ตอนจะเคลียร์
+
+---
+
 ## Don'ts
 
 - ❌ อย่าเพิ่ม composer dependency โดยไม่ถามก่อน — user รัน `composer install` บน server ลำบาก

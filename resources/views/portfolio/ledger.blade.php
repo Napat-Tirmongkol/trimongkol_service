@@ -113,8 +113,93 @@ document.addEventListener('alpine:init', () => {
             if (k === '/') { e.preventDefault(); this.co('÷'); }
         },
     }));
+
+    // กราฟเส้นแนวโน้มรายเดือน (cumulative ต่อวัน) — filter ตามหมวดงบ (budget_item_id)
+    // สำคัญ: เก็บ instance ของ Chart ไว้นอก reactive state ของ Alpine (closure var)
+    // ถ้าเก็บใน this.chart Alpine จะ proxy ทั้งก้อน → recursion จน stack overflow + Chart.js พัง
+    Alpine.data('ledgerChart', (cfg) => {
+        let chart = null;
+        const xlabels = () => Array.from({ length: cfg.days }, (_, i) => i + 1);
+        // ยอด "รายวัน" ต่อวัน (ไม่สะสม)
+        const perDay = (match) => {
+            const arr = new Array(cfg.days).fill(0);
+            cfg.entries.forEach(e => { if (match(e)) arr[e.d - 1] += e.amt; });
+            return arr.map(v => Math.round(v * 100) / 100);
+        };
+        // ยอด "สะสม" (running total)
+        const cumulative = (match) => {
+            let run = 0;
+            return perDay(match).map(v => Math.round((run += v) * 100) / 100);
+        };
+        const lineDs = (label, data, color, opts = {}) => Object.assign({
+            label, data, borderColor: color, backgroundColor: color + '22',
+            borderWidth: 2.5, tension: 0.3, pointRadius: 0, pointHoverRadius: 4, fill: false,
+        }, opts);
+        const barDs = (label, data, color) => ({
+            label, data, backgroundColor: color + 'cc', borderColor: color,
+            borderWidth: 0, borderRadius: 4, maxBarThickness: 22,
+        });
+        const datasets = (filter, mode) => {
+            const daily = mode === 'daily';
+            const series = daily ? perDay : cumulative;
+            if (filter === 'all') {
+                const inc = series(e => e.type === 'income');
+                const exp = series(e => e.type === 'expense');
+                return daily
+                    ? [ barDs(cfg.labels.income, inc, '#35ed7e'), barDs(cfg.labels.expense, exp, '#ff7088') ]
+                    : [ lineDs(cfg.labels.income, inc, '#35ed7e'), lineDs(cfg.labels.expense, exp, '#ff7088') ];
+            }
+            const bid = parseInt(filter, 10);
+            const exp = series(e => e.type === 'expense' && e.bid === bid);
+            const ds = [ daily ? barDs(cfg.labels.expense, exp, '#5865f2') : lineDs(cfg.labels.expense, exp, '#5865f2', { fill: true }) ];
+            const planned = cfg.planned[bid];
+            if (planned) {
+                if (daily) {
+                    const avg = Math.round((planned / cfg.days) * 100) / 100;
+                    ds.push(Object.assign(lineDs(cfg.labels.budgetDaily, new Array(cfg.days).fill(avg), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }), { type: 'line' }));
+                } else {
+                    ds.push(lineDs(cfg.labels.budget, new Array(cfg.days).fill(planned), '#9aa2d8', { borderDash: [6, 6], borderWidth: 1.5 }));
+                }
+            }
+            return ds;
+        };
+        return {
+            filter: 'all',
+            mode: 'cumulative',
+            init() {
+                const boot = () => window.Chart ? this.draw() : setTimeout(boot, 40);
+                this.$nextTick(boot);
+            },
+            draw() {
+                chart = new Chart(this.$refs.canvas, {
+                    type: this.mode === 'daily' ? 'bar' : 'line',
+                    data: { labels: xlabels(), datasets: datasets(this.filter, this.mode) },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#cdd2f5', usePointStyle: true, boxWidth: 8 } },
+                            tooltip: { callbacks: { label: (c) => c.dataset.label + ': ฿' + c.parsed.y.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) } },
+                        },
+                        scales: {
+                            x: { ticks: { color: '#9aa2d8', maxTicksLimit: 12 }, grid: { color: 'rgba(155,162,216,.12)' } },
+                            y: { beginAtZero: true, ticks: { color: '#9aa2d8', callback: (v) => '฿' + v.toLocaleString('th-TH') }, grid: { color: 'rgba(155,162,216,.12)' } },
+                        },
+                    },
+                });
+            },
+            // เปลี่ยนโหมด = เปลี่ยนชนิดกราฟ (line↔bar) ต้อง destroy แล้วสร้างใหม่
+            refresh() {
+                if (chart) { chart.destroy(); chart = null; }
+                this.draw();
+            },
+        };
+    });
 });
 </script>
+
+{{-- Chart.js (CDN ตาม pattern เดิมของโปรเจกต์) — ใช้กับกราฟแนวโน้มในหน้านี้เท่านั้น --}}
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 
 @php
     $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -201,6 +286,53 @@ document.addEventListener('alpine:init', () => {
             </div>
         </div>
     </div>
+
+    {{-- กราฟเส้นแนวโน้ม (cumulative ต่อวัน) — ดูตามหมวดงบได้ (filter ตาม budget item) --}}
+    @if ($entries->isNotEmpty())
+        <script>
+            window.__ledgerChart = {
+                days: {{ $daysInMonth }},
+                entries: @json($chartEntries),
+                planned: @json($chartPlanned),
+                labels: {
+                    income:  @json(__('app.portfolio.ledger.chart_income')),
+                    expense: @json(__('app.portfolio.ledger.chart_expense')),
+                    budget:  @json(__('app.portfolio.ledger.chart_budget')),
+                    budgetDaily: @json(__('app.portfolio.ledger.chart_budget_daily')),
+                },
+            };
+        </script>
+        <div class="mb-6 rounded-xl border bg-white p-4 shadow-sm sm:p-5" x-data="ledgerChart(window.__ledgerChart)">
+            <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-sm font-semibold" :class="dark ? 'text-slate-200' : 'text-slate-700'">
+                    {{ __('app.portfolio.ledger.chart_heading') }}
+                </h2>
+                <div class="flex flex-wrap gap-2">
+                    <select x-model="mode" @change="refresh()"
+                            class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
+                        <option value="cumulative">{{ __('app.portfolio.ledger.chart_cumulative') }}</option>
+                        <option value="daily">{{ __('app.portfolio.ledger.chart_daily') }}</option>
+                    </select>
+                    <select x-model="filter" @change="refresh()"
+                            class="rounded-lg border px-3 py-1.5 text-sm font-medium shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            :class="dark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-white text-slate-700'">
+                        <option value="all">{{ __('app.portfolio.ledger.chart_all') }}</option>
+                        @foreach ($budgetItems->groupBy('category') as $cat => $items)
+                            <optgroup label="{{ $categoryLabel[$cat] ?? $cat }}">
+                                @foreach ($items as $item)
+                                    <option value="{{ $item->id }}">{{ $item->label }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div style="position:relative;height:260px">
+                <canvas x-ref="canvas"></canvas>
+            </div>
+        </div>
+    @endif
 
     {{-- Add entry panel --}}
     <div x-data="{ open: false, newType: 'expense' }" class="mb-6">

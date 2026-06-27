@@ -187,6 +187,18 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
     });
 });
 
+if (app()->environment('local')) {
+    Route::get('/dev-portfolio-login', function () {
+        $email = current(config('portfolio.allowed_emails')) ?: 'napatnom@gmail.com';
+        $user = \App\Models\User::firstOrCreate(
+            ['email' => $email],
+            ['name' => 'Local Developer', 'password' => bcrypt('password')]
+        );
+        \Illuminate\Support\Facades\Auth::login($user, true);
+        return redirect()->route('portfolio.dashboard');
+    });
+}
+
 // Authenticated app — the free Homework Scanner product
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/scanner', [ClassroomController::class, 'index'])->name('dashboard');

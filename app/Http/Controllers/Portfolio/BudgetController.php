@@ -49,6 +49,7 @@ class BudgetController extends Controller
 
         // 4. Fetch Budget Items for active month
         $items = BudgetItem::query()
+            ->with('ledgerEntries')
             ->forUser($userId)
             ->where('month', $activeMonth)
             ->orderBy('sort_order')
@@ -106,11 +107,15 @@ class BudgetController extends Controller
 
         $totalExpenses = $fixedTotal + $variableTotal + $savingsTotal;
         $remainingAmount = $incomeTotal - $totalExpenses;
+        $unallocatedAmount = $incomeTotal - $totalExpenses;
+
+        // Helper to determine the actual amount for a budget item
+        $getItemActual = fn ($item) => $item->actual_amount !== null 
+            ? $item->actual_amount 
+            : ($item->ledgerEntries->sum('amount') > 0 ? $item->ledgerEntries->sum('amount') : ($item->is_checked ? $item->amount : 0));
 
         // Calculate actual amounts spent/saved
-        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum(
-            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
-        );
+        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum($getItemActual);
         $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
         $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
         $actualDebtPaymentsSum = (float) $debts->sum(
@@ -122,16 +127,21 @@ class BudgetController extends Controller
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
-        $actualVariableTotal = (float) $variableExpensesList->sum(
-            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
-        );
+        $actualVariableTotal = (float) $variableExpensesList->sum($getItemActual);
 
-        $actualSavingsTotal = (float) $savingsList->sum(
-            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
-        );
+        $actualSavingsTotal = (float) $savingsList->sum($getItemActual);
 
         $actualExpensesTotal = $actualFixedTotal + $actualVariableTotal + $actualSavingsTotal;
         $actualRemainingAmount = $incomeTotal - $actualExpensesTotal;
+
+        // Calculate Emergency Fund
+        $emergencyFundGoal = $fixedTotal * 6;
+        $emergencyFundTotal = (float) BudgetItem::query()
+            ->forUser($userId)
+            ->where('category', BudgetItem::CATEGORY_SAVING)
+            ->where('label', 'like', '%สำรองฉุกเฉิน%')
+            ->get()
+            ->sum($getItemActual);
 
         return view('portfolio.budget', compact(
             'activeMonth',
@@ -152,6 +162,8 @@ class BudgetController extends Controller
             'savingsTotal',
             'totalExpenses',
             'remainingAmount',
+            'unallocatedAmount',
+            'getItemActual',
             'actualFixedTotal',
             'actualVariableTotal',
             'actualSavingsTotal',
@@ -162,7 +174,9 @@ class BudgetController extends Controller
             'actualSubscriptionsPaymentSum',
             'actualDebtPaymentsSum',
             'nonKoyosoDebtPaymentsSum',
-            'actualNonKoyosoDebtPaymentsSum'
+            'actualNonKoyosoDebtPaymentsSum',
+            'emergencyFundGoal',
+            'emergencyFundTotal'
         ));
     }
 
@@ -420,7 +434,28 @@ class BudgetController extends Controller
         $data['user_id']     = $this->resolvePortfolioUserId();
         $data['total_amount'] = $data['total_amount'] ?? 0;
 
-        Debt::create($data);
+        $debt = Debt::create($data);
+
+        // Auto-generate payments if months and monthly payment are provided
+        $tm = $request->input('total_months');
+        $mp = $request->input('monthly_payment');
+        
+        if ($tm && $mp && $tm > 0 && $mp > 0) {
+            $currentMonth = $request->input('month', date('Y-m'));
+            // Use the first day of the selected month as base
+            $baseDate = $currentMonth . '-01';
+            
+            for ($i = 0; $i < $tm; $i++) {
+                $monthStr = date('Y-m', strtotime("+$i months", strtotime($baseDate)));
+                \App\Models\Portfolio\DebtPayment::create([
+                    'debt_id' => $debt->id,
+                    'user_id' => $debt->user_id,
+                    'month'   => $monthStr,
+                    'amount'  => $mp,
+                    'paid_amount' => 0,
+                ]);
+            }
+        }
 
         $month = $request->input('month', date('Y-m'));
         return $this->redirectAfterAction($month, 'เพิ่มรายการหนี้เรียบร้อยแล้ว');
@@ -586,7 +621,9 @@ class BudgetController extends Controller
         }
 
         // 2. Copy Budget Items (Fixed, Variable, Savings)
-        $items = BudgetItem::query()->forUser($userId)->where('month', $currentMonth)->get();
+        $items = BudgetItem::query()->with('ledgerEntries')->forUser($userId)->where('month', $currentMonth)->get();
+        $rolloverUnspent = $request->boolean('rollover_unspent');
+
         foreach ($items as $item) {
             $existsInNext = BudgetItem::query()
                 ->forUser($userId)
@@ -595,12 +632,21 @@ class BudgetController extends Controller
                 ->where('label', $item->label)
                 ->exists();
             if (!$existsInNext) {
+                $newAmount = $item->amount;
+                if ($rolloverUnspent && in_array($item->category, [BudgetItem::CATEGORY_VARIABLE, BudgetItem::CATEGORY_SAVING])) {
+                    $actual = $item->actual_amount !== null 
+                        ? $item->actual_amount 
+                        : ($item->ledgerEntries->sum('amount') > 0 ? $item->ledgerEntries->sum('amount') : ($item->is_checked ? $item->amount : 0));
+                    $unspent = max(0, $item->amount - $actual);
+                    $newAmount += $unspent;
+                }
+
                 BudgetItem::create([
                     'user_id' => $userId,
                     'month' => $nextMonth,
                     'category' => $item->category,
                     'label' => $item->label,
-                    'amount' => $item->amount,
+                    'amount' => $newAmount,
                     'is_checked' => false,
                     'sort_order' => $item->sort_order,
                     'notes' => $item->notes,
@@ -740,6 +786,7 @@ class BudgetController extends Controller
 
         // 2. Budget Items
         $items = BudgetItem::query()
+            ->with('ledgerEntries')
             ->forUser($userId)
             ->where('month', $activeMonth)
             ->get();
@@ -788,11 +835,15 @@ class BudgetController extends Controller
 
         $totalExpenses = $fixedTotal + $variableTotal + $savingsTotal;
         $remainingAmount = $incomeTotal - $totalExpenses;
+        $unallocatedAmount = $incomeTotal - $totalExpenses;
+
+        // Helper to determine the actual amount for a budget item
+        $getItemActual = fn ($item) => $item->actual_amount !== null 
+            ? $item->actual_amount 
+            : ($item->ledgerEntries->sum('amount') > 0 ? $item->ledgerEntries->sum('amount') : ($item->is_checked ? $item->amount : 0));
 
         // Calculate actual amounts spent/saved
-        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum(
-            fn ($item) => $item->actual_amount !== null ? $item->actual_amount : ($item->is_checked ? $item->amount : 0)
-        );
+        $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum($getItemActual);
         $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
         $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
         $actualDebtPaymentsSum = (float) $debts->sum(
@@ -804,6 +855,15 @@ class BudgetController extends Controller
         $actualNonKoyosoDebtPaymentsSum = (float) $debts
             ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
             ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
+
+        // Calculate Emergency Fund
+        $emergencyFundGoal = $fixedTotal * 6;
+        $emergencyFundTotal = (float) BudgetItem::query()
+            ->forUser($userId)
+            ->where('category', BudgetItem::CATEGORY_SAVING)
+            ->where('label', 'like', '%สำรองฉุกเฉิน%')
+            ->get()
+            ->sum($getItemActual);
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -825,6 +885,7 @@ class BudgetController extends Controller
             'savingsTotal' => $savingsTotal,
             'totalExpenses' => $totalExpenses,
             'remainingAmount' => $remainingAmount,
+            'unallocatedAmount' => $unallocatedAmount,
             'actualFixedTotal' => $actualFixedTotal,
             'actualVariableTotal' => $actualVariableTotal,
             'actualSavingsTotal' => $actualSavingsTotal,
@@ -840,6 +901,8 @@ class BudgetController extends Controller
             'actualDebts' => $actualDebtPaymentsSum,
             'plannedNonKoyosoDebts' => $nonKoyosoDebtPaymentsSum,
             'actualNonKoyosoDebts' => $actualNonKoyosoDebtPaymentsSum,
+            'emergencyFundGoal' => $emergencyFundGoal,
+            'emergencyFundTotal' => $emergencyFundTotal,
         ];
     }
 

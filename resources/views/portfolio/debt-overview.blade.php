@@ -53,7 +53,8 @@
             </div>
 
             {{-- Add installment form --}}
-            <div x-show="addOpen" x-cloak class="border-b border-slate-100 bg-slate-50/50 px-5 py-4">
+            <div x-show="addOpen" x-cloak class="border-b border-slate-100 bg-slate-50/50 px-5 py-4"
+                 x-data="{ ta: '', tm: '', mp: '' }">
                 <form method="POST" action="{{ route('portfolio.budget.installments.store') }}" class="space-y-3">
                     @csrf
                     <input type="hidden" name="month" value="{{ date('Y-m') }}">
@@ -64,16 +65,19 @@
                             <input type="text" name="label" required placeholder="เช่น S24 Ultra" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ผ่อนต่อเดือน (฿) *</label>
-                            <input type="number" step="0.01" min="0" name="monthly_payment" required placeholder="0.00" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
-                        </div>
-                        <div>
                             <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ยอดรวม (฿)</label>
-                            <input type="number" step="0.01" min="0" name="total_amount" value="0" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                            <input type="number" step="0.01" min="0" name="total_amount" x-model="ta" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
                         </div>
                         <div>
                             <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">งวดทั้งหมด *</label>
-                            <input type="number" min="1" name="total_months" required placeholder="12" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                            <input type="number" min="1" name="total_months" x-model="tm" required placeholder="12" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-0.5">
+                                <label class="block text-[10px] font-semibold text-slate-500">ผ่อนต่อเดือน (฿) *</label>
+                                <button type="button" @click="if(ta && mp && !tm) tm = Math.ceil(ta / mp); else if(ta && tm && !mp) mp = (ta / tm).toFixed(2); else if(mp && tm && !ta) ta = (mp * tm).toFixed(2); else if(ta && tm) mp = (ta / tm).toFixed(2); else if(mp && tm) ta = (mp * tm).toFixed(2); else if(ta && mp) tm = Math.ceil(ta / mp);" class="text-[9px] text-brand-600 hover:text-brand-700 font-semibold cursor-pointer">คำนวณให้อัตโนมัติ</button>
+                            </div>
+                            <input type="number" step="0.01" min="0" name="monthly_payment" x-model="mp" required placeholder="0.00" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
                         </div>
                         <div>
                             <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">จ่ายไปแล้ว (งวด)</label>
@@ -147,16 +151,19 @@
                                 <input type="text" name="label" x-model="label" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
                             </div>
                             <div>
-                                <label class="block text-[9px] font-semibold text-slate-500">ผ่อนต่อเดือน (฿)</label>
-                                <input type="number" step="0.01" min="0" name="monthly_payment" x-model="mp" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                            </div>
-                            <div>
-                                <label class="block text-[9px] font-semibold text-slate-500">ยอดรวม (฿)</label>
+                                <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">ยอดรวม (฿)</label>
                                 <input type="number" step="0.01" min="0" name="total_amount" x-model="ta" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
                             </div>
                             <div>
-                                <label class="block text-[9px] font-semibold text-slate-500">งวดทั้งหมด</label>
+                                <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">งวดทั้งหมด</label>
                                 <input type="number" min="1" name="total_months" x-model="tm" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <label class="block text-[9px] font-semibold text-slate-500">ผ่อนต่อเดือน (฿)</label>
+                                    <button type="button" @click="if(ta && mp && !tm) tm = Math.ceil(ta / mp); else if(ta && tm && !mp) mp = (ta / tm).toFixed(2); else if(mp && tm && !ta) ta = (mp * tm).toFixed(2); else if(ta && tm) mp = (ta / tm).toFixed(2); else if(mp && tm) ta = (mp * tm).toFixed(2); else if(ta && mp) tm = Math.ceil(ta / mp);" class="text-[9px] text-brand-600 hover:text-brand-700 font-semibold cursor-pointer">คำนวณอัตโนมัติ</button>
+                                </div>
+                                <input type="number" step="0.01" min="0" name="monthly_payment" x-model="mp" required class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
                             </div>
                             <div>
                                 <label class="block text-[9px] font-semibold text-slate-500">จ่ายไปแล้ว (งวด)</label>
@@ -196,28 +203,40 @@
             </div>
 
             {{-- Add debt form --}}
-            <div x-show="addDebtOpen" x-cloak class="mb-4 rounded-2xl border bg-white p-4 shadow-sm">
+            <div x-show="addDebtOpen" x-cloak class="mb-4 rounded-2xl border bg-white p-4 shadow-sm"
+                 x-data="{ total: '', mp: '', tm: '' }">
                 <p class="mb-3 text-xs font-semibold text-slate-600">เพิ่มหนี้สินใหม่</p>
-                <form method="POST" action="{{ route('portfolio.budget.debts.store') }}" class="space-y-2">
+                <form method="POST" action="{{ route('portfolio.budget.debts.store') }}" class="space-y-3">
                     @csrf
                     <input type="hidden" name="month" value="{{ date('Y-m') }}">
                     <input type="hidden" name="redirect_to" value="debts">
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ชื่อหนี้ *</label>
-                        <input type="text" name="label" required placeholder="เช่น เงินกู้สหกรณ์"
-                               class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ชื่อหนี้ *</label>
+                            <input type="text" name="label" required placeholder="เช่น เงินกู้สหกรณ์"
+                                   class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ยอดรวม (฿)</label>
+                            <input type="number" step="0.01" min="0" name="total_amount" x-model="total" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">งวดทั้งหมด (ถ้ามี)</label>
+                            <input type="number" min="1" name="total_months" x-model="tm" placeholder="12" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-0.5">
+                                <label class="block text-[10px] font-semibold text-slate-500">ผ่อนต่อเดือน (ถ้ามี)</label>
+                                <button type="button" @click="if(total && mp && !tm) tm = Math.ceil(total / mp); else if(total && tm && !mp) mp = (total / tm).toFixed(2); else if(mp && tm && !total) total = (mp * tm).toFixed(2); else if(total && tm) mp = (total / tm).toFixed(2); else if(mp && tm) total = (mp * tm).toFixed(2); else if(total && mp) tm = Math.ceil(total / mp);" class="text-[9px] text-brand-600 hover:text-brand-700 font-semibold cursor-pointer">คำนวณอัตโนมัติ</button>
+                            </div>
+                            <input type="number" step="0.01" min="0" name="monthly_payment" x-model="mp" placeholder="0.00" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">หมายเหตุ</label>
+                            <input type="text" name="notes" placeholder="หมายเหตุ (ไม่บังคับ)" class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">ยอดหนี้รวม (฿)</label>
-                        <input type="number" step="0.01" min="0" name="total_amount" value="0"
-                               class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">หมายเหตุ</label>
-                        <input type="text" name="notes" placeholder="หมายเหตุ (ไม่บังคับ)"
-                               class="block w-full rounded-lg border-slate-300 px-3 py-1.5 text-sm">
-                    </div>
-                    <div class="flex justify-end gap-2">
+                    <div class="flex justify-end gap-2 mt-2">
                         <button type="button" @click="addDebtOpen = false"
                                 class="rounded-lg px-3 py-1.5 text-xs font-semibold bg-slate-200 text-slate-700">ยกเลิก</button>
                         <button type="submit"
@@ -242,7 +261,8 @@
                         <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-2"
                              x-data="{ editDebt: false, paymentsOpen: false, addPayment: false,
                                         label: '{{ addslashes($debt->label) }}',
-                                        total: '{{ $debt->total_amount }}' }">
+                                        total: '{{ $debt->total_amount }}',
+                                        mp: '', tm: '' }">
 
                             {{-- Header read --}}
                             <div x-show="!editDebt" class="flex items-start justify-between gap-3">
@@ -282,17 +302,34 @@
                                 @csrf @method('PATCH')
                                 <input type="hidden" name="month" value="{{ $activeMonth }}">
                                 <input type="hidden" name="redirect_to" value="debts">
-                                <div>
-                                    <label class="block text-[9px] font-semibold text-slate-500">ชื่อหนี้</label>
-                                    <input type="text" name="label" x-model="label" required
-                                           class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="col-span-2">
+                                        <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">ชื่อหนี้</label>
+                                        <input type="text" name="label" x-model="label" required
+                                               class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">ยอดหนี้รวม (฿)</label>
+                                        <input type="number" step="0.01" min="0" name="total_amount" x-model="total"
+                                               class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">งวดทั้งหมด</label>
+                                        <input type="number" min="1" name="total_months" x-model="tm" class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between mb-0.5">
+                                            <label class="block text-[9px] font-semibold text-slate-500">ผ่อนต่อเดือน</label>
+                                            <button type="button" @click="if(total && mp && !tm) tm = Math.ceil(total / mp); else if(total && tm && !mp) mp = (total / tm).toFixed(2); else if(mp && tm && !total) total = (mp * tm).toFixed(2); else if(total && tm) mp = (total / tm).toFixed(2); else if(mp && tm) total = (mp * tm).toFixed(2); else if(total && mp) tm = Math.ceil(total / mp);" class="text-[9px] text-brand-600 hover:text-brand-700 font-semibold cursor-pointer">คำนวณอัตโนมัติ</button>
+                                        </div>
+                                        <input type="number" step="0.01" min="0" name="monthly_payment" x-model="mp" class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[9px] font-semibold text-slate-500 mb-0.5">หมายเหตุ</label>
+                                        <input type="text" name="notes" value="{{ $debt->notes }}" class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-[9px] font-semibold text-slate-500">ยอดหนี้รวม (฿)</label>
-                                    <input type="number" step="0.01" min="0" name="total_amount" x-model="total"
-                                           class="block w-full rounded border-slate-300 px-2 py-1 text-xs">
-                                </div>
-                                <div class="flex justify-end gap-1.5">
+                                <div class="flex justify-end gap-1.5 mt-2">
                                     <button type="button" @click="editDebt = false"
                                             class="rounded px-2.5 py-1 text-xs font-semibold bg-slate-200 text-slate-700">ยกเลิก</button>
                                     <button type="submit"
