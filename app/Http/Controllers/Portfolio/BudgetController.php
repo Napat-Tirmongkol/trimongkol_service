@@ -11,8 +11,6 @@ use App\Models\Portfolio\Installment;
 use App\Models\Portfolio\LedgerEntry;
 use App\Models\Portfolio\Subscription;
 use App\Models\Portfolio\Income;
-use App\Models\Portfolio\Holding;
-use App\Models\Portfolio\Transaction;
 use Illuminate\Http\Request;
 
 class BudgetController extends Controller
@@ -976,56 +974,9 @@ class BudgetController extends Controller
 
     private function syncSavingToHolding(BudgetItem $item): void
     {
-        // Only run for savings category
-        if ($item->category !== BudgetItem::CATEGORY_SAVING) {
-            return;
-        }
-
-        $userId = $item->user_id;
-        $prices = app(\App\Services\Portfolio\PriceFetcher::class);
-
-        // 1. Find and delete any existing auto-created transaction for this budget item
-        $oldTransactions = Transaction::query()
-            ->whereHas('holding', fn ($q) => $q->where('user_id', $userId))
-            ->where('notes', 'like', "%(ID: {$item->id})%")
-            ->get();
-
-        $affectedHoldingIds = [];
-        foreach ($oldTransactions as $t) {
-            $affectedHoldingIds[] = $t->holding_id;
-            $t->delete();
-        }
-
-        // 2. If it is currently checked, find a matching holding and create a new transaction
-        if ($item->is_checked) {
-            $matchingHolding = Holding::query()
-                ->forUser($userId)
-                ->whereIn('kind', [Holding::KIND_DEPOSIT, Holding::KIND_CASH])
-                ->whereRaw('LOWER(TRIM(label)) = ?', [strtolower(trim($item->label))])
-                ->first();
-
-            if ($matchingHolding) {
-                $amount = $item->actual_amount !== null ? (float) $item->actual_amount : (float) $item->amount;
-
-                $matchingHolding->transactions()->create([
-                    'type'             => 'in',
-                    'amount'           => $amount,
-                    'transaction_date' => $item->month . '-01',
-                    'notes'            => "[รายจ่ายเงินออมอัตโนมัติ] จากแผนงบประมาณเดือน {$item->month} (ID: {$item->id})",
-                ]);
-
-                $affectedHoldingIds[] = $matchingHolding->id;
-            }
-        }
-
-        // 3. Recalculate all affected holdings
-        $uniqueHoldingIds = array_unique($affectedHoldingIds);
-        foreach ($uniqueHoldingIds as $holdingId) {
-            $holding = Holding::find($holdingId);
-            if ($holding) {
-                $holding->recalculateFromTransactions($prices);
-            }
-        }
+        // Shared with LedgerController so a saving deposit recorded in the ledger
+        // flows into the matching holding the same way a ticked plan item does.
+        app(\App\Services\Portfolio\SavingHoldingSync::class)->sync($item);
     }
 
     private function redirectAfterAction(string $month, string $msg)
