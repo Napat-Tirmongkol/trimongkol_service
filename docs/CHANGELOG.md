@@ -4,6 +4,17 @@
 
 ---
 
+## 🎨 Design reference — Discord design DNA (opt-in, ไม่ใช่แบรนด์หลัก)
+
+เพิ่มไฟล์วิเคราะห์ดีไซน์สไตล์ Discord ไว้เป็น **reference ทางเลือก** (ผู้ใช้อัปโหลดมา) หยิบใช้เฉพาะงาน prototype/ทดลองเมื่อสั่งเท่านั้น:
+
+- 📄 ไฟล์: `docs/design/discord-analysis.md` (Blurple #5865f2 + เขียว #35ed7e + ม่วงแดง #ec48bd, ABC Ginto Nord)
+- ⚠️ **แบรนด์ production ไม่เปลี่ยน** — ยังยึด Tirmongkol/LangBaan (`DESIGN.md`, primary #3366ff) ตามกฎใน `CLAUDE.md`
+- วางใต้ `docs/design/` (ไม่ใช่ root) โดยตั้งใจ — impeccable อ่าน `DESIGN.md` ที่ root เท่านั้น ตัวนี้จึงไม่ override สีแบรนด์อัตโนมัติ
+- ใช้เมื่อผู้ใช้ระบุชัดว่าต้องการสไตล์นี้เท่านั้น
+
+---
+
 ## 🔧 กยศ — แก้ไขข้อมูลเองได้ทั้งหมด (เพิ่ม/แก้/ลบ งวด)
 
 การ์ด กยศ ในหน้างบ (`/portfolio/budget`) เดิมแก้ได้แค่ชื่อ/ยอดรวม/หมายเหตุ + บันทึกจ่ายเฉพาะงวดปัจจุบัน
