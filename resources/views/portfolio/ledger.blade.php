@@ -225,14 +225,18 @@ document.addEventListener('alpine:init', () => {
         if ($entry->budget_item_id)  return 'b:'  . $entry->budget_item_id;
         if ($entry->installment_id)  return 'i:'  . $entry->installment_id;
         if ($entry->income_id)       return 'in:' . $entry->income_id;
+        if ($entry->subscription_id) return 's:'  . $entry->subscription_id;
+        if ($entry->debt_id)         return 'd:'  . $entry->debt_id;
         return '';
     };
 
     // Helper: label of whatever the entry is linked to
     $linkedLabel = function ($entry): string {
-        if ($entry->budgetItem)  return $entry->budgetItem->label;
-        if ($entry->installment) return $entry->installment->label;
-        if ($entry->income)      return $entry->income->label;
+        if ($entry->budgetItem)   return $entry->budgetItem->label;
+        if ($entry->installment)  return $entry->installment->label;
+        if ($entry->income)       return $entry->income->label;
+        if ($entry->subscription) return $entry->subscription->label;
+        if ($entry->debt)         return $entry->debt->label;
         return '';
     };
 @endphp
@@ -405,10 +409,24 @@ document.addEventListener('alpine:init', () => {
                                     @endforeach
                                 </optgroup>
                             @endforeach
+                            @if ($subscriptions->isNotEmpty())
+                                <optgroup label="ค่าบริการรายเดือน">
+                                    @foreach ($subscriptions as $sub)
+                                        <option value="s:{{ $sub->id }}">{{ $sub->label }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                             @if ($installments->isNotEmpty())
                                 <optgroup label="หนี้สิน / ผ่อนของ">
                                     @foreach ($installments as $ins)
                                         <option value="i:{{ $ins->id }}">{{ $ins->label }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if ($debtItems->isNotEmpty())
+                                <optgroup label="ผ่อนตามตาราง">
+                                    @foreach ($debtItems as $dbt)
+                                        <option value="d:{{ $dbt->id }}">{{ $dbt->label }}</option>
                                     @endforeach
                                 </optgroup>
                             @endif
@@ -582,11 +600,29 @@ document.addEventListener('alpine:init', () => {
                                                             @endforeach
                                                         </optgroup>
                                                     @endforeach
+                                                    @if ($subscriptions->isNotEmpty())
+                                                        <optgroup label="ค่าบริการรายเดือน">
+                                                            @foreach ($subscriptions as $sub)
+                                                                <option value="s:{{ $sub->id }}" @selected($entryLink($entry) === 's:' . $sub->id)>
+                                                                    {{ $sub->label }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endif
                                                     @if ($installments->isNotEmpty())
                                                         <optgroup label="หนี้สิน / ผ่อนของ">
                                                             @foreach ($installments as $ins)
                                                                 <option value="i:{{ $ins->id }}" @selected($entryLink($entry) === 'i:' . $ins->id)>
                                                                     {{ $ins->label }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endif
+                                                    @if ($debtItems->isNotEmpty())
+                                                        <optgroup label="ผ่อนตามตาราง">
+                                                            @foreach ($debtItems as $dbt)
+                                                                <option value="d:{{ $dbt->id }}" @selected($entryLink($entry) === 'd:' . $dbt->id)>
+                                                                    {{ $dbt->label }}
                                                                 </option>
                                                             @endforeach
                                                         </optgroup>
