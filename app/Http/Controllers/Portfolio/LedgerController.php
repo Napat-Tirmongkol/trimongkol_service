@@ -260,11 +260,20 @@ class LedgerController extends Controller
     {
         if (!$budgetItemId) return;
 
+        $item = BudgetItem::find($budgetItemId);
+        if (!$item) return;
+
         $sum = LedgerEntry::where('budget_item_id', $budgetItemId)
             ->where('type', LedgerEntry::TYPE_EXPENSE)
             ->sum('amount');
 
-        BudgetItem::where('id', $budgetItemId)->update(['actual_amount' => $sum]);
+        $item->update(['actual_amount' => $sum]);
+
+        // Saving deposits recorded in the ledger flow into the matching holding
+        // (เงินฝาก/เงินสด) so the portfolio / net worth stays in sync.
+        if ($item->category === BudgetItem::CATEGORY_SAVING) {
+            app(\App\Services\Portfolio\SavingHoldingSync::class)->sync($item->fresh());
+        }
     }
 
     private function resolvePortfolioUserId(): int

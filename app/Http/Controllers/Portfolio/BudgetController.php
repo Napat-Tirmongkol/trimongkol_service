@@ -8,10 +8,9 @@ use App\Models\Portfolio\Debt;
 use App\Models\Portfolio\DebtPayment;
 use App\Models\Portfolio\DebtPaymentLog;
 use App\Models\Portfolio\Installment;
+use App\Models\Portfolio\LedgerEntry;
 use App\Models\Portfolio\Subscription;
 use App\Models\Portfolio\Income;
-use App\Models\Portfolio\Holding;
-use App\Models\Portfolio\Transaction;
 use Illuminate\Http\Request;
 
 class BudgetController extends Controller
@@ -114,16 +113,25 @@ class BudgetController extends Controller
             ? $item->actual_amount 
             : ($item->ledgerEntries->sum('amount') > 0 ? $item->ledgerEntries->sum('amount') : ($item->is_checked ? $item->amount : 0));
 
+        // Ledger-driven actuals (this month) keyed by linked item label.
+        $installmentLedger  = $this->ledgerActualByLabel($userId, $activeMonth, 'installment_id', 'portfolio_installments');
+        $subscriptionLedger = $this->ledgerActualByLabel($userId, $activeMonth, 'subscription_id', 'portfolio_subscriptions');
+        $debtLedger         = $this->ledgerActualByLabel($userId, $activeMonth, 'debt_id', 'portfolio_debts');
+
         // Calculate actual amounts spent/saved
         $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum($getItemActual);
-        $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
-        $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
+        $actualInstallmentsPaymentSum = (float) $installments->sum(
+            fn ($inst) => $this->installmentActual($inst, $installmentLedger)
+        );
+        $actualSubscriptionsPaymentSum = (float) $subscriptions->sum(
+            fn ($sub) => $this->subscriptionActual($sub, $subscriptionLedger)
+        );
         $actualDebtPaymentsSum = (float) $debts->sum(
-            fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
+            fn ($d) => $this->debtActual($d, $activeMonth, $debtLedger)
         );
         $actualNonKoyosoDebtPaymentsSum = (float) $debts
             ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
-            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
+            ->sum(fn ($d) => $this->debtActual($d, $activeMonth, $debtLedger));
 
         $actualFixedTotal = $actualFixedBudgetItemSum + $actualInstallmentsPaymentSum + $actualSubscriptionsPaymentSum + $actualDebtPaymentsSum;
 
@@ -176,7 +184,10 @@ class BudgetController extends Controller
             'nonKoyosoDebtPaymentsSum',
             'actualNonKoyosoDebtPaymentsSum',
             'emergencyFundGoal',
-            'emergencyFundTotal'
+            'emergencyFundTotal',
+            'installmentLedger',
+            'subscriptionLedger',
+            'debtLedger'
         ));
     }
 
@@ -763,6 +774,52 @@ class BudgetController extends Controller
         return ($payment && $payment->is_paid) ? (float) $payment->amount : 0.0;
     }
 
+    /**
+     * Sum of this month's ledger EXPENSES, keyed by the linked item's label.
+     * Lets installment / subscription / debt "ใช้จริง" reflect real payments
+     * recorded in the ledger — mirroring how BudgetItem pulls actual from its
+     * linked ledger entries. Keyed by label (not record id) so it matches the
+     * active month's installment/subscription record regardless of which
+     * per-month row the ledger entry was originally linked to.
+     */
+    private function ledgerActualByLabel(int $userId, string $month, string $fkColumn, string $relatedTable)
+    {
+        return LedgerEntry::query()
+            ->where('portfolio_ledger.user_id', $userId)
+            ->where('portfolio_ledger.month', $month)
+            ->where('portfolio_ledger.type', LedgerEntry::TYPE_EXPENSE)
+            ->whereNotNull("portfolio_ledger.$fkColumn")
+            ->join($relatedTable, "portfolio_ledger.$fkColumn", '=', "$relatedTable.id")
+            ->groupBy("$relatedTable.label")
+            ->selectRaw("$relatedTable.label as label, SUM(portfolio_ledger.amount) as total")
+            ->pluck('total', 'label');
+    }
+
+    /** Installment actual: ledger payment if any, else the planned amount when ticked. */
+    private function installmentActual(Installment $inst, $ledgerMap): float
+    {
+        $ledger = (float) ($ledgerMap[$inst->label] ?? 0);
+        return $ledger > 0 ? $ledger : ($inst->is_checked ? (float) $inst->monthly_payment : 0.0);
+    }
+
+    /** Subscription actual: ledger payment if any, else the planned amount when ticked. */
+    private function subscriptionActual(Subscription $sub, $ledgerMap): float
+    {
+        $ledger = (float) ($ledgerMap[$sub->label] ?? 0);
+        return $ledger > 0 ? $ledger : ($sub->is_checked ? (float) $sub->monthly_payment : 0.0);
+    }
+
+    /**
+     * Debt actual: a ledger payment takes precedence over the debt's own payment
+     * logs / is_paid flag, so a payment recorded in the ledger is never double
+     * counted with one recorded through the debt card.
+     */
+    private function debtActual(Debt $debt, string $month, $ledgerMap): float
+    {
+        $ledger = (float) ($ledgerMap[$debt->label] ?? 0);
+        return $ledger > 0 ? $ledger : $this->debtMonthlyActual($debt, $month);
+    }
+
     /** Re-sum a งวด's logs into paid_amount / is_paid after a log changes. */
     private function recalcDebtPayment(DebtPayment $payment): void
     {
@@ -842,19 +899,28 @@ class BudgetController extends Controller
             ? $item->actual_amount 
             : ($item->ledgerEntries->sum('amount') > 0 ? $item->ledgerEntries->sum('amount') : ($item->is_checked ? $item->amount : 0));
 
+        // Ledger-driven actuals (this month) keyed by linked item label.
+        $installmentLedger  = $this->ledgerActualByLabel($userId, $activeMonth, 'installment_id', 'portfolio_installments');
+        $subscriptionLedger = $this->ledgerActualByLabel($userId, $activeMonth, 'subscription_id', 'portfolio_subscriptions');
+        $debtLedger         = $this->ledgerActualByLabel($userId, $activeMonth, 'debt_id', 'portfolio_debts');
+
         // Calculate actual amounts spent/saved
         $actualFixedBudgetItemSum = (float) $fixedExpensesList->sum($getItemActual);
-        $actualInstallmentsPaymentSum = (float) $installments->filter(fn($inst) => $inst->is_checked)->sum('monthly_payment');
-        $actualSubscriptionsPaymentSum = (float) $subscriptions->filter(fn($sub) => $sub->is_checked)->sum('monthly_payment');
+        $actualInstallmentsPaymentSum = (float) $installments->sum(
+            fn ($inst) => $this->installmentActual($inst, $installmentLedger)
+        );
+        $actualSubscriptionsPaymentSum = (float) $subscriptions->sum(
+            fn ($sub) => $this->subscriptionActual($sub, $subscriptionLedger)
+        );
         $actualDebtPaymentsSum = (float) $debts->sum(
-            fn ($d) => $this->debtMonthlyActual($d, $activeMonth)
+            fn ($d) => $this->debtActual($d, $activeMonth, $debtLedger)
         );
         $nonKoyosoDebtPaymentsSum = (float) $debts
             ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
             ->sum(fn ($d) => $this->debtMonthlyAmount($d, $activeMonth));
         $actualNonKoyosoDebtPaymentsSum = (float) $debts
             ->filter(fn ($d) => !str_contains($d->label, 'กยศ'))
-            ->sum(fn ($d) => $this->debtMonthlyActual($d, $activeMonth));
+            ->sum(fn ($d) => $this->debtActual($d, $activeMonth, $debtLedger));
 
         // Calculate Emergency Fund
         $emergencyFundGoal = $fixedTotal * 6;
@@ -908,56 +974,9 @@ class BudgetController extends Controller
 
     private function syncSavingToHolding(BudgetItem $item): void
     {
-        // Only run for savings category
-        if ($item->category !== BudgetItem::CATEGORY_SAVING) {
-            return;
-        }
-
-        $userId = $item->user_id;
-        $prices = app(\App\Services\Portfolio\PriceFetcher::class);
-
-        // 1. Find and delete any existing auto-created transaction for this budget item
-        $oldTransactions = Transaction::query()
-            ->whereHas('holding', fn ($q) => $q->where('user_id', $userId))
-            ->where('notes', 'like', "%(ID: {$item->id})%")
-            ->get();
-
-        $affectedHoldingIds = [];
-        foreach ($oldTransactions as $t) {
-            $affectedHoldingIds[] = $t->holding_id;
-            $t->delete();
-        }
-
-        // 2. If it is currently checked, find a matching holding and create a new transaction
-        if ($item->is_checked) {
-            $matchingHolding = Holding::query()
-                ->forUser($userId)
-                ->whereIn('kind', [Holding::KIND_DEPOSIT, Holding::KIND_CASH])
-                ->whereRaw('LOWER(TRIM(label)) = ?', [strtolower(trim($item->label))])
-                ->first();
-
-            if ($matchingHolding) {
-                $amount = $item->actual_amount !== null ? (float) $item->actual_amount : (float) $item->amount;
-
-                $matchingHolding->transactions()->create([
-                    'type'             => 'in',
-                    'amount'           => $amount,
-                    'transaction_date' => $item->month . '-01',
-                    'notes'            => "[รายจ่ายเงินออมอัตโนมัติ] จากแผนงบประมาณเดือน {$item->month} (ID: {$item->id})",
-                ]);
-
-                $affectedHoldingIds[] = $matchingHolding->id;
-            }
-        }
-
-        // 3. Recalculate all affected holdings
-        $uniqueHoldingIds = array_unique($affectedHoldingIds);
-        foreach ($uniqueHoldingIds as $holdingId) {
-            $holding = Holding::find($holdingId);
-            if ($holding) {
-                $holding->recalculateFromTransactions($prices);
-            }
-        }
+        // Shared with LedgerController so a saving deposit recorded in the ledger
+        // flows into the matching holding the same way a ticked plan item does.
+        app(\App\Services\Portfolio\SavingHoldingSync::class)->sync($item);
     }
 
     private function redirectAfterAction(string $month, string $msg)
