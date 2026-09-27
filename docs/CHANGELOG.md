@@ -4,6 +4,21 @@
 
 ---
 
+## 🗒️ เครื่องมือย้าย Google Keep → Wiki.js (`tools/keep-to-wikijs/`)
+
+สคริปต์ CLI แปลงโน้ต Google Keep (จาก Google Takeout) เป็นไฟล์ Markdown ที่ Wiki.js import ได้เลย
+
+- 📄 `tools/keep-to-wikijs/keep_to_wikijs.py` — Python 3.9+ **stdlib ล้วน ไม่ต้องลง dependency**
+- เป็น tool แยก ไม่แตะโค้ด Laravel — flow: Takeout → รันสคริปต์ → วางใน Git/Local FS storage → "Import Everything"
+- อ่านจากไฟล์ `.json` ของ Takeout (ข้อมูลสะอาด) แล้ว gen front-matter ครบ (title/tags/date), จัดโฟลเดอร์ตาม label แรก, แปลง label→tags
+- **สำรองอ่าน `.html` ด้วย** เมื่อโน้ตไม่มี `.json` คู่กัน (export เก่า/โหลดมาแค่ HTML) — parse เป็น dict รูปแบบเดียวกับ JSON แล้ว reuse ไปป์ไลน์เดิม, แปลงวันที่หัวโน้ตภาษาไทย (พ.ศ. UTC+7 → ค.ศ. UTC), ปิดด้วย `--no-html`
+- แปลงให้: checklist → `- [ ]`/`- [x]`, weblink annotation → หัวข้อ "ลิงก์ที่แนบ", รูปแนบ → ก๊อปวางข้างโน้ต + `![]()`, `pinned`/`archived`/สี → tags
+- โน้ตไทย: slug **คงสระ/วรรณยุกต์ไว้ครบ** (ใช้ Unicode category L/M/N — `\w` ไม่นับ combining mark ของไทย จึงเขียนเองper-char)
+- flag: `--dry-run` (ไม่มี side-effect), `--include-trashed`, `--skip-archived`, `--no-copy-assets`, `--no-status-tags`, `--color-tags`
+- วิธีใช้เต็ม + ตาราง mapping + ข้อจำกัด (รูปแนบ/โฟลเดอร์ = label แรก) อยู่ใน `tools/keep-to-wikijs/README.md`
+
+---
+
 ## 🎨 Design reference — Discord design DNA (opt-in, ไม่ใช่แบรนด์หลัก)
 
 เพิ่มไฟล์วิเคราะห์ดีไซน์สไตล์ Discord ไว้เป็น **reference ทางเลือก** (ผู้ใช้อัปโหลดมา) หยิบใช้เฉพาะงาน prototype/ทดลองเมื่อสั่งเท่านั้น:
