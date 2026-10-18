@@ -36,11 +36,28 @@ PROTECTED_PATHS = {
     "public/signin-logs-lab.php"
 }
 
-def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        print(f"[Error] Configuration file not found at {CONFIG_PATH}")
+def load_config(custom_path=None):
+    candidates = []
+    if custom_path:
+        candidates.append(os.path.abspath(custom_path))
+    candidates.append(os.path.join(os.getcwd(), "ftp_credentials.json"))
+    
+    if "trimongkol" in os.getcwd().lower():
+        candidates.append(os.path.expanduser(r"C:\Users\User\.gemini\config\ftp_credentials.trimongkol.json"))
+        
+    candidates.append(CONFIG_PATH)
+
+    chosen = None
+    for p in candidates:
+        if p and os.path.exists(p):
+            chosen = p
+            break
+
+    if not chosen:
+        print(f"[Error] Configuration file not found. Checked: {candidates}")
         sys.exit(1)
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+
+    with open(chosen, "r", encoding="utf-8") as f:
         return json.load(f)
 
 class PleskSyncClient:
