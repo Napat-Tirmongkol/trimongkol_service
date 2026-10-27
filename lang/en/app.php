@@ -2249,6 +2249,8 @@ return [
             'col_notes'     => 'Notes',
             'budget_of_month'  => 'Budget: :month',
             'cross_month_hint' => 'Transaction date is outside this budget month',
+            'btn_this_month'   => 'This month',
+            'btn_next_month'   => 'Next month budget',
         ],
 
         'flash_created' => 'Holding added.',

@@ -239,6 +239,8 @@ document.addEventListener('alpine:init', () => {
         if ($entry->debt)         return $entry->debt->label;
         return '';
     };
+
+    $nextMonthVal = date('Y-m', strtotime($activeMonth . '-01 +1 month'));
 @endphp
 
 {{-- ── Outer wrapper: owns the calculator singleton ── --}}
@@ -339,7 +341,7 @@ document.addEventListener('alpine:init', () => {
     @endif
 
     {{-- Add entry panel --}}
-    <div x-data="{ open: false, newType: 'expense' }" class="mb-6">
+    <div x-data="{ open: false, newType: 'expense', newMonth: '{{ $activeMonth }}' }" class="mb-6">
         <button type="button" @click="open = !open"
                 class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60 bg-brand-600 hover:bg-brand-700">
             <svg x-show="!open" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -364,12 +366,31 @@ document.addEventListener('alpine:init', () => {
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_budget_month') }}</label>
-                        <select name="month"
+                        <select name="month" x-model="newMonth"
                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                             @foreach ($budgetMonthOptions as $mOpt)
-                                <option value="{{ $mOpt }}" @selected($mOpt === $activeMonth)>{{ $monthLabel($mOpt) }}</option>
+                                <option value="{{ $mOpt }}">{{ $monthLabel($mOpt) }}</option>
                             @endforeach
                         </select>
+                        @php
+                            $nextMonthVal = date('Y-m', strtotime($activeMonth . '-01 +1 month'));
+                        @endphp
+                        <div class="mt-1.5 flex flex-wrap gap-1">
+                            <button type="button" @click="newMonth = '{{ $activeMonth }}'"
+                                    :class="newMonth === '{{ $activeMonth }}'
+                                        ? 'bg-brand-600 text-white font-semibold shadow-xs ring-1 ring-brand-400'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                    class="rounded-md px-2 py-0.5 text-[11px] transition cursor-pointer">
+                                {{ __('app.portfolio.ledger.btn_this_month') }} ({{ $monthLabel($activeMonth) }})
+                            </button>
+                            <button type="button" @click="newMonth = '{{ $nextMonthVal }}'"
+                                    :class="newMonth === '{{ $nextMonthVal }}'
+                                        ? 'bg-amber-600 text-white font-semibold shadow-xs ring-1 ring-amber-400'
+                                        : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
+                                    class="rounded-md px-2 py-0.5 text-[11px] transition cursor-pointer">
+                                ⚡ {{ __('app.portfolio.ledger.btn_next_month') }} ({{ $monthLabel($nextMonthVal) }})
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_type') }}</label>
@@ -500,7 +521,7 @@ document.addEventListener('alpine:init', () => {
 
                     <div class="divide-y overflow-hidden rounded-xl border bg-white shadow-sm">
                         @foreach ($dayEntries as $entry)
-                            <div x-data="{ editing: false, eType: '{{ $entry->type }}' }" class="group px-4 py-3">
+                            <div x-data="{ editing: false, eType: '{{ $entry->type }}', eMonth: '{{ $entry->month }}' }" class="group px-4 py-3">
 
                                 {{-- Display row --}}
                                 <div x-show="!editing" class="flex min-h-[2rem] items-center gap-3">
@@ -572,12 +593,28 @@ document.addEventListener('alpine:init', () => {
                                             </div>
                                             <div>
                                                 <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_budget_month') }}</label>
-                                                <select name="month"
+                                                <select name="month" x-model="eMonth"
                                                         class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">
                                                     @foreach ($budgetMonthOptions as $mOpt)
-                                                        <option value="{{ $mOpt }}" @selected($mOpt === $entry->month)>{{ $monthLabel($mOpt) }}</option>
+                                                        <option value="{{ $mOpt }}">{{ $monthLabel($mOpt) }}</option>
                                                     @endforeach
                                                 </select>
+                                                <div class="mt-1 flex flex-wrap gap-1">
+                                                    <button type="button" @click="eMonth = '{{ $activeMonth }}'"
+                                                            :class="eMonth === '{{ $activeMonth }}'
+                                                                ? 'bg-brand-600 text-white font-semibold shadow-xs ring-1 ring-brand-400'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                                                            class="rounded px-1.5 py-0.5 text-[10px] transition cursor-pointer">
+                                                        {{ __('app.portfolio.ledger.btn_this_month') }}
+                                                    </button>
+                                                    <button type="button" @click="eMonth = '{{ $nextMonthVal }}'"
+                                                            :class="eMonth === '{{ $nextMonthVal }}'
+                                                                ? 'bg-amber-600 text-white font-semibold shadow-xs ring-1 ring-amber-400'
+                                                                : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
+                                                            class="rounded px-1.5 py-0.5 text-[10px] transition cursor-pointer">
+                                                        ⚡ {{ __('app.portfolio.ledger.btn_next_month') }}
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div>
                                                 <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_type') }}</label>

@@ -2249,6 +2249,8 @@ return [
             'col_notes'     => 'หมายเหตุ',
             'budget_of_month'  => 'งบ :month',
             'cross_month_hint' => 'วันที่ทำรายการจริงข้ามเดือนกับรอบงบประมาณ',
+            'btn_this_month'   => 'เดือนนี้',
+            'btn_next_month'   => 'งบเดือนหน้า',
         ],
 
         'flash_created' => 'เพิ่มรายการแล้ว',
