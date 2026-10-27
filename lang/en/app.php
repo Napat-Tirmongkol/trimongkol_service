@@ -2242,10 +2242,13 @@ return [
             'chart_cumulative'   => 'Cumulative',
             'chart_daily'        => 'Daily',
             'col_date'      => 'Date',
+            'col_budget_month' => 'Budget Month',
             'col_type'      => 'Type',
             'col_label'     => 'Description',
             'col_amount'    => 'Amount',
             'col_notes'     => 'Notes',
+            'budget_of_month'  => 'Budget: :month',
+            'cross_month_hint' => 'Transaction date is outside this budget month',
         ],
 
         'flash_created' => 'Holding added.',

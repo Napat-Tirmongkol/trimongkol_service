@@ -356,14 +356,23 @@ document.addEventListener('alpine:init', () => {
              class="mt-3 rounded-xl border bg-white p-5 shadow-sm">
             <form method="POST" action="{{ route('portfolio.ledger.store') }}" class="space-y-4">
                 @csrf
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">วันที่</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_date') }}</label>
                         <input type="date" name="date" value="{{ date('Y-m-d') }}" required
                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">ประเภท</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_budget_month') }}</label>
+                        <select name="month"
+                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            @foreach ($budgetMonthOptions as $mOpt)
+                                <option value="{{ $mOpt }}" @selected($mOpt === $activeMonth)>{{ $monthLabel($mOpt) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_type') }}</label>
                         <select name="type" x-model="newType"
                                 class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
                             <option value="expense">{{ __('app.portfolio.ledger.type_expense') }}</option>
@@ -371,7 +380,7 @@ document.addEventListener('alpine:init', () => {
                         </select>
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">จำนวนเงิน (฿)</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_amount') }} (฿)</label>
                         <div class="flex gap-1">
                             <input id="cal-add" type="number" name="amount" step="0.01" min="0.01"
                                    placeholder="0.00" required
@@ -384,8 +393,8 @@ document.addEventListener('alpine:init', () => {
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">รายการ / คำอธิบาย</label>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="mb-1 block text-xs font-medium text-slate-600">{{ __('app.portfolio.ledger.col_label') }}</label>
                         <input type="text" name="label" maxlength="200"
                                placeholder="เช่น ค่าข้าวกลางวัน, เงินเดือน" required
                                class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
@@ -512,6 +521,12 @@ document.addEventListener('alpine:init', () => {
                                                     {{ $lbl }}
                                                 </span>
                                             @endif
+                                            @if ($entry->date->format('Y-m') !== $entry->month)
+                                                <span class="rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20"
+                                                      title="{{ __('app.portfolio.ledger.cross_month_hint') }}">
+                                                    {{ __('app.portfolio.ledger.budget_of_month', ['month' => $monthLabel($entry->month)]) }}
+                                                </span>
+                                            @endif
                                         </div>
                                         @if ($entry->notes)
                                             <p class="mt-0.5 truncate text-xs text-slate-400">{{ $entry->notes }}</p>
@@ -548,15 +563,24 @@ document.addEventListener('alpine:init', () => {
                                 <div x-show="editing" x-cloak>
                                     <form method="POST" action="{{ route('portfolio.ledger.update', $entry) }}" class="space-y-3 py-1">
                                         @csrf @method('PATCH')
-                                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
                                             <div>
-                                                <label class="mb-0.5 block text-xs text-slate-500">วันที่</label>
+                                                <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_date') }}</label>
                                                 <input type="date" name="date"
                                                        value="{{ $entry->date->format('Y-m-d') }}" required
                                                        class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">
                                             </div>
                                             <div>
-                                                <label class="mb-0.5 block text-xs text-slate-500">ประเภท</label>
+                                                <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_budget_month') }}</label>
+                                                <select name="month"
+                                                        class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                                    @foreach ($budgetMonthOptions as $mOpt)
+                                                        <option value="{{ $mOpt }}" @selected($mOpt === $entry->month)>{{ $monthLabel($mOpt) }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_type') }}</label>
                                                 <select name="type" x-model="eType"
                                                         class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">
                                                     <option value="expense">{{ __('app.portfolio.ledger.type_expense') }}</option>
@@ -564,7 +588,7 @@ document.addEventListener('alpine:init', () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label class="mb-0.5 block text-xs text-slate-500">จำนวนเงิน (฿)</label>
+                                                <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_amount') }} (฿)</label>
                                                 <div class="flex gap-1">
                                                     <input id="cal-{{ $entry->id }}" type="number" name="amount"
                                                            step="0.01" min="0.01"
@@ -578,8 +602,8 @@ document.addEventListener('alpine:init', () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label class="mb-0.5 block text-xs text-slate-500">รายการ</label>
+                                            <div class="col-span-2 sm:col-span-1">
+                                                <label class="mb-0.5 block text-xs text-slate-500">{{ __('app.portfolio.ledger.col_label') }}</label>
                                                 <input type="text" name="label" maxlength="200"
                                                        value="{{ $entry->label }}" required
                                                        class="w-full rounded border border-slate-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500">

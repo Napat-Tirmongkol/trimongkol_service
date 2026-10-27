@@ -2242,10 +2242,13 @@ return [
             'chart_cumulative'   => 'สะสม',
             'chart_daily'        => 'รายวัน',
             'col_date'      => 'วันที่',
+            'col_budget_month' => 'นับเข้างบเดือน',
             'col_type'      => 'ประเภท',
             'col_label'     => 'รายการ',
             'col_amount'    => 'จำนวนเงิน',
             'col_notes'     => 'หมายเหตุ',
+            'budget_of_month'  => 'งบ :month',
+            'cross_month_hint' => 'วันที่ทำรายการจริงข้ามเดือนกับรอบงบประมาณ',
         ],
 
         'flash_created' => 'เพิ่มรายการแล้ว',
