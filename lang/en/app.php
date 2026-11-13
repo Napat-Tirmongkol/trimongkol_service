@@ -2258,6 +2258,15 @@ return [
             'cross_month_hint' => 'Transaction date is outside this budget month',
             'btn_this_month'   => 'This month',
             'btn_next_month'   => 'Next month budget',
+
+            // Receipt import (PDF e-receipt → auto-fill the form in-browser)
+            'receipt_import'    => 'Read receipt (PDF)',
+            'receipt_reading'   => 'Reading…',
+            'receipt_filled'    => 'Filled from the receipt — review and save',
+            'receipt_only_pdf'  => 'PDF e-receipts only for now — photo support coming later',
+            'receipt_no_text'   => "Couldn't read text from the PDF (maybe a scan) — enter manually",
+            'receipt_load_fail' => 'Failed to load the PDF reader — please try again',
+            'receipt_failed'    => "Couldn't read the receipt — try again or enter manually",
         ],
 
         'flash_created' => 'Holding added.',
