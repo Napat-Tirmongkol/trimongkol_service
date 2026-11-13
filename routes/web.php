@@ -41,7 +41,19 @@ use App\Http\Controllers\Portfolio\PlannerController as PortfolioPlannerControll
 use App\Http\Controllers\Portfolio\BudgetController as PortfolioBudgetController;
 use App\Http\Controllers\Portfolio\LedgerController as PortfolioLedgerController;
 use App\Http\Controllers\Portfolio\DebtOverviewController as PortfolioDebtOverviewController;
+use App\Http\Controllers\Portfolio\FuelController as PortfolioFuelController;
+use App\Http\Controllers\Portfolio\JourneyController as PortfolioJourneyController;
+use App\Http\Controllers\Portfolio\GooglePhotosController as PortfolioGooglePhotosController;
+use App\Http\Controllers\Portfolio\LifeGoalController as PortfolioLifeGoalController;
+use App\Http\Controllers\Portfolio\SecondBrainController as PortfolioSecondBrainController;
+use App\Http\Controllers\Portfolio\CoupleController as PortfolioCoupleController;
+use App\Http\Controllers\Portfolio\PersonaController as PortfolioPersonaController;
+use App\Http\Controllers\Portfolio\CommandCenterController as PortfolioCommandCenterController;
 use App\Http\Controllers\Portfolio\SubscriptionController as PortfolioSubscriptionController;
+use App\Http\Controllers\Portfolio\StockAiController as PortfolioStockAiController;
+use App\Http\Controllers\Portfolio\HealthWebhookController as PortfolioHealthWebhookController;
+use App\Http\Controllers\Portfolio\HealthDashboardController as PortfolioHealthDashboardController;
+use App\Http\Controllers\Portfolio\GoogleCalendarController as PortfolioGoogleCalendarController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -123,6 +135,7 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
 
     Route::middleware('portfolio.access')->group(function () {
         Route::get('/', [PortfolioDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/finance', [PortfolioDashboardController::class, 'financeIndex'])->name('finance.index');
         Route::post('/refresh', [PortfolioDashboardController::class, 'refresh'])->name('refresh');
         Route::get('/holdings/create', [PortfolioDashboardController::class, 'create'])->name('holdings.create');
         Route::post('/holdings', [PortfolioDashboardController::class, 'store'])->name('holdings.store');
@@ -147,9 +160,12 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         // Monthly Budget & Debt Tracker
         Route::get('/budget', [PortfolioBudgetController::class, 'index'])->name('budget.index');
         Route::post('/budget/incomes', [PortfolioBudgetController::class, 'storeIncome'])->name('budget.income.store');
+        Route::post('/budget/payslip', [PortfolioBudgetController::class, 'storePayslip'])->name('budget.payslip.store');
         Route::patch('/budget/incomes/{income}', [PortfolioBudgetController::class, 'updateIncome'])->name('budget.income.update');
         Route::delete('/budget/incomes/{income}', [PortfolioBudgetController::class, 'destroyIncome'])->name('budget.income.destroy');
         Route::post('/budget/reset', [PortfolioBudgetController::class, 'resetMonth'])->name('budget.reset');
+        Route::post('/budget/copy-month', [PortfolioBudgetController::class, 'copyMonth'])->name('budget.copy-month');
+        Route::post('/budget/sync-plan', [PortfolioBudgetController::class, 'syncVerifiedPlan'])->name('budget.sync-plan');
         Route::post('/budget/items', [PortfolioBudgetController::class, 'storeBudgetItem'])->name('budget.items.store');
         Route::patch('/budget/items/{item}', [PortfolioBudgetController::class, 'updateBudgetItem'])->name('budget.items.update');
         Route::delete('/budget/items/{item}', [PortfolioBudgetController::class, 'destroyBudgetItem'])->name('budget.items.destroy');
@@ -179,13 +195,112 @@ Route::prefix('portfolio')->name('portfolio.')->group(function () {
         // Debt Overview
         Route::get('/debts', [PortfolioDebtOverviewController::class, 'index'])->name('debts.index');
 
+        // Goal Year & Life Roadmap (เป้าหมายประจำปี & แผนชีวิต)
+        Route::get('/life-goals', [PortfolioLifeGoalController::class, 'index'])->name('life-goals.index');
+        Route::post('/life-goals', [PortfolioLifeGoalController::class, 'store'])->name('life-goals.store');
+        Route::patch('/life-goals/{goal}', [PortfolioLifeGoalController::class, 'update'])->name('life-goals.update');
+        Route::post('/life-goals/{goal}/toggle', [PortfolioLifeGoalController::class, 'toggle'])->name('life-goals.toggle');
+        Route::post('/life-goals/{goal}/progress', [PortfolioLifeGoalController::class, 'updateProgress'])->name('life-goals.progress');
+        Route::delete('/life-goals/{goal}', [PortfolioLifeGoalController::class, 'destroy'])->name('life-goals.destroy');
+
+        // Fuel Refill Log (บันทึกค่าน้ำมันรถ)
+        Route::get('/fuel', [PortfolioFuelController::class, 'index'])->name('fuel.index');
+        Route::post('/fuel', [PortfolioFuelController::class, 'store'])->name('fuel.store');
+        Route::patch('/fuel/{log}', [PortfolioFuelController::class, 'update'])->name('fuel.update');
+        Route::delete('/fuel/{log}', [PortfolioFuelController::class, 'destroy'])->name('fuel.destroy');
+
+        // Life Journey & Map Timeline (ประวัติการเดินทางและแผนที่ชีวิต)
+        Route::get('/journey', [PortfolioJourneyController::class, 'index'])->name('journey.index');
+        Route::post('/journey/upload', [PortfolioJourneyController::class, 'upload'])->name('journey.upload');
+        Route::post('/journey/regions/toggle', [PortfolioJourneyController::class, 'toggleRegion'])->name('journey.regions.toggle');
+
+        // Second Brain (P.A.R.A. Framework)
+        Route::get('/brain', [PortfolioSecondBrainController::class, 'index'])->name('brain.index');
+        Route::post('/brain', [PortfolioSecondBrainController::class, 'store'])->name('brain.store');
+        Route::patch('/brain/{note}', [PortfolioSecondBrainController::class, 'update'])->name('brain.update');
+        Route::post('/brain/{note}/pin', [PortfolioSecondBrainController::class, 'togglePin'])->name('brain.pin');
+        Route::delete('/brain/{note}', [PortfolioSecondBrainController::class, 'destroy'])->name('brain.destroy');
+
+        // Couple Space & Shared Memory (พื้นที่เราสองคน 💕)
+        Route::get('/couple', [PortfolioCoupleController::class, 'index'])->name('couple.index');
+        Route::post('/couple', [PortfolioCoupleController::class, 'store'])->name('couple.store');
+        Route::post('/couple/{item}/toggle', [PortfolioCoupleController::class, 'toggleDone'])->name('couple.toggle');
+        Route::post('/couple/{item}/savings', [PortfolioCoupleController::class, 'updateSavings'])->name('couple.savings');
+        Route::delete('/couple/{item}', [PortfolioCoupleController::class, 'destroy'])->name('couple.destroy');
+
+        // Personal Profile (User Manual of Me / นิสัย & ตัวตน)
+        Route::get('/persona', [PortfolioPersonaController::class, 'index'])->name('persona.index');
+        Route::post('/persona', [PortfolioPersonaController::class, 'update'])->name('persona.update');
+        Route::post('/persona/qa', [PortfolioPersonaController::class, 'storeQa'])->name('persona.qa.store');
+        Route::delete('/persona/qa/{id}', [PortfolioPersonaController::class, 'deleteQa'])->name('persona.qa.delete');
+
+        // AI Command Center Room (8-Bit Animated Office)
+        Route::get('/command-center', [PortfolioCommandCenterController::class, 'index'])->name('command-center.index');
+        Route::post('/command-center/ping', [PortfolioCommandCenterController::class, 'ping'])->name('command-center.ping');
+
+        // Google Photos integration
+        Route::get('/photos/connect', [PortfolioGooglePhotosController::class, 'connect'])->name('photos.connect');
+        Route::get('/photos/callback', [PortfolioGooglePhotosController::class, 'callback'])->name('photos.callback');
+        Route::get('/photos/latest', [PortfolioGooglePhotosController::class, 'getLatestJson'])->name('photos.latest');
+        Route::post('/photos/disconnect', [PortfolioGooglePhotosController::class, 'disconnect'])->name('photos.disconnect');
+
+        // Google Calendar & SOC Shift Radar integration
+        Route::get('/calendar/connect', [PortfolioGoogleCalendarController::class, 'connect'])->name('calendar.connect');
+        Route::get('/calendar/callback', [PortfolioGoogleCalendarController::class, 'callback'])->name('calendar.callback');
+        Route::post('/calendar/sync', [PortfolioGoogleCalendarController::class, 'sync'])->name('calendar.sync');
+        Route::post('/calendar/events', [PortfolioGoogleCalendarController::class, 'storeEvent'])->name('calendar.events.store');
+        Route::get('/calendar/shifts', [PortfolioGoogleCalendarController::class, 'getShiftsJson'])->name('calendar.shifts');
+        Route::post('/calendar/disconnect', [PortfolioGoogleCalendarController::class, 'disconnect'])->name('calendar.disconnect');
+
         // Subscriptions
         Route::get('/subscriptions', [PortfolioSubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::post('/subscriptions', [PortfolioSubscriptionController::class, 'store'])->name('subscriptions.store');
         Route::patch('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'update'])->name('subscriptions.update');
         Route::delete('/subscriptions/{subscription}', [PortfolioSubscriptionController::class, 'destroy'])->name('subscriptions.destroy');
+
+        // AI Stock Analyst (10 Popular Investment Prompts + Live Technicals + Paper & Real Portfolio)
+        Route::get('/ai-analyst', [PortfolioStockAiController::class, 'index'])->name('ai.index');
+        Route::post('/ai-analyst/analyze', [PortfolioStockAiController::class, 'analyze'])->name('ai.analyze');
+        Route::post('/ai-analyst/news', [PortfolioStockAiController::class, 'fetchNewsApi'])->name('ai.news');
+        Route::post('/ai-analyst/api-key', [PortfolioStockAiController::class, 'saveApiKey'])->name('ai.api-key');
+        Route::post('/ai-analyst/paper-trades', [PortfolioStockAiController::class, 'storePaperTrade'])->name('ai.paper-trade.store');
+        Route::post('/ai-analyst/paper-trades/{trade}/close', [PortfolioStockAiController::class, 'closePaperTrade'])->name('ai.paper-trade.close');
+        Route::post('/ai-analyst/paper-trades/{trade}/convert', [PortfolioStockAiController::class, 'convertToRealHolding'])->name('ai.paper-trade.convert');
+        Route::delete('/ai-analyst/paper-trades/{trade}', [PortfolioStockAiController::class, 'destroyPaperTrade'])->name('ai.paper-trade.destroy');
+        Route::post('/ai-analyst/paper-account/reset', [PortfolioStockAiController::class, 'resetPaperAccount'])->name('ai.paper-account.reset');
+        Route::patch('/ai-analyst/holdings/{holding}/guard', [PortfolioStockAiController::class, 'updateHoldingGuard'])->name('ai.holding-guard.update');
+        Route::post('/ai-analyst/refresh-prices', [PortfolioStockAiController::class, 'refreshPrices'])->name('ai.refresh-prices');
+
+        // Health & Bio-Hacker Cockpit (Galaxy Watch 7)
+        Route::get('/health', [PortfolioHealthDashboardController::class, 'index'])->name('health.index');
     });
+
+    // Health Connect Webhook (Machine-to-Machine API, secured by Bearer Token)
+    Route::post('/health/webhook', [PortfolioHealthWebhookController::class, 'handle'])->name('health.webhook');
+    Route::get('/health/test', [PortfolioHealthWebhookController::class, 'test'])->name('health.test');
 });
+
+// Root API Health Endpoints for mobile apps
+Route::post('/api/health/webhook', [PortfolioHealthWebhookController::class, 'handle'])->name('api.health.webhook');
+Route::get('/api/health/test', [PortfolioHealthWebhookController::class, 'test'])->name('api.health.test');
+
+// Short URL aliases for Personal Life Dashboard
+Route::redirect('/life', '/portfolio');
+Route::redirect('/finance', '/portfolio/finance');
+Route::redirect('/fuel', '/portfolio/fuel');
+Route::redirect('/journey', '/portfolio/journey');
+Route::redirect('/budget', '/portfolio/budget');
+Route::redirect('/goals', '/portfolio/life-goals');
+Route::redirect('/goal-year', '/portfolio/life-goals');
+Route::redirect('/brain', '/portfolio/brain');
+Route::redirect('/second-brain', '/portfolio/brain');
+Route::redirect('/couple', '/portfolio/couple');
+Route::redirect('/persona', '/portfolio/persona');
+Route::redirect('/me', '/portfolio/persona');
+Route::redirect('/agents', '/portfolio/command-center');
+Route::redirect('/room', '/portfolio/command-center');
+Route::redirect('/command-center', '/portfolio/command-center');
+Route::redirect('/health', '/portfolio/health');
 
 if (app()->environment('local')) {
     Route::get('/dev-portfolio-login', function () {

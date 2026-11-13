@@ -78,4 +78,23 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    // Google Photos API integration
+    'google_photos' => [
+        'client_id' => env('GOOGLE_PHOTOS_CLIENT_ID', env('GOOGLE_CLIENT_ID')),
+        'client_secret' => env('GOOGLE_PHOTOS_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET')),
+        'redirect' => env('GOOGLE_PHOTOS_REDIRECT_URI', 'https://trimongkol.com/portfolio/photos/callback'),
+    ],
+
+    // Google Calendar API integration (SOC Shift & Bio-Rhythm Radar)
+    'google_calendar' => [
+        'client_id' => env('GOOGLE_CALENDAR_CLIENT_ID', env('GOOGLE_PHOTOS_CLIENT_ID', env('GOOGLE_CLIENT_ID'))),
+        'client_secret' => env('GOOGLE_CALENDAR_CLIENT_SECRET', env('GOOGLE_PHOTOS_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET'))),
+        'redirect' => env('GOOGLE_CALENDAR_REDIRECT_URI', 'https://trimongkol.com/portfolio/calendar/callback'),
+    ],
+
+    // Health Connect Webhook for Bio-Hacker Agent (Galaxy Watch / Android)
+    'health_webhook' => [
+        'secret' => env('HEALTH_WEBHOOK_SECRET'),
+    ],
+
 ];

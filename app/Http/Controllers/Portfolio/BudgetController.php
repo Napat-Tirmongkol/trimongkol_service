@@ -19,10 +19,47 @@ class BudgetController extends Controller
     {
         $userId = $this->resolvePortfolioUserId();
 
-        // 1. Months for the dropdown = only months with real budget activity.
-        //    DebtPayment entries are a pre-seeded schedule stretching years into
-        //    the future — including them would flood the list with 100+ months.
+        // Always default to the current calendar month so the page opens
+        // on "now" regardless of how far debt schedules extend.
+        $activeMonth = $request->query('month');
+        if (!$activeMonth || !preg_match('/^\d{4}-\d{2}$/', $activeMonth)) {
+            $activeMonth = date('Y-m');
+        }
+
+        // Auto-seed the verified Nov 2026 financial plan when 2026-11 is empty
+        // or when explicitly requested via ?sync_plan=1.
+        if ($request->boolean('sync_plan')) {
+            $this->seedVerifiedNovember2026Plan($userId, $activeMonth);
+            return redirect()->route('portfolio.budget.index', ['month' => $activeMonth])
+                ->with('status', "ซิงก์ข้อมูลแผนการเงินจริง (สลิปเงินเดือน 29,911 ฿ + หอพัก 7,292 ฿ + หนี้สิน + Subscriptions) สำหรับเดือน {$activeMonth} เรียบร้อยแล้ว");
+        }
+        if (
+            $activeMonth === '2026-11'
+            && Income::query()->forUser($userId)->where('month', '2026-11')->doesntExist()
+            && BudgetItem::query()->forUser($userId)->where('month', '2026-11')->doesntExist()
+            && Installment::query()->forUser($userId)->where('month', '2026-11')->doesntExist()
+        ) {
+            $this->seedVerifiedNovember2026Plan($userId, '2026-11');
+        }
+
+        // Migrate labels to verified specific names
+        Debt::query()->forUser($userId)->where('label', 'ใบแจ้งยอดล่วงหน้า (ครบกำหนดทุกวันที่ 1)')->update([
+            'label' => 'TikTok PayLater (ครบกำหนดทุกวันที่ 1)'
+        ]);
+        Installment::query()->forUser($userId)->where('label', 'สินเชื่อ Tiktok')->update([
+            'label' => 'สินเชื่อเงินสด TikTok'
+        ]);
+
+        // 1. Months for the dropdown = real budget activity + past 24 months + next 2 months
+        $recentMonths = collect();
+        $baseDate = \Carbon\Carbon::now()->startOfMonth();
+        for ($i = -2; $i <= 24; $i++) {
+            $recentMonths->push($baseDate->copy()->subMonths($i)->format('Y-m'));
+        }
+        $recentMonths->push($activeMonth);
+
         $allMonths = collect()
+            ->merge($recentMonths)
             ->merge(BudgetItem::query()->forUser($userId)->pluck('month'))
             ->merge(Installment::query()->forUser($userId)->pluck('month'))
             ->merge(Subscription::query()->forUser($userId)->pluck('month'))
@@ -31,13 +68,6 @@ class BudgetController extends Controller
             ->sort()
             ->reverse()
             ->values();
-
-        // 2. Always default to the current calendar month so the page opens
-        //    on "now" regardless of how far debt schedules extend.
-        $activeMonth = $request->query('month');
-        if (!$activeMonth || !preg_match('/^\d{4}-\d{2}$/', $activeMonth)) {
-            $activeMonth = date('Y-m');
-        }
 
         // 3. Fetch Income Sources for active month
         $incomes = Income::query()
@@ -207,6 +237,169 @@ class BudgetController extends Controller
             ->with('status', 'เพิ่มแหล่งรายได้เรียบร้อยแล้ว');
     }
 
+    public function storePayslip(Request $request)
+    {
+        $userId = $this->resolvePortfolioUserId();
+
+        $data = $request->validate([
+            'month'           => 'required|string|regex:/^\d{4}-\d{2}$/',
+            'company'         => 'required|string|max:120',
+            'base_salary'     => 'required|numeric|min:0',
+            'ot'              => 'nullable|numeric|min:0',
+            'bonus'           => 'nullable|numeric|min:0',
+            'social_security' => 'nullable|numeric|min:0',
+            'tax'             => 'nullable|numeric|min:0',
+            'other_deduct'    => 'nullable|numeric|min:0',
+            'notes'           => 'nullable|string|max:1000',
+        ]);
+
+        $baseSalary      = (float) $data['base_salary'];
+        $ot              = (float) ($data['ot'] ?? 0);
+        $bonus           = (float) ($data['bonus'] ?? 0);
+        $socialSecurity  = (float) ($data['social_security'] ?? 0);
+        $tax             = (float) ($data['tax'] ?? 0);
+        $otherDeduct     = (float) ($data['other_deduct'] ?? 0);
+
+        $grossIncome     = round($baseSalary + $ot + $bonus, 2);
+        $totalDeductions = round($socialSecurity + $tax + $otherDeduct, 2);
+        $netPay          = round(max(0, $grossIncome - $totalDeductions), 2);
+
+        $payslipData = [
+            'is_payslip'       => true,
+            'company'          => trim($data['company']),
+            'base_salary'      => $baseSalary,
+            'ot'               => $ot,
+            'bonus'            => $bonus,
+            'gross_income'     => $grossIncome,
+            'social_security'  => $socialSecurity,
+            'tax'              => $tax,
+            'other_deduct'     => $otherDeduct,
+            'total_deductions' => $totalDeductions,
+            'net_pay'          => $netPay,
+            'custom_notes'     => $data['notes'] ?? '',
+        ];
+
+        $companyName = trim($data['company']);
+        $label = "เงินเดือนประจำสุทธิ ({$companyName})";
+
+        // Find existing salary income for this user & month (or create new)
+        $income = Income::query()
+            ->forUser($userId)
+            ->where('month', $data['month'])
+            ->where(function ($q) {
+                $q->where('label', 'LIKE', 'เงินเดือน%')
+                  ->orWhere('notes', 'LIKE', '%"is_payslip":true%');
+            })
+            ->first();
+
+        if ($income) {
+            $income->update([
+                'label'  => $label,
+                'amount' => $netPay,
+                'notes'  => json_encode($payslipData, JSON_UNESCAPED_UNICODE),
+            ]);
+        } else {
+            Income::create([
+                'user_id' => $userId,
+                'month'   => $data['month'],
+                'label'   => $label,
+                'amount'  => $netPay,
+                'notes'   => json_encode($payslipData, JSON_UNESCAPED_UNICODE),
+            ]);
+        }
+
+        // Clean up standalone OT row if OT was merged into this payslip to prevent double counting
+        if ($ot > 0) {
+            Income::query()
+                ->forUser($userId)
+                ->where('month', $data['month'])
+                ->where(function ($q) {
+                    $q->where('label', 'ค่าล่วงเวลา (OT)')
+                      ->orWhere('label', 'ค่าล่วงเวลา')
+                      ->orWhere('label', 'OT');
+                })
+                ->delete();
+        }
+
+        return redirect()->route('portfolio.budget.index', ['month' => $data['month']])
+            ->with('status', "บันทึกสลิปเงินเดือนงวด {$data['month']} เรียบร้อยแล้ว (สุทธิ ฿" . number_format($netPay, 2) . ")");
+    }
+
+    public function copyMonth(Request $request)
+    {
+        $userId = $this->resolvePortfolioUserId();
+        $targetMonth = $request->input('target_month');
+        $sourceMonth = $request->input('source_month');
+
+        if (!$targetMonth || !preg_match('/^\d{4}-\d{2}$/', $targetMonth)) {
+            return redirect()->back()->with('error', 'ระบุเดือนปลายทางไม่ถูกต้อง');
+        }
+
+        if (!$sourceMonth) {
+            $sourceMonth = BudgetItem::query()
+                ->forUser($userId)
+                ->where('month', '!=', $targetMonth)
+                ->orderBy('month', 'desc')
+                ->value('month') ?? '2026-11';
+        }
+
+        // Copy Incomes
+        $sourceIncomes = Income::query()->forUser($userId)->where('month', $sourceMonth)->get();
+        foreach ($sourceIncomes as $inc) {
+            Income::firstOrCreate(
+                ['user_id' => $userId, 'month' => $targetMonth, 'label' => $inc->label],
+                ['amount' => $inc->amount, 'notes' => $inc->notes]
+            );
+        }
+
+        // Copy BudgetItems
+        $sourceItems = BudgetItem::query()->forUser($userId)->where('month', $sourceMonth)->get();
+        foreach ($sourceItems as $item) {
+            BudgetItem::firstOrCreate(
+                ['user_id' => $userId, 'month' => $targetMonth, 'category' => $item->category, 'label' => $item->label],
+                [
+                    'amount'     => $item->amount,
+                    'is_checked' => false,
+                    'sort_order' => $item->sort_order,
+                    'notes'      => $item->notes,
+                ]
+            );
+        }
+
+        // Copy Subscriptions
+        $sourceSubs = Subscription::query()->forUser($userId)->where('month', $sourceMonth)->get();
+        foreach ($sourceSubs as $sub) {
+            Subscription::firstOrCreate(
+                ['user_id' => $userId, 'month' => $targetMonth, 'label' => $sub->label],
+                [
+                    'monthly_payment' => $sub->monthly_payment,
+                    'billing_day'     => $sub->billing_day,
+                    'is_checked'      => false,
+                    'notes'           => $sub->notes,
+                ]
+            );
+        }
+
+        // Copy Installments
+        $sourceInst = Installment::query()->forUser($userId)->where('month', $sourceMonth)->get();
+        foreach ($sourceInst as $inst) {
+            Installment::firstOrCreate(
+                ['user_id' => $userId, 'month' => $targetMonth, 'label' => $inst->label],
+                [
+                    'monthly_payment' => $inst->monthly_payment,
+                    'total_amount'    => $inst->total_amount,
+                    'total_months'    => $inst->total_months,
+                    'paid_months'     => max(0, $inst->paid_months - 1),
+                    'is_checked'      => false,
+                    'notes'           => $inst->notes,
+                ]
+            );
+        }
+
+        return redirect()->route('portfolio.budget.index', ['month' => $targetMonth])
+            ->with('status', "คัดลอกโครงร่างงบจากงวด {$sourceMonth} มายังงวด {$targetMonth} เรียบร้อยแล้ว");
+    }
+
     public function updateIncome(Request $request, Income $income)
     {
         $this->authorizeIncome($income);
@@ -313,6 +506,32 @@ class BudgetController extends Controller
     public function updateInstallment(Request $request, Installment $installment)
     {
         $this->authorizeInstallment($installment);
+
+        // Support one-click +1 / -1 paid_months step from /portfolio/debts
+        if ($request->filled('step_paid')) {
+            $step = (int) $request->input('step_paid');
+            $newPaid = max(0, min((int) $installment->total_months, (int) $installment->paid_months + $step));
+            $remMonths = (int) $installment->total_months - $newPaid;
+            $remAmount = max(0.0, round((float) $installment->total_amount - ((float) $installment->monthly_payment * $newPaid), 2));
+
+            $notes = $installment->notes;
+            if ($notes && (str_contains($notes, 'เหลืออีก') || str_contains($notes, 'งวดสุดท้าย') || str_contains($notes, 'ผ่อนครบแล้ว'))) {
+                $notes = $remMonths > 0
+                    ? 'เหลืออีก ' . $remMonths . ' งวด (คงเหลือ ' . number_format($remAmount, 2) . ' ฿)'
+                    : 'ผ่อนครบแล้ว (คงเหลือ 0.00 ฿)';
+            }
+
+            $installment->update([
+                'paid_months' => $newPaid,
+                'is_checked'  => $step > 0 ? true : $installment->is_checked,
+                'notes'       => $notes,
+            ]);
+
+            return $this->redirectAfterAction(
+                $installment->month,
+                "อัปเดตงวดผ่อน '{$installment->label}' เป็น {$newPaid}/{$installment->total_months} งวดเรียบร้อยแล้ว"
+            );
+        }
 
         $data = $request->validate([
             'label' => 'required|string|max:120',
@@ -430,6 +649,13 @@ class BudgetController extends Controller
             ]);
         }
 
+        if ($type === 'debt-payment') {
+            $statusMsg = $model->is_paid
+                ? "บันทึกชำระงวด {$model->month} (฿" . number_format((float) $model->amount, 2) . ") เรียบร้อยแล้ว"
+                : "ยกเลิกสถานะชำระงวด {$model->month} เรียบร้อยแล้ว";
+            return redirect()->back()->with('status', $statusMsg);
+        }
+
         return redirect()->back();
     }
 
@@ -531,7 +757,9 @@ class BudgetController extends Controller
         ]);
 
         $payment->amount = $data['amount'];
-        $payment->notes  = $data['notes'] ?? null;
+        if ($request->has('notes')) {
+            $payment->notes = $data['notes'] ?? null;
+        }
         if (!empty($data['due_month'])) {
             $payment->month = $data['due_month']; // กยศ: editable งวด due month
         }
@@ -542,6 +770,13 @@ class BudgetController extends Controller
             $payment->is_paid = (float) $payment->paid_amount >= (float) $payment->amount;
         }
         $payment->save();
+
+        // Keep total_amount on non-กยศ variable debts in sync with their payment rows
+        $parentDebt = $payment->debt;
+        if ($parentDebt && !str_contains($parentDebt->label, 'กยศ')) {
+            $parentDebt->total_amount = (float) $parentDebt->payments()->sum('amount');
+            $parentDebt->save();
+        }
 
         $month = $request->input('month', $payment->month);
         return $this->redirectAfterAction($month, 'อัปเดตงวดชำระเรียบร้อยแล้ว');
@@ -602,6 +837,10 @@ class BudgetController extends Controller
 
     public function resetMonth(Request $request)
     {
+        if ($request->boolean('sync_verified_plan')) {
+            return $this->syncVerifiedPlan($request);
+        }
+
         $userId = $this->resolvePortfolioUserId();
         $currentMonth = $request->input('current_month');
         if (!$currentMonth || !preg_match('/^\d{4}-\d{2}$/', $currentMonth)) {
@@ -686,19 +925,40 @@ class BudgetController extends Controller
             }
         }
 
-        // 4. Copy Installments (incrementing paid_months if checked)
+        // 4. Copy Installments (incrementing paid_months if checked, skipping completed ones)
         $insts = Installment::query()->forUser($userId)->where('month', $currentMonth)->get();
         foreach ($insts as $inst) {
+            $newPaid = (int) $inst->paid_months;
+            if ($inst->is_checked) {
+                $newPaid = min((int) $inst->total_months, $newPaid + 1);
+            }
+
+            // If this installment finished after paying the current month, mark the current record as completed
+            // and do NOT copy it into the next month.
+            if ($newPaid >= (int) $inst->total_months) {
+                if ((int) $inst->paid_months !== $newPaid) {
+                    $inst->update([
+                        'paid_months' => $newPaid,
+                        'notes' => 'ผ่อนครบแล้ว (คงเหลือ 0.00 ฿)',
+                    ]);
+                }
+                continue;
+            }
+
             $existsInNext = Installment::query()
                 ->forUser($userId)
                 ->where('month', $nextMonth)
                 ->where('label', $inst->label)
                 ->exists();
-            if (!$existsInNext && $inst->paid_months < $inst->total_months) {
-                $newPaid = $inst->paid_months;
-                if ($inst->is_checked) {
-                    $newPaid = min($inst->total_months, $inst->paid_months + 1);
+
+            if (!$existsInNext) {
+                $remMonths = (int) $inst->total_months - $newPaid;
+                $remAmount = max(0.0, round((float) $inst->total_amount - ((float) $inst->monthly_payment * $newPaid), 2));
+                $notes = $inst->notes;
+                if ($notes && (str_contains($notes, 'เหลืออีก') || str_contains($notes, 'งวดสุดท้าย'))) {
+                    $notes = 'เหลืออีก ' . $remMonths . ' งวด (คงเหลือ ' . number_format($remAmount, 2) . ' ฿)';
                 }
+
                 Installment::create([
                     'user_id' => $userId,
                     'month' => $nextMonth,
@@ -708,13 +968,219 @@ class BudgetController extends Controller
                     'total_months' => $inst->total_months,
                     'paid_months' => $newPaid,
                     'is_checked' => false,
-                    'notes' => $inst->notes,
+                    'notes' => $notes,
                 ]);
             }
         }
 
         return redirect()->route('portfolio.budget.index', ['month' => $nextMonth])
             ->with('status', "เริ่มต้นงบประมาณเดือนใหม่ ($nextMonth) และเตรียมข้อมูลสำเร็จแล้ว");
+    }
+
+    public function syncVerifiedPlan(Request $request)
+    {
+        $userId = $this->resolvePortfolioUserId();
+        $month = $request->input('month', '2026-11');
+        if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $month = '2026-11';
+        }
+
+        $this->seedVerifiedNovember2026Plan($userId, $month);
+
+        return $this->redirectAfterAction(
+            $month,
+            "ซิงก์ข้อมูลแผนการเงินและหนี้สินปัจจุบัน (พ.ย. 2569) เรียบร้อยแล้ว"
+        );
+    }
+
+    public function seedVerifiedNovember2026Plan(int $userId, string $month = '2026-11'): void
+    {
+        // 1. Incomes (Pay Slip: Base net 28,911.00 + OT 1,000.00 = 29,911.00)
+        Income::query()->forUser($userId)->where('month', $month)->delete();
+        $incomes = [
+            [
+                'label' => 'เงินเดือนประจำสุทธิ (บจก. ดูดีพ)',
+                'amount' => 28911.00,
+                'notes' => 'ฐานเงินเดือน 30,000.00 หักประกันสังคม 875.00 และภาษี 214.00',
+            ],
+            [
+                'label' => 'ค่าล่วงเวลา (OT)',
+                'amount' => 1000.00,
+                'notes' => 'รายได้ไม่ประจำตามสลิปเงินเดือน',
+            ],
+        ];
+        foreach ($incomes as $inc) {
+            Income::create(array_merge($inc, ['user_id' => $userId, 'month' => $month]));
+        }
+
+        // 2. Budget Items (Fixed Housing: Thatcharin Place 7,292 ฿ + Variable Living 6,600 ฿ + Emergency Fund Saving 2,021.08 ฿)
+        BudgetItem::query()->forUser($userId)->where('month', $month)->delete();
+        $budgetItems = [
+            [
+                'category' => BudgetItem::CATEGORY_FIXED,
+                'label' => 'ค่าเช่าห้อง Thatcharin Place (ห้อง 410)',
+                'amount' => 5100.00,
+                'sort_order' => 1,
+                'notes' => 'ครบกำหนดชำระวันที่ 7 ของเดือน (INV112610041)',
+            ],
+            [
+                'category' => BudgetItem::CATEGORY_FIXED,
+                'label' => 'ค่าส่วนกลาง + ที่จอดรถหอพัก',
+                'amount' => 490.00,
+                'sort_order' => 2,
+                'notes' => 'ค่าส่วนกลาง 390.00 ฿ + ค่าที่จอดรถ 100.00 ฿',
+            ],
+            [
+                'category' => BudgetItem::CATEGORY_FIXED,
+                'label' => 'ค่าน้ำ + ค่าไฟหอพัก (332 ยูนิต)',
+                'amount' => 1702.00,
+                'sort_order' => 3,
+                'notes' => 'ค่าน้ำ 5 ยูนิต (75 ฿) + ค่าไฟ 332 ยูนิต x 4.90 (1,627 ฿)',
+            ],
+            [
+                'category' => BudgetItem::CATEGORY_VARIABLE,
+                'label' => 'ค่าอาหารและเครื่องดื่มรายวัน',
+                'amount' => 5400.00,
+                'sort_order' => 1,
+                'notes' => 'คุมงบเฉลี่ยวันละ 180 บาท',
+            ],
+            [
+                'category' => BudgetItem::CATEGORY_VARIABLE,
+                'label' => 'ค่าน้ำมันรถมอเตอร์ไซค์ & เดินทาง',
+                'amount' => 1200.00,
+                'sort_order' => 2,
+                'notes' => 'เฉลี่ยสัปดาห์ละ 300 บาท (รวมค่ากิน+เดินทาง = 220 ฿/วัน)',
+            ],
+            [
+                'category' => BudgetItem::CATEGORY_SAVING,
+                'label' => 'เงินสำรองฉุกเฉิน (High-Yield e-Savings)',
+                'amount' => 2021.08,
+                'sort_order' => 1,
+                'notes' => 'โอนเก็บทันทีที่เงินเดือนออก (เป้าหมายสำรอง 3 เดือน = 52,443 ฿)',
+            ],
+        ];
+        foreach ($budgetItems as $item) {
+            BudgetItem::create(array_merge($item, [
+                'user_id' => $userId,
+                'month' => $month,
+                'is_checked' => false,
+            ]));
+        }
+
+        // 3. Installments (6 items from Debt Excel = 7,679.02 ฿/month)
+        // Remove discontinued/crossed-out installment labels from earlier months so /portfolio/debts stays clean
+        $activeInstallmentLabels = ['S24 Ultra', 'SPayLater', 'สินเชื่อเงินสด TikTok', 'mono max', 'มอไซต์', 'คืนแม่'];
+        Installment::query()->forUser($userId)->whereNotIn('label', $activeInstallmentLabels)->delete();
+        Installment::query()->forUser($userId)->where('month', '>=', $month)->delete();
+
+        $installments = [
+            [
+                'label' => 'S24 Ultra',
+                'monthly_payment' => 1498.24,
+                'total_amount' => 35957.76,
+                'paid_months' => 14,
+                'total_months' => 24,
+                'notes' => 'เหลืออีก 10 งวด (คงเหลือ 14,982.40 ฿)',
+            ],
+            [
+                'label' => 'SPayLater',
+                'monthly_payment' => 1000.00,
+                'total_amount' => 10000.00,
+                'paid_months' => 4,
+                'total_months' => 10,
+                'notes' => 'เหลืออีก 6 งวด (คงเหลือ 6,000.00 ฿)',
+            ],
+            [
+                'label' => 'สินเชื่อเงินสด TikTok',
+                'monthly_payment' => 948.62,
+                'total_amount' => 9000.00,
+                'paid_months' => 3,
+                'total_months' => 12,
+                'notes' => 'เหลืออีก 9 งวด (คงเหลือ 6,154.14 ฿)',
+            ],
+            [
+                'label' => 'mono max',
+                'monthly_payment' => 243.16,
+                'total_amount' => 2918.00,
+                'paid_months' => 3,
+                'total_months' => 12,
+                'notes' => 'เหลืออีก 9 งวด (คงเหลือ 2,188.52 ฿)',
+            ],
+            [
+                'label' => 'มอไซต์',
+                'monthly_payment' => 2989.00,
+                'total_amount' => 99972.00,
+                'paid_months' => 3,
+                'total_months' => 20,
+                'notes' => 'คงเหลือ 91,005.00 ฿',
+            ],
+            [
+                'label' => 'คืนแม่',
+                'monthly_payment' => 1000.00,
+                'total_amount' => 1000.00,
+                'paid_months' => 0,
+                'total_months' => 1,
+                'notes' => 'งวดสุดท้าย พ.ย. 2026 (คงเหลือ 1,000.00 ฿)',
+            ],
+        ];
+        foreach ($installments as $inst) {
+            Installment::create(array_merge($inst, [
+                'user_id' => $userId,
+                'month' => $month,
+                'is_checked' => false,
+            ]));
+        }
+
+        // 4. Stepped Variable Debt Schedule (TikTok PayLater 6 งวด: พ.ย. 2026 – เม.ย. 2027)
+        // Remove obsolete non-กยศ variable debts so only current stepped schedule + กยศ remain
+        Debt::query()
+            ->forUser($userId)
+            ->where('label', 'not like', '%กยศ%')
+            ->where('label', '!=', 'TikTok PayLater (ครบกำหนดทุกวันที่ 1)')
+            ->where('label', '!=', 'ใบแจ้งยอดล่วงหน้า (ครบกำหนดทุกวันที่ 1)')
+            ->delete();
+
+        $steppedDebt = Debt::updateOrCreate(
+            ['user_id' => $userId, 'label' => 'TikTok PayLater (ครบกำหนดทุกวันที่ 1)'],
+            [
+                'total_amount' => 14729.07,
+                'notes' => 'ยอดค้างชำระรายเดือนลดลงตามขั้นบันได 6 งวด (พ.ย. 2026 - เม.ย. 2027)',
+            ]
+        );
+        $steppedDebt->payments()->whereNotIn('month', ['2026-11', '2026-12', '2027-01', '2027-02', '2027-03', '2027-04'])->delete();
+        $schedule = [
+            '2026-11' => ['amount' => 4955.97, 'notes' => 'ครบกำหนดชำระ: 1 ธ.ค. 2026'],
+            '2026-12' => ['amount' => 3867.24, 'notes' => 'ครบกำหนดชำระ: 1 ม.ค. 2027'],
+            '2027-01' => ['amount' => 2614.94, 'notes' => 'ครบกำหนดชำระ: 1 ก.พ. 2027'],
+            '2027-02' => ['amount' => 1429.25, 'notes' => 'ครบกำหนดชำระ: 1 มี.ค. 2027'],
+            '2027-03' => ['amount' => 1099.97, 'notes' => 'ครบกำหนดชำระ: 1 เม.ย. 2027'],
+            '2027-04' => ['amount' => 761.70,  'notes' => 'ครบกำหนดชำระ: 1 พ.ค. 2027 (งวดสุดท้าย)'],
+        ];
+        foreach ($schedule as $ym => $row) {
+            DebtPayment::updateOrCreate(
+                ['debt_id' => $steppedDebt->id, 'user_id' => $userId, 'month' => $ym],
+                ['amount' => $row['amount'], 'notes' => $row['notes']]
+            );
+        }
+
+        // 5. Subscriptions (7 items = 1,362.93 ฿/month)
+        Subscription::query()->forUser($userId)->where('month', $month)->delete();
+        $subscriptions = [
+            ['label' => 'เน็ตรายเดือน', 'monthly_payment' => 426.93, 'billing_day' => 1, 'notes' => 'อินเทอร์เน็ตมือถือรายเดือน'],
+            ['label' => 'YouTube', 'monthly_payment' => 240.00, 'billing_day' => 5, 'notes' => 'แนะนำย้ายไปสมัครผ่านเว็บโดยตรงเหลือ 179 ฿ (-61 ฿/ด.)'],
+            ['label' => 'Spotify', 'monthly_payment' => 209.00, 'billing_day' => 10, 'notes' => 'ซ้ำซ้อนกับ YouTube Music (พักชั่วคราวประหยัด 209 ฿/ด.)'],
+            ['label' => 'Google gemini pro', 'monthly_payment' => 189.00, 'billing_day' => 12, 'notes' => 'เครื่องมือ AI ช่วยทำงานสาย IT'],
+            ['label' => 'ค่ากล้องวงจรปิดบ้านย่า', 'monthly_payment' => 169.00, 'billing_day' => 15, 'notes' => 'ดูแลความปลอดภัยครอบครัว'],
+            ['label' => 'Google cloud แม่', 'monthly_payment' => 70.00, 'billing_day' => 18, 'notes' => 'พื้นที่สำรองข้อมูลให้คุณแม่'],
+            ['label' => 'Whoscall', 'monthly_payment' => 59.00, 'billing_day' => 20, 'notes' => 'ใช้ Smart Call ใน S24 Ultra แทนได้ (-59 ฿/ด.)'],
+        ];
+        foreach ($subscriptions as $sub) {
+            Subscription::create(array_merge($sub, [
+                'user_id' => $userId,
+                'month' => $month,
+                'is_checked' => false,
+            ]));
+        }
     }
 
     private function authorizeIncome(Income $income): void

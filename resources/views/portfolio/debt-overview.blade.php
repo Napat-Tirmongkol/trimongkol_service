@@ -3,38 +3,100 @@
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8" x-data="debtOverview()">
 
     {{-- ── Header ─────────────────────────────────────────────────────── --}}
-    <div class="mb-6">
-        <h1 class="text-xl font-bold text-slate-900">{{ __('app.portfolio.debts.heading') }}</h1>
-        <p class="mt-0.5 text-sm text-slate-500">{{ __('app.portfolio.debts.subheading') }}</p>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="text-xl font-bold text-slate-900">{{ __('app.portfolio.debts.heading') }}</h1>
+                <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">อัปเดตล่าสุด พ.ย. 2026</span>
+            </div>
+            <p class="mt-0.5 text-sm text-slate-500">สรุปภาระผ่อนชำระ ใบแจ้งยอดล่วงหน้า 6 งวด และแผนปลดหนี้รายเดือน (อ้างอิงสลิปเงินเดือนสุทธิ ฿29,911.00)</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('portfolio.budget.index', ['month' => '2026-11']) }}"
+               class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                ← แดชบอร์ดแผนการเงิน 50/30/20
+            </a>
+            <form method="POST" action="{{ route('portfolio.budget.reset') }}">
+                @csrf
+                <input type="hidden" name="month" value="2026-11">
+                <input type="hidden" name="sync_verified_plan" value="1">
+                <input type="hidden" name="redirect_to" value="debts">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 transition">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    ซิงก์ข้อมูลหนี้ พ.ย. 69
+                </button>
+            </form>
+        </div>
     </div>
 
+    @if(session('status'))
+        <div class="mb-6 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-sm">
+            <div class="flex items-center gap-2">
+                <svg class="h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <span>{{ session('status') }}</span>
+            </div>
+        </div>
+    @endif
+
     {{-- ── Summary tiles ───────────────────────────────────────────────── --}}
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        {{-- Total remaining --}}
+        {{-- 1. Short-term & Installments remaining --}}
         <div class="rounded-2xl border bg-white p-5 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.tile_remaining') }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">หนี้ผ่อนของ + ใบแจ้งยอดคงเหลือ</p>
             <p class="mt-2 text-2xl font-bold text-rose-600">
-                ฿{{ number_format($totalRemaining, 0) }}
+                ฿{{ number_format($totalRemainingNonKoyoso, 2) }}
             </p>
+            <p class="mt-1 text-[11px] text-slate-500">
+                ผ่อนของ ฿{{ number_format($totalRemainingInstallments, 2) }} + ใบแจ้งยอด ฿{{ number_format($totalRemainingShortTermDebts, 2) }}
+            </p>
+            @if($totalRemainingKoyoso > 0)
+            <p class="mt-1 text-[10px] text-slate-400">
+                (กยศ. แยกต่างหาก ฿{{ number_format($totalRemainingKoyoso, 2) }} · รวมทั้งหมด ฿{{ number_format($totalRemaining, 2) }})
+            </p>
+            @endif
         </div>
 
-        {{-- Next month (plan starts next month; current month excluded) --}}
+        {{-- 2. Current month (Nov 2026) --}}
         <div class="rounded-2xl border bg-white p-5 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.tile_next_month') }}</p>
+            <div class="flex items-center justify-between gap-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">ยอดจ่ายเดือนนี้ ({{ \Illuminate\Support\Carbon::parse($startYM . '-01')->locale('th')->isoFormat('MMM YY') }})</p>
+                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">42.2% ของรายได้</span>
+            </div>
             <p class="mt-2 text-2xl font-bold text-amber-600">
-                ฿{{ number_format($firstMonthTotal, 0) }}
+                ฿{{ number_format($firstMonthNonKoyoso, 2) }}
             </p>
-            <p class="mt-1 text-[11px] text-slate-500">{{ \Illuminate\Support\Carbon::parse($startYM . '-01')->locale('th')->isoFormat('MMMM YY') }}</p>
+            <p class="mt-1 text-[11px] text-slate-500">
+                ผ่อนของ ฿{{ number_format($monthlyInstallmentsSum, 2) }} + ใบแจ้งยอด ฿{{ number_format(max(0, $firstMonthNonKoyoso - $monthlyInstallmentsSum), 2) }}
+            </p>
         </div>
 
-        {{-- 12-month average --}}
+        {{-- 3. Next month (Dec 2026) --}}
         <div class="rounded-2xl border bg-white p-5 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.tile_avg_12') }}</p>
+            <div class="flex items-center justify-between gap-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">ยอดเดือนหน้า ({{ \Illuminate\Support\Carbon::parse($nextYM . '-01')->locale('th')->isoFormat('MMM YY') }})</p>
+                @if($firstMonthNonKoyoso > $nextMonthNonKoyoso)
+                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">-฿{{ number_format($firstMonthNonKoyoso - $nextMonthNonKoyoso, 2) }}</span>
+                @endif
+            </div>
             <p class="mt-2 text-2xl font-bold text-sky-600">
-                ฿{{ number_format($avgMonthly, 0) }}
+                ฿{{ number_format($nextMonthNonKoyoso, 2) }}
             </p>
-            <p class="mt-1 text-[11px] text-slate-500">ต่อเดือน</p>
+            <p class="mt-1 text-[11px] text-slate-500">
+                ปลดหนี้คืนแม่ (-฿1,000) + ใบแจ้งยอดลดเหลือ ฿3,867.24
+            </p>
+        </div>
+
+        {{-- 4. Debt-free milestone --}}
+        <div class="rounded-2xl border bg-white p-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">ไทม์ไลน์ปลดหนี้ระยะสั้น</p>
+            <p class="mt-2 text-lg font-bold text-emerald-600">
+                พ.ค. 70 → ก.ย. 70
+            </p>
+            <p class="mt-1 text-[11px] text-slate-500">
+                พ.ค. 70 จบใบแจ้งยอด+SPayLater (เหลือ ฿5,679/ด.) · ก.ย. 70 เหลือเฉพาะมอไซต์ ฿2,989/ด.
+            </p>
         </div>
     </div>
 
@@ -43,8 +105,14 @@
 
         {{-- ── INSTALLMENTS ─────────────────────────────────────────────────── --}}
         <div class="rounded-2xl border bg-white shadow-sm" x-data="{ addOpen: false }">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <h2 class="text-sm font-semibold text-slate-700">{{ __('app.portfolio.debts.installments') }}</h2>
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-4">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-700">{{ __('app.portfolio.debts.installments') }} ({{ $installments->count() }} รายการ)</h2>
+                    <p class="text-[11px] text-slate-500 mt-0.5">
+                        รวมเดือนละ <span class="font-semibold text-slate-700">฿{{ number_format($monthlyInstallmentsSum, 2) }}</span>
+                        · ยอดคงเหลือรวม <span class="font-semibold text-rose-600">-฿{{ number_format($totalRemainingInstallments, 2) }}</span>
+                    </p>
+                </div>
                 <button @click="addOpen = !addOpen" type="button"
                         class="flex items-center gap-1.5 rounded-lg border border-brand-200 px-2.5 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 transition">
                     <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -101,8 +169,9 @@
                 @php
                     $insLeft = (int) $ins->total_months - (int) $ins->paid_months;
                     $insPct  = $ins->total_months > 0 ? round(($ins->paid_months / $ins->total_months) * 100) : 0;
+                    $insRem  = $ins->remainingBalance();
                 @endphp
-                <div class="px-5 py-3"
+                <div class="px-5 py-3.5"
                      x-data="{ editIns: false,
                                 label: '{{ addslashes($ins->label) }}',
                                 mp: '{{ $ins->monthly_payment }}',
@@ -114,14 +183,64 @@
                         <div class="flex items-start gap-2">
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-sm font-medium text-slate-800">{{ $ins->label }}</span>
-                                    <span class="shrink-0 text-sm font-semibold text-slate-900">฿{{ number_format($ins->monthly_payment, 0) }}/เดือน</span>
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="text-sm font-semibold {{ $insLeft <= 0 ? 'line-through text-slate-400' : 'text-slate-800' }} truncate">{{ $ins->label }}</span>
+                                        @if($insLeft <= 0)
+                                            <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">✓ ผ่อนครบแล้ว</span>
+                                        @elseif($insLeft === 1)
+                                            <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">งวดสุดท้าย พ.ย. 69</span>
+                                        @endif
+                                    </div>
+                                    <span class="shrink-0 text-sm font-bold {{ $insLeft <= 0 ? 'line-through text-slate-400' : 'text-slate-900' }}">฿{{ number_format($ins->monthly_payment, 2) }}/ด.</span>
+                                </div>
+                                <div class="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                                    <span>ราคาเต็ม ฿{{ number_format($ins->total_amount, 2) }} · ผ่อนแล้ว {{ $ins->paid_months }}/{{ $ins->total_months }} เดือน</span>
+                                    @if($insRem > 0)
+                                        <span class="font-semibold text-rose-600">คงเหลือ -฿{{ number_format($insRem, 2) }}</span>
+                                    @else
+                                        <span class="font-semibold text-emerald-600">คงเหลือ ฿0.00</span>
+                                    @endif
                                 </div>
                                 <div class="mt-1.5 flex items-center gap-2">
                                     <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
-                                        <div class="h-1.5 rounded-full bg-brand-500 transition-all" style="width: {{ $insPct }}%"></div>
+                                        <div class="h-1.5 rounded-full {{ $insLeft <= 0 ? 'bg-emerald-500' : 'bg-brand-500' }} transition-all" style="width: {{ $insPct }}%"></div>
                                     </div>
-                                    <span class="shrink-0 text-[10px] text-slate-500">เหลือ {{ $insLeft }} งวด</span>
+                                    <span class="shrink-0 text-[10px] font-medium text-slate-500">
+                                        {{ $insLeft > 0 ? "เหลือ {$insLeft} งวด" : 'ครบงวดแล้ว' }}
+                                    </span>
+                                </div>
+                                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                                    @if($ins->notes)
+                                        <p class="text-[10px] text-slate-400">{{ $ins->notes }}</p>
+                                    @else
+                                        <span></span>
+                                    @endif
+                                    <div class="flex items-center gap-1">
+                                        @if((int) $ins->paid_months > 0)
+                                            <form method="POST" action="{{ route('portfolio.budget.installments.update', $ins) }}">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="step_paid" value="-1">
+                                                <input type="hidden" name="redirect_to" value="debts">
+                                                <button type="submit"
+                                                        class="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-100 transition"
+                                                        title="ลดงวดที่จ่ายแล้ว 1 งวด">
+                                                    -1 งวด
+                                                </button>
+                                            </form>
+                                        @endif
+                                        @if($insLeft > 0)
+                                            <form method="POST" action="{{ route('portfolio.budget.installments.update', $ins) }}">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="step_paid" value="1">
+                                                <input type="hidden" name="redirect_to" value="debts">
+                                                <button type="submit"
+                                                        class="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                                                        title="บันทึกจ่ายเพิ่ม 1 งวด">
+                                                    ✓ จ่ายงวดนี้ (+1)
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex items-center gap-0.5 shrink-0 pt-0.5">
@@ -194,7 +313,7 @@
         {{-- ── DEBTS ─────────────────────────────────────────────────────────── --}}
         <div x-data="{ addDebtOpen: false }">
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-sm font-semibold text-slate-700">{{ __('app.portfolio.debts.debts') }}</h2>
+                <h2 class="text-sm font-semibold text-slate-700">{{ __('app.portfolio.debts.debts') }} & ใบแจ้งยอดล่วงหน้า</h2>
                 <button @click="addDebtOpen = !addDebtOpen" type="button"
                         class="flex items-center gap-1.5 rounded-lg border border-brand-200 px-2.5 py-1 text-xs font-semibold text-brand-600 hover:bg-brand-50 transition">
                     <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -253,13 +372,13 @@
                     @else
                         @php
                             $dTotal  = (float) $debt->payments->sum('amount');
-                            $dPaid   = (float) $debt->payments->sum('paid_amount');
-                            $dRemain = max(0, $dTotal - $dPaid);
+                            $dPaid   = (float) $debt->payments->where('is_paid', true)->sum('amount');
+                            $dRemain = (float) $debt->payments->where('is_paid', false)->sum('amount');
                             $dPct    = $dTotal > 0 ? min(100, round($dPaid / $dTotal * 100)) : 0;
                             $futurePayments = $debt->payments->where('month', '>=', date('Y-m'))->sortBy('month')->values();
                         @endphp
-                        <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-2"
-                             x-data="{ editDebt: false, paymentsOpen: false, addPayment: false,
+                        <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-2 shadow-sm"
+                             x-data="{ editDebt: false, paymentsOpen: true, addPayment: false,
                                         label: '{{ addslashes($debt->label) }}',
                                         total: '{{ $debt->total_amount }}',
                                         mp: '', tm: '' }">
@@ -268,12 +387,16 @@
                             <div x-show="!editDebt" class="flex items-start justify-between gap-3">
                                 <div class="min-w-0 flex-1">
                                     <span class="text-sm font-bold text-slate-800">{{ $debt->label }}</span>
-                                    <p class="text-[10px] text-slate-500 mt-0.5">
-                                        คงเหลือ ฿{{ number_format($dRemain, 0) }}
-                                        @if($dTotal > 0)
+                                    <p class="text-[11px] text-slate-500 mt-0.5">
+                                        คงเหลือ <span class="font-semibold text-rose-600">฿{{ number_format($dRemain, 2) }}</span>
+                                        · ทั้งหมด {{ $futurePayments->count() }} งวด
+                                        @if($dTotal > 0 && $dPaid > 0)
                                             · จ่ายแล้ว {{ $dPct }}%
                                         @endif
                                     </p>
+                                    @if($debt->notes)
+                                        <p class="text-[10px] text-slate-400 mt-0.5">{{ $debt->notes }}</p>
+                                    @endif
                                 </div>
                                 <div class="flex items-center gap-0.5 shrink-0">
                                     <button @click="paymentsOpen = !paymentsOpen" type="button"
@@ -337,17 +460,30 @@
                                 </div>
                             </form>
 
-                            {{-- Payment schedule (collapsible) --}}
-                            <div x-show="paymentsOpen" x-cloak class="border-t border-slate-100 pt-2 space-y-1.5">
+                            {{-- Payment schedule (collapsible, open by default) --}}
+                            <div x-show="paymentsOpen" class="border-t border-slate-100 pt-2 space-y-1.5">
                                 @forelse($futurePayments as $fp)
-                                <div class="flex items-center gap-2 text-[11px]" x-data="{ editFp: false, fpAmt: '{{ $fp->amount }}' }">
+                                @php
+                                    $dueDateLabel = \Illuminate\Support\Carbon::parse($fp->month . '-01')->addMonth()->locale('th')->isoFormat('D MMM YYYY');
+                                @endphp
+                                <div class="flex items-center gap-2 text-[11px] py-0.5" x-data="{ editFp: false, fpAmt: '{{ $fp->amount }}' }">
                                     <div x-show="!editFp" class="flex flex-1 items-center gap-2">
-                                        <span class="shrink-0 text-slate-500">{{ \Illuminate\Support\Carbon::parse($fp->month . '-01')->locale('th')->isoFormat('MMM YY') }}</span>
-                                        <span class="flex-1 font-semibold text-slate-700">฿{{ number_format($fp->amount, 0) }}</span>
-                                        @if($fp->is_paid)
-                                        <span class="shrink-0 text-emerald-600 text-[9px] font-semibold">✓ จ่ายแล้ว</span>
-                                        @endif
-                                        <button @click="editFp = true" type="button" class="shrink-0 text-slate-400 hover:text-slate-600">
+                                        <form method="POST" action="{{ route('portfolio.budget.toggle', ['type' => 'debt-payment', 'id' => $fp->id]) }}" class="shrink-0">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold transition {{ $fp->is_paid ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700' }}"
+                                                    title="{{ $fp->is_paid ? 'คลิกเพื่อยกเลิกสถานะจ่ายแล้ว' : 'คลิกเพื่อบันทึกว่าจ่ายงวดนี้แล้ว' }}">
+                                                @if($fp->is_paid)
+                                                    ✓ จ่ายแล้ว
+                                                @else
+                                                    ○ รอชำระ
+                                                @endif
+                                            </button>
+                                        </form>
+                                        <span class="shrink-0 font-medium {{ $fp->is_paid ? 'line-through text-slate-400' : 'text-slate-700' }} w-14">{{ \Illuminate\Support\Carbon::parse($fp->month . '-01')->locale('th')->isoFormat('MMM YY') }}</span>
+                                        <span class="shrink-0 text-[10px] text-slate-400">(ครบ {{ $dueDateLabel }})</span>
+                                        <span class="flex-1 text-right font-bold {{ $fp->is_paid ? 'line-through text-slate-400' : 'text-slate-800' }}">฿{{ number_format($fp->amount, 2) }}</span>
+                                        <button @click="editFp = true" type="button" class="shrink-0 text-slate-400 hover:text-slate-600" title="แก้ไขยอด">
                                             <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
                                         <form method="POST" action="{{ route('portfolio.budget.debt-payments.destroy', $fp) }}"
@@ -355,7 +491,7 @@
                                             @csrf @method('DELETE')
                                             <input type="hidden" name="month" value="{{ $activeMonth }}">
                                             <input type="hidden" name="redirect_to" value="debts">
-                                            <button type="submit" class="shrink-0 text-rose-400 hover:text-rose-600">
+                                            <button type="submit" class="shrink-0 text-rose-400 hover:text-rose-600" title="ลบงวด">
                                                 <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </form>
@@ -435,7 +571,10 @@
     {{-- ── Monthly schedule table ───────────────────────────────────────── --}}
     <div class="rounded-2xl border bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <h2 class="text-sm font-semibold text-slate-700">แผนการจ่ายรายเดือน</h2>
+            <div>
+                <h2 class="text-sm font-semibold text-slate-700">แผนการจ่ายรายเดือน (เริ่ม พ.ย. 2569)</h2>
+                <p class="text-[11px] text-slate-500 mt-0.5">แสดงภาระผ่อนชำระและใบแจ้งยอดล่วงหน้ารายเดือนตามลำดับเวลาปลดหนี้</p>
+            </div>
             @if (count($schedule) > 12)
             <button @click="showAll = !showAll" type="button"
                     class="text-xs font-medium text-brand-600 hover:text-brand-700 transition">
@@ -448,10 +587,10 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-slate-50/60">
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-28">{{ __('app.portfolio.debts.col_month') }}</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 w-32">{{ __('app.portfolio.debts.col_month') }}</th>
                         <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.col_installments') }}</th>
                         <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('app.portfolio.debts.col_debts') }}</th>
-                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 w-36">{{ __('app.portfolio.debts.col_total') }}</th>
+                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 w-44">{{ __('app.portfolio.debts.col_total') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -459,6 +598,7 @@
                     @foreach ($schedule as $ym => $row)
                     @php
                         $isFirstMonth = ($ym === $startYM);
+                        $isNextMonth  = ($ym === $nextYM);
                         $barPct = $maxMonthlyTotal > 0 ? round(($row['total'] / $maxMonthlyTotal) * 100) : 0;
                         $rowIndex++;
                     @endphp
@@ -468,7 +608,9 @@
                             <div class="flex items-center gap-1.5">
                                 <span class="font-medium {{ $isFirstMonth ? 'text-brand-700' : 'text-slate-700' }}">{{ \Illuminate\Support\Carbon::parse($ym . '-01')->locale('th')->isoFormat('MMM YY') }}</span>
                                 @if ($isFirstMonth)
-                                    <span class="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">{{ __('app.portfolio.debts.next_month') }}</span>
+                                    <span class="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-0.5 text-[9px] font-semibold text-brand-700">เดือนนี้</span>
+                                @elseif ($isNextMonth)
+                                    <span class="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[9px] font-semibold text-sky-700">เดือนหน้า</span>
                                 @endif
                             </div>
                         </td>
@@ -478,7 +620,7 @@
                                     @foreach ($row['installments'] as $ins)
                                     <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
                                         {{ $ins['label'] }}
-                                        <span class="font-medium">฿{{ number_format($ins['amount'], 0) }}</span>
+                                        <span class="font-medium">฿{{ number_format($ins['amount'], 2) }}</span>
                                     </span>
                                     @endforeach
                                 </div>
@@ -490,9 +632,9 @@
                             @if (!empty($row['debt_payments']))
                                 <div class="flex flex-wrap gap-1">
                                     @foreach ($row['debt_payments'] as $dp)
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] text-rose-700">
+                                    <span class="inline-flex items-center gap-1 rounded-full {{ !empty($dp['is_koyoso']) ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700' }} px-2 py-0.5 text-[11px]">
                                         {{ $dp['debt_label'] }}
-                                        <span class="font-medium">฿{{ number_format($dp['amount'], 0) }}</span>
+                                        <span class="font-medium">฿{{ number_format($dp['amount'], 2) }}</span>
                                     </span>
                                     @endforeach
                                 </div>
@@ -501,14 +643,19 @@
                             @endif
                         </td>
                         <td class="px-5 py-3">
-                            <div class="flex items-center justify-end gap-2">
-                                {{-- Bar visual --}}
-                                <div class="hidden sm:block h-1.5 w-20 overflow-hidden rounded-full bg-slate-200">
-                                    <div class="h-1.5 rounded-full {{ $isFirstMonth ? 'bg-brand-500' : 'bg-slate-400' }} transition-all" style="width: {{ $barPct }}%"></div>
+                            <div class="flex flex-col items-end gap-0.5">
+                                <div class="flex items-center justify-end gap-2">
+                                    {{-- Bar visual --}}
+                                    <div class="hidden sm:block h-1.5 w-20 overflow-hidden rounded-full bg-slate-200">
+                                        <div class="h-1.5 rounded-full {{ $isFirstMonth ? 'bg-brand-500' : 'bg-slate-400' }} transition-all" style="width: {{ $barPct }}%"></div>
+                                    </div>
+                                    <span class="text-right font-semibold {{ $isFirstMonth ? 'text-brand-700' : 'text-slate-900' }}">
+                                        ฿{{ number_format($row['non_koyoso_total'] > 0 ? $row['non_koyoso_total'] : $row['total'], 2) }}
+                                    </span>
                                 </div>
-                                <span class="text-right font-semibold {{ $isFirstMonth ? 'text-brand-700' : 'text-slate-900' }}">
-                                    ฿{{ number_format($row['total'], 0) }}
-                                </span>
+                                @if ($row['non_koyoso_total'] > 0 && abs($row['total'] - $row['non_koyoso_total']) > 0.01)
+                                    <span class="text-[10px] text-slate-400">รวมออม กยศ.: ฿{{ number_format($row['total'], 2) }}</span>
+                                @endif
                             </div>
                         </td>
                     </tr>

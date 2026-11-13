@@ -18,7 +18,159 @@ class DashboardController extends Controller
     public function index()
     {
         $userId = $this->resolvePortfolioUserId();
+        $fin = $this->getFinancialData($userId);
 
+        // 1. Life Goals telemetry
+        $lifeGoals = [
+            'activeCount'     => 0,
+            'completedCount'  => 0,
+            'overallProgress' => 0,
+            'focusGoals'      => collect(),
+        ];
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_life_goals')) {
+                $allGoals = \App\Models\Portfolio\LifeGoal::query()->forUser($userId)->get();
+                $active = $allGoals->where('is_completed', false);
+                $lifeGoals['activeCount']     = $active->count();
+                $lifeGoals['completedCount']  = $allGoals->where('is_completed', true)->count();
+                $lifeGoals['overallProgress'] = $active->isNotEmpty() ? (int) round($active->avg('progress_percent')) : 0;
+                $lifeGoals['focusGoals']      = $active->sortBy('sort_order')->take(3)->values();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Life Goals telemetry warning: ' . $e->getMessage());
+        }
+
+        // 2. Second Brain telemetry
+        $brain = [
+            'totalCount'    => 0,
+            'inboxCount'    => 0,
+            'projectsCount' => 0,
+            'recentNotes'   => collect(),
+        ];
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_brain_notes')) {
+                $allNotes = \App\Models\Portfolio\BrainNote::query()->forUser($userId)->where('is_archived', false)->get();
+                $brain['totalCount']    = $allNotes->count();
+                $brain['inboxCount']    = $allNotes->where('type', 'inbox')->count();
+                $brain['projectsCount'] = $allNotes->where('type', 'project')->count();
+                $brain['recentNotes']   = $allNotes->sortByDesc('is_pinned')->sortByDesc('updated_at')->take(4)->values();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Second Brain telemetry warning: ' . $e->getMessage());
+        }
+
+        // 3. Couple Space telemetry
+        $couple = [
+            'tripFundSaved'  => 0.0,
+            'tripFundTarget' => 50000.0,
+            'pendingCount'   => 0,
+            'recentItems'    => collect(),
+        ];
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_couple_items')) {
+                $coupleItems = \App\Models\Portfolio\CoupleItem::query()->forUser($userId)->get();
+                $savings = $coupleItems->firstWhere('type', 'savings');
+                $couple['tripFundSaved']  = $savings ? (float) $savings->saved_amount : 0.0;
+                $couple['tripFundTarget'] = $savings && $savings->target_amount > 0 ? (float) $savings->target_amount : 50000.0;
+                $couple['pendingCount']   = $coupleItems->where('is_done', false)->count();
+                $couple['recentItems']    = $coupleItems->where('is_done', false)->sortByDesc('id')->take(3)->values();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Couple Space telemetry warning: ' . $e->getMessage());
+        }
+
+        // 4. Fuel & Journey telemetry
+        $fuelCostThisMonth = 0.0;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_fuel_logs')) {
+                $fuelCostThisMonth = (float) \App\Models\Portfolio\FuelLog::query()
+                    ->forUser($userId)
+                    ->where('refill_date', '>=', now()->startOfMonth()->toDateString())
+                    ->sum('total_price');
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Fuel telemetry warning: ' . $e->getMessage());
+        }
+
+        // 5. Persona / Profile
+        $persona = null;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_personal_profiles')) {
+                $persona = \App\Models\Portfolio\PersonalProfile::query()->forUser($userId)->first();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Persona telemetry warning: ' . $e->getMessage());
+        }
+
+        // 6. AI Command Center fleet status
+        $aiAgents = [
+            [
+                'id' => 'guard',
+                'name' => 'ลุงยาม รปภ.',
+                'role' => 'Security & Firewall',
+                'status' => 'online',
+                'status_text' => 'เฝ้าระวังเซิร์ฟเวอร์ 100%',
+                'icon' => 'shield',
+                'color' => 'emerald',
+                'station' => 'STATION 01',
+            ],
+            [
+                'id' => 'mechanic',
+                'name' => 'ช่างซ่อมบำรุง',
+                'role' => 'DevOps & Auto-Heal',
+                'status' => 'online',
+                'status_text' => 'ระบบเสถียร ไม่มี Error ค้าง',
+                'icon' => 'wrench',
+                'color' => 'sky',
+                'station' => 'STATION 02',
+            ],
+            [
+                'id' => 'hr_qa',
+                'name' => 'คุณ HR & QA',
+                'role' => 'AI Evaluator & Coordinator',
+                'status' => 'standby',
+                'status_text' => 'ตรวจคุณภาพงาน 4/4 ผ่านเกณฑ์',
+                'icon' => 'clipboard',
+                'color' => 'purple',
+                'station' => 'STATION 03',
+            ],
+            [
+                'id' => 'antigravity',
+                'name' => 'Antigravity (AI)',
+                'role' => 'Lead AI Pair Programmer',
+                'status' => 'active',
+                'status_text' => 'พร้อมลุยโค้ดกับมึงตลอด 24 ชม.',
+                'icon' => 'sparkles',
+                'color' => 'indigo',
+                'station' => 'STATION 04',
+            ],
+        ];
+
+        // 7. Bio-Hacker & Health Telemetry (Galaxy Watch 7 / Health Connect)
+        $health = null;
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_health_metrics')) {
+                $health = \App\Models\Portfolio\HealthMetric::query()->where('user_id', $userId)->orderByDesc('date')->first();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Health telemetry warning: ' . $e->getMessage());
+        }
+
+        return view('portfolio.dashboard', array_merge($fin, compact(
+            'lifeGoals', 'brain', 'couple', 'fuelCostThisMonth', 'persona', 'aiAgents', 'health'
+        )));
+    }
+
+    public function financeIndex()
+    {
+        $userId = $this->resolvePortfolioUserId();
+        $data = $this->getFinancialData($userId);
+
+        return view('portfolio.finance', $data);
+    }
+
+    protected function getFinancialData(int $userId): array
+    {
         $holdings = Holding::query()
             ->forUser($userId)
             ->orderBy('sort_order')
@@ -60,8 +212,6 @@ class DashboardController extends Controller
             foreach ($variableDebts as $d) {
                 $isKoyoso = str_contains($d->label, 'กยศ');
                 if ($d->total_amount > 0) {
-                    // กยศ tracks partial progress via paid_amount per งวด; other
-                    // debts mark whole monthly rows paid.
                     $paidSumD = $isKoyoso
                         ? (float) $d->payments->sum('paid_amount')
                         : (float) $d->payments->where('is_paid', true)->sum('amount');
@@ -74,15 +224,12 @@ class DashboardController extends Controller
                 }
 
                 if ($isKoyoso && $koyoso === null && $d->payments->isNotEmpty()) {
-                    // Per-งวด model: 15 yearly targets (month = YYYY-07 due date),
-                    // each accruing flexible logged payments into paid_amount.
                     $periods     = $d->payments->sortBy('month')->values();
                     $paid        = (float) $periods->sum('paid_amount');
                     $totalTarget = (float) $d->total_amount;
 
-                    // Focus งวด = earliest not-fully-paid (fall back to last).
                     $current    = $periods->firstWhere('is_paid', false) ?? $periods->last();
-                    $curMonthYM = $current?->month;               // YYYY-07
+                    $curMonthYM = $current?->month;
                     $curTarget  = $current ? (float) $current->amount : 0.0;
                     $curPaid    = $current ? (float) $current->paid_amount : 0.0;
 
@@ -135,6 +282,122 @@ class DashboardController extends Controller
         $totals['budget_debts'] = $variableDebtsUnpaid + $installmentsUnpaid;
         $totals['koyoso_total'] = $koyosoDebtsUnpaid + $koyosoInstallmentsUnpaid;
 
+        // Cash flow & Monthly DCA Capacity from budget for active month
+        $activeMonth = date('Y-m');
+        $monthlyIncome = 0.0;
+        $monthlyExpenses = 0.0;
+        $monthlyDcaCapacity = 0.0;
+        $coreValue = 0.0;
+        $satelliteValue = 0.0;
+        $otherStockValue = 0.0;
+        $cashDepositValue = 0.0;
+        $goldValue = 0.0;
+        $cryptoValue = 0.0;
+        $totalInvestedStocks = 0.0;
+        $corePct = 70.0;
+        $satellitePct = 30.0;
+        $estAnnualDividend = 0.0;
+        $estMonthlyDividend = 0.0;
+        $freedomRatio = 0.0;
+        $paperTradeCount = 0;
+        $monthlyPlannedSavings = 0.0;
+        $unallocatedSurplus = 0.0;
+
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_income') || \Illuminate\Support\Facades\Schema::hasTable('portfolio_incomes')) {
+                $monthlyIncome = (float) \App\Models\Portfolio\Income::query()
+                    ->forUser($userId)
+                    ->where('month', $activeMonth)
+                    ->sum('amount');
+            }
+
+            $monthlyFixedItems = 0.0;
+            $monthlyVariableItems = 0.0;
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_budget_items')) {
+                $budgetItems = \App\Models\Portfolio\BudgetItem::query()
+                    ->forUser($userId)
+                    ->where('month', $activeMonth)
+                    ->get();
+                $monthlyFixedItems = (float) $budgetItems->where('category', \App\Models\Portfolio\BudgetItem::CATEGORY_FIXED)->sum('amount');
+                $monthlyVariableItems = (float) $budgetItems->where('category', \App\Models\Portfolio\BudgetItem::CATEGORY_VARIABLE)->sum('amount');
+                $monthlyPlannedSavings = (float) $budgetItems->where('category', \App\Models\Portfolio\BudgetItem::CATEGORY_SAVING)->sum('amount');
+            }
+
+            $monthlyInstallments = 0.0;
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_installments')) {
+                $monthlyInstallments = (float) \App\Models\Portfolio\Installment::query()
+                    ->forUser($userId)
+                    ->where('month', $activeMonth)
+                    ->sum('monthly_payment');
+            }
+
+            $monthlySubscriptions = 0.0;
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_subscriptions')) {
+                $monthlySubscriptions = (float) \App\Models\Portfolio\Subscription::query()
+                    ->forUser($userId)
+                    ->where('month', $activeMonth)
+                    ->sum('monthly_payment');
+            }
+
+            $monthlyDebtPayments = 0.0;
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_debt_payments')) {
+                $monthlyDebtPayments = (float) \App\Models\Portfolio\DebtPayment::query()
+                    ->where('user_id', $userId)
+                    ->where('month', $activeMonth)
+                    ->sum('amount');
+            }
+
+            $monthlyExpenses = $monthlyFixedItems + $monthlyVariableItems + $monthlyInstallments + $monthlySubscriptions + $monthlyDebtPayments;
+            $surplusCash = max(0.0, $monthlyIncome - $monthlyExpenses);
+            $monthlyDcaCapacity = $monthlyPlannedSavings > 0 ? $monthlyPlannedSavings : $surplusCash;
+            $unallocatedSurplus = max(0.0, $surplusCash - $monthlyPlannedSavings);
+
+            $coreSymbols = ['CPALL.BK', 'BDMS.BK', 'ADVANC.BK', 'AOT.BK', 'MSFT', 'SCHD', 'KO', 'PTT.BK', 'SCB.BK', 'KBANK.BK'];
+            $satelliteSymbols = ['NVDA', 'TSLA', 'DELTA.BK', 'GULF.BK', 'QQQ', 'SMH', 'AAPL', 'GOOGL', 'BTC', 'ETH'];
+
+            foreach ($holdings as $h) {
+                $val = (float) ($h->current_value_thb ?? 0);
+                if ($h->kind === Holding::KIND_STOCK || $h->kind === Holding::KIND_FUND) {
+                    $sym = strtoupper(trim((string)$h->symbol));
+                    if (in_array($sym, $coreSymbols, true) || str_contains(strtolower($h->notes ?? ''), 'core') || str_contains(strtolower($h->label ?? ''), 'ชนะเงินเฟ้อ')) {
+                        $coreValue += $val;
+                    } elseif (in_array($sym, $satelliteSymbols, true) || str_contains(strtolower($h->notes ?? ''), 'satellite') || str_contains(strtolower($h->label ?? ''), 'กระแส')) {
+                        $satelliteValue += $val;
+                    } else {
+                        $otherStockValue += $val;
+                    }
+                } elseif ($h->kind === Holding::KIND_CASH || $h->kind === Holding::KIND_DEPOSIT) {
+                    $cashDepositValue += $val;
+                } elseif ($h->kind === Holding::KIND_GOLD) {
+                    $goldValue += $val;
+                } elseif ($h->kind === Holding::KIND_CRYPTO) {
+                    $cryptoValue += $val;
+                }
+            }
+
+            if ($otherStockValue > 0) {
+                $coreValue += $otherStockValue * 0.70;
+                $satelliteValue += $otherStockValue * 0.30;
+            }
+
+            $totalInvestedStocks = $coreValue + $satelliteValue;
+            $corePct = $totalInvestedStocks > 0 ? round(($coreValue / $totalInvestedStocks) * 100, 1) : 70.0;
+            $satellitePct = $totalInvestedStocks > 0 ? round(($satelliteValue / $totalInvestedStocks) * 100, 1) : 30.0;
+
+            $estAnnualDividend = $totalInvestedStocks * 0.035;
+            $estMonthlyDividend = $estAnnualDividend / 12;
+            $freedomRatio = $monthlyExpenses > 0 ? min(100.0, round(($estMonthlyDividend / $monthlyExpenses) * 100, 1)) : 0.0;
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('portfolio_paper_trades')) {
+                $paperTradeCount = \Illuminate\Support\Facades\DB::table('portfolio_paper_trades')
+                    ->where('user_id', $userId)
+                    ->where('status', 'open')
+                    ->count();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Dashboard metric calculation warning: ' . $e->getMessage());
+        }
+
         $snapshots = Snapshot::query()
             ->forUser($userId)
             ->where('snapshot_date', '>=', now()->subDays(90)->toDateString())
@@ -150,9 +413,15 @@ class DashboardController extends Controller
 
         $lastRefresh = $holdings->whereNotNull('last_priced_at')->max('last_priced_at');
 
-        return view('portfolio.dashboard', compact(
+        return compact(
             'holdings', 'byKind', 'totals', 'trend', 'lastRefresh', 'koyoso',
-        ));
+            'monthlyIncome', 'monthlyExpenses', 'monthlyDcaCapacity',
+            'unallocatedSurplus', 'monthlyPlannedSavings',
+            'coreValue', 'satelliteValue', 'corePct', 'satellitePct',
+            'cashDepositValue', 'goldValue', 'cryptoValue', 'totalInvestedStocks',
+            'estAnnualDividend', 'estMonthlyDividend', 'freedomRatio',
+            'paperTradeCount', 'activeMonth'
+        );
     }
 
     public function create()

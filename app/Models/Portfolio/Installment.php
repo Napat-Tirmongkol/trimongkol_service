@@ -43,8 +43,14 @@ class Installment extends Model
 
     public function remainingBalance(): float
     {
-        $leftMonths = max(0, $this->total_months - $this->paid_months);
-        return (float) $this->monthly_payment * $leftMonths;
+        $leftMonths = max(0, (int) $this->total_months - (int) $this->paid_months);
+        if ($leftMonths <= 0) {
+            return 0.0;
+        }
+        if ((float) $this->total_amount > 0) {
+            return max(0.0, round((float) $this->total_amount - ((float) $this->monthly_payment * (int) $this->paid_months), 2));
+        }
+        return round((float) $this->monthly_payment * $leftMonths, 2);
     }
 
     public function progressPercent(): float

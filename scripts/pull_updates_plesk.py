@@ -14,6 +14,7 @@ import os
 import ssl
 import subprocess
 import sys
+import time
 import urllib.parse
 import urllib.request
 
@@ -83,14 +84,22 @@ class PleskSyncClient:
         url = f"{self.base_url}{endpoint}"
         headers = {
             "Authorization": self.auth_header,
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "Connection": "close"
         }
         if data is not None:
             headers["Content-Type"] = content_type
 
-        req = urllib.request.Request(url, data=data, headers=headers, method=method)
-        with urllib.request.urlopen(req, context=self.ctx, timeout=30) as resp:
-            return resp.status, resp.read()
+        last_err = None
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(url, data=data, headers=headers, method=method)
+                with urllib.request.urlopen(req, context=self.ctx, timeout=30) as resp:
+                    return resp.status, resp.read()
+            except Exception as e:
+                last_err = e
+                time.sleep(1.5)
+        raise last_err
 
     def get_deployed_commit(self):
         """Read the last deployed commit hash recorded on Plesk."""

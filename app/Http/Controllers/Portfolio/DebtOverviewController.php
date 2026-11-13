@@ -18,23 +18,34 @@ class DebtOverviewController extends Controller
         // (koyoso-debt-card partial needs it for redirect_month hidden inputs).
         $activeMonth = date('Y-m');
 
-        // Plan starts NEXT month. The current month is tracked in the budget
-        // worksheet, so it is intentionally excluded from this forward plan.
-        $startYM = Carbon::parse(date('Y-m') . '-01')->addMonth()->format('Y-m');
+        // Auto-sync the verified November 2026 debt & installment data ONLY when explicitly
+        // requested or when the user has zero debt/installment records (never overwrite user edits).
+        $verifiedInstallmentLabels = ['S24 Ultra', 'SPayLater', 'สินเชื่อเงินสด TikTok', 'mono max', 'มอไซต์', 'คืนแม่'];
+        if (Schema::hasTable('portfolio_installments') && Schema::hasTable('portfolio_debts')) {
+            $needsSync = request()->boolean('sync_plan')
+                || (Debt::forUser($userId)->doesntExist() && Installment::forUser($userId)->doesntExist());
+
+            if ($needsSync) {
+                app(BudgetController::class)->seedVerifiedNovember2026Plan($userId, '2026-11');
+            }
+        }
+
+        // Start schedule from current month so current month obligations (e.g. คืนแม่ & Nov stepped bill) are visible.
+        $startYM = $activeMonth;
+        $nextYM  = Carbon::parse($startYM . '-01')->addMonth()->format('Y-m');
 
         // ── Installments: most-recent record per label ────────────────────
-        // Using a single snapMonth misses installments added after the last
-        // "new month" copy (e.g. SEasyCash has no 2026-06 row if it was added
-        // mid-month). Taking the newest record per label is always correct.
         $installments = collect();
         if (Schema::hasTable('portfolio_installments')) {
+            $orderMap = array_flip($verifiedInstallmentLabels);
             $installments = Installment::forUser($userId)
                 ->where('total_months', '>', 0)
                 ->orderBy('month', 'desc')
+                ->orderBy('id', 'asc')
                 ->get()
                 ->unique('label')
-                ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0)
-                ->sortBy('label')
+                ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0 || $i->remainingBalance() > 0 || $i->month === $activeMonth)
+                ->sortBy(fn ($i) => $orderMap[$i->label] ?? (100 + (int) $i->id))
                 ->values();
         }
 
@@ -135,17 +146,18 @@ class DebtOverviewController extends Controller
             }
         }
 
-        // ── Build month-by-month schedule (from next month onward) ────────
+        // ── Build month-by-month schedule (from current month onward) ─────
         $schedule        = [];
         $maxMonthlyTotal = 1.0;
 
         for ($i = 0; $i < $horizonMonths; $i++) {
             $ym  = Carbon::parse($startYM . '-01')->addMonths($i)->format('Y-m');
             $row = [
-                'month'         => $ym,
-                'installments'  => [],
-                'debt_payments' => [],
-                'total'         => 0.0,
+                'month'            => $ym,
+                'installments'     => [],
+                'debt_payments'    => [],
+                'non_koyoso_total' => 0.0,
+                'total'            => 0.0,
             ];
 
             // Installments: active for the next `remaining` months
@@ -159,6 +171,7 @@ class DebtOverviewController extends Controller
                         'amount'      => $amt,
                         'months_left' => $remaining - $i,
                     ];
+                    $row['non_koyoso_total'] += $amt;
                     $row['total'] += $amt;
                 }
             }
@@ -170,7 +183,7 @@ class DebtOverviewController extends Controller
                     continue;
                 }
                 $payment = $debt->payments->firstWhere('month', $ym);
-                if ($payment) {
+                if ($payment && !$payment->is_paid) {
                     $amt = (float) $payment->amount;
                     if ($amt <= 0) {
                         continue;
@@ -180,7 +193,9 @@ class DebtOverviewController extends Controller
                         'debt_id'    => $debt->id,
                         'debt_label' => $debt->label,
                         'amount'     => $amt,
+                        'is_koyoso'  => false,
                     ];
+                    $row['non_koyoso_total'] += $amt;
                     $row['total'] += $amt;
                 }
             }
@@ -193,6 +208,7 @@ class DebtOverviewController extends Controller
                     'debt_id'    => $g['debt_id'],
                     'debt_label' => $g['debt_label'],
                     'amount'     => $g['amount'],
+                    'is_koyoso'  => true,
                 ];
                 $row['total'] += $g['amount'];
             }
@@ -204,29 +220,48 @@ class DebtOverviewController extends Controller
         }
 
         // ── Summary numbers ───────────────────────────────────────────────
-        $totalRemainingInstallments = $installments->sum(fn ($i) => $i->remainingBalance());
-        $totalRemainingDebts = $debts->sum(function ($d) {
-            if (str_contains($d->label, 'กยศ')) {
-                return (float) $d->payments->sum(
-                    fn ($p) => max(0.0, (float) $p->amount - (float) $p->paid_amount)
-                );
-            }
-            return (float) $d->payments->where('is_paid', false)->sum('amount');
-        });
-        $totalRemaining   = $totalRemainingInstallments + $totalRemainingDebts;
-        $firstMonthData   = $schedule[$startYM] ?? null;
-        $firstMonthTotal  = $firstMonthData['total'] ?? 0.0;
+        $totalRemainingInstallments = (float) $installments->sum(fn ($i) => $i->remainingBalance());
+        $monthlyInstallmentsSum     = (float) $installments
+            ->filter(fn ($i) => ((int) $i->total_months - (int) $i->paid_months) > 0)
+            ->sum(fn ($i) => (float) $i->monthly_payment);
+
+        $totalRemainingShortTermDebts = (float) $allDebts
+            ->reject(fn ($d) => str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => (float) $d->payments->where('is_paid', false)->sum('amount'));
+
+        $totalRemainingKoyoso = (float) $allDebts
+            ->filter(fn ($d) => str_contains($d->label, 'กยศ'))
+            ->sum(fn ($d) => (float) $d->payments->sum(
+                fn ($p) => max(0.0, (float) $p->amount - (float) $p->paid_amount)
+            ));
+
+        $totalRemainingNonKoyoso = $totalRemainingInstallments + $totalRemainingShortTermDebts;
+        $totalRemaining          = $totalRemainingNonKoyoso + $totalRemainingKoyoso;
+
+        $firstMonthData      = $schedule[$startYM] ?? null;
+        $firstMonthTotal     = $firstMonthData['total'] ?? 0.0;
+        $firstMonthNonKoyoso = $firstMonthData['non_koyoso_total'] ?? 0.0;
+
+        $nextMonthData       = $schedule[$nextYM] ?? null;
+        $nextMonthTotal      = $nextMonthData['total'] ?? 0.0;
+        $nextMonthNonKoyoso  = $nextMonthData['non_koyoso_total'] ?? 0.0;
 
         // Average monthly payment over the next 12 scheduled months
         $next12 = array_slice(array_values($schedule), 0, 12);
         $avgMonthly = count($next12) > 0
             ? collect($next12)->avg('total')
             : 0.0;
+        $avgMonthlyNonKoyoso = count($next12) > 0
+            ? collect($next12)->avg('non_koyoso_total')
+            : 0.0;
 
         return view('portfolio.debt-overview', compact(
-            'installments', 'debts', 'allDebts', 'schedule', 'startYM',
-            'activeMonth', 'firstMonthData', 'firstMonthTotal', 'totalRemaining',
-            'maxMonthlyTotal', 'avgMonthly'
+            'installments', 'debts', 'allDebts', 'schedule', 'startYM', 'nextYM',
+            'activeMonth', 'firstMonthData', 'firstMonthTotal', 'firstMonthNonKoyoso',
+            'nextMonthData', 'nextMonthTotal', 'nextMonthNonKoyoso',
+            'totalRemainingInstallments', 'totalRemainingShortTermDebts',
+            'totalRemainingKoyoso', 'totalRemainingNonKoyoso', 'totalRemaining',
+            'monthlyInstallmentsSum', 'maxMonthlyTotal', 'avgMonthly', 'avgMonthlyNonKoyoso'
         ));
     }
 

@@ -148,7 +148,7 @@ class PriceFetcher
         return round($native * $rate, 2);
     }
 
-    private function fetchUnitPrice(string $kind, string $symbol): ?float
+    public function fetchUnitPrice(string $kind, string $symbol): ?float
     {
         return match ($kind) {
             Holding::KIND_STOCK, Holding::KIND_FUND => $this->yahooPrice($symbol),
@@ -194,7 +194,7 @@ class PriceFetcher
         return is_numeric($price) ? (float) $price : null;
     }
 
-    private function fxRateToThb(string $currency): ?float
+    public function fxRateToThb(string $currency): ?float
     {
         $key = 'portfolio.fx.' . strtolower($currency) . '_thb';
 

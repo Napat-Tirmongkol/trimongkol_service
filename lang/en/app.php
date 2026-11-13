@@ -2085,6 +2085,8 @@ return [
             'planner'       => 'Investment Planner',
             'ledger'        => 'Income & Expenses',
             'debts'         => 'Debt Overview',
+            'fuel'          => 'Fuel Log',
+            'journey'       => 'Life Journey',
             'subscriptions' => 'Subscriptions',
         ],
         // Short labels for the mobile bottom nav (limited width)
@@ -2094,6 +2096,8 @@ return [
             'planner'       => 'Invest',
             'ledger'        => 'Ledger',
             'debts'         => 'Debts',
+            'fuel'          => 'Fuel',
+            'journey'       => 'Journey',
             'subscriptions' => 'Subs',
         ],
         'planner' => [

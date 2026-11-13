@@ -1,0 +1,48 @@
+{
+  "name": "Folk Life & Tactical Ops",
+  "short_name": "Folk Life",
+  "description": "SOC Shift Radar, Bio-Rhythm Telemetry & Personal Portfolio",
+  "start_url": "/portfolio/health",
+  "scope": "/portfolio",
+  "display": "standalone",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "SOC Health Radar",
+      "short_name": "Radar",
+      "description": "ดูเรดาร์เวรและสุขภาพ Galaxy Watch",
+      "url": "/portfolio/health",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Fuel Log (เติมน้ำมัน)",
+      "short_name": "Fuel",
+      "description": "บันทึกค่าน้ำมันรถ",
+      "url": "/portfolio/fuel",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Personal Profile",
+      "short_name": "Persona",
+      "description": "คลังคำถามและตัวตน",
+      "url": "/portfolio/persona",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
