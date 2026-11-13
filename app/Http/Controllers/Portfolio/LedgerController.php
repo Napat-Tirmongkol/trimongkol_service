@@ -18,9 +18,10 @@ class LedgerController extends Controller
     {
         $userId = $this->resolvePortfolioUserId();
 
-        $allMonths = LedgerEntry::query()
-            ->forUser($userId)
-            ->pluck('month')
+        $allMonths = collect()
+            ->merge(LedgerEntry::query()->forUser($userId)->pluck('month'))
+            ->merge(Schema::hasTable('portfolio_budget_items') ? BudgetItem::query()->forUser($userId)->pluck('month') : [])
+            ->merge(Schema::hasTable('portfolio_income') ? Income::query()->forUser($userId)->pluck('month') : [])
             ->unique()
             ->sort()
             ->reverse()
@@ -34,6 +35,15 @@ class LedgerController extends Controller
         if (!$allMonths->contains($activeMonth)) {
             $allMonths = $allMonths->prepend($activeMonth);
         }
+
+        // Available budget months for transaction assignment (previous, active, next, current real, plus all existing)
+        $budgetMonthOptions = collect([
+            date('Y-m', strtotime($activeMonth . '-01 -1 month')),
+            $activeMonth,
+            date('Y-m', strtotime($activeMonth . '-01 +1 month')),
+            date('Y-m'),
+            date('Y-m', strtotime('+1 month')),
+        ])->merge($allMonths)->unique()->sort()->reverse()->values();
 
         $entries = LedgerEntry::query()
             ->forUser($userId)
@@ -118,16 +128,27 @@ class LedgerController extends Controller
         // ── Line-chart data (cumulative ต่อวัน, คำนวณฝั่ง client) ──
         // เชื่อมหมวดงบผ่าน budget_item_id ที่มีอยู่แล้ว — ไม่ต้องเพิ่มคอลัมน์
         $daysInMonth  = \Illuminate\Support\Carbon::parse($activeMonth . '-01')->daysInMonth;
-        $chartEntries = $entries->map(fn ($e) => [
-            'd'    => (int) $e->date->day,
-            'amt'  => (float) $e->amount,
-            'type' => $e->type,
-            'bid'  => $e->budget_item_id,
-        ])->values();
+        $chartEntries = $entries->map(function ($e) use ($activeMonth, $daysInMonth) {
+            $entryMonth = $e->date->format('Y-m');
+            if ($entryMonth < $activeMonth) {
+                $day = 1; // Prior month transaction counting in this budget month -> ready on Day 1
+            } elseif ($entryMonth > $activeMonth) {
+                $day = $daysInMonth;
+            } else {
+                $day = (int) $e->date->day;
+            }
+
+            return [
+                'd'    => $day,
+                'amt'  => (float) $e->amount,
+                'type' => $e->type,
+                'bid'  => $e->budget_item_id,
+            ];
+        })->values();
         $chartPlanned = $budgetItems->mapWithKeys(fn ($b) => [$b->id => (float) $b->amount]);
 
         return view('portfolio.ledger', compact(
-            'allMonths', 'activeMonth', 'entries', 'byDate',
+            'allMonths', 'activeMonth', 'budgetMonthOptions', 'entries', 'byDate',
             'totalIncome', 'totalExpense', 'net',
             'budgetItems', 'budgetItemMonth',
             'installments', 'incomeItems', 'subscriptions', 'debtItems',
@@ -141,6 +162,7 @@ class LedgerController extends Controller
 
         $data = $request->validate([
             'date'        => 'required|date',
+            'month'       => 'nullable|string|regex:/^\d{4}-\d{2}$/',
             'type'        => 'required|in:income,expense',
             'amount'      => 'required|numeric|min:0.01',
             'label'       => 'required|string|max:200',
@@ -153,7 +175,9 @@ class LedgerController extends Controller
         unset($data['budget_link']);
         $data = array_merge($data, $links);
         $data['user_id'] = $userId;
-        $data['month']   = substr($data['date'], 0, 7);
+        if (empty($data['month'])) {
+            $data['month'] = substr($data['date'], 0, 7);
+        }
 
         $entry = LedgerEntry::create($data);
 
@@ -172,6 +196,7 @@ class LedgerController extends Controller
 
         $data = $request->validate([
             'date'        => 'required|date',
+            'month'       => 'nullable|string|regex:/^\d{4}-\d{2}$/',
             'type'        => 'required|in:income,expense',
             'amount'      => 'required|numeric|min:0.01',
             'label'       => 'required|string|max:200',
@@ -185,7 +210,9 @@ class LedgerController extends Controller
 
         unset($data['budget_link']);
         $data = array_merge($data, $links);
-        $data['month'] = substr($data['date'], 0, 7);
+        if (empty($data['month'])) {
+            $data['month'] = substr($data['date'], 0, 7);
+        }
 
         $entry->update($data);
 
